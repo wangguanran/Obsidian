@@ -57,8 +57,8 @@ Each chip-model directory is an **independent git repository**. When the same ch
 ```
 
 #### 平台子目录命名规则
-`<项目代号>-<SoC型号>-<Android版本>`
-例如：`ProjectA-SM6115-A14`、`ProjectB-SM6225-A14`、`ProjectD-SM8550-A15`
+`<SoC型号>-<Android版本>`
+例如：`SM6115-A14`、`SM6225-A14`、`SM8550-A15`
 
 #### 平台区分规则
 - 同一颗芯片用于不同平台/项目/SoC/Android版本时，必须**分别建立独立子目录**
@@ -71,7 +71,7 @@ Each chip-model directory is an **independent git repository**. When the same ch
 当首次归档某颗芯片的资料时：
 1. 在芯片目录下 `git init -b main`
 2. 创建 `.gitignore`（至少忽略 `.DS_Store`）
-3. 创建平台子目录（如 `ProjectA-SM6115-A14/`）
+3. 创建平台子目录（如 `SM6115-A14/`）
 4. 从源码树检索并归档该芯片相关文件（驱动、HAL、配置、固件）
 5. 导出 git 修改历史（`git log --oneline` + `git format-patch`）
 6. 生成 `00.总览.md`、移植文档、驱动分析总结
@@ -87,7 +87,7 @@ Each chip-model directory is an **independent git repository**. When the same ch
 Any file (source code, patch, config, firmware, PDF) mentioned in a document that exists in the Obsidian vault must use an **Obsidian wiki link** `[[<relative-path>|<display-name>]]` for one-click navigation.
 
 - **Relative path base**: `01.驱动文档/`
-- **Example**: `[[10.NFC/01.NXP/PN7221/ProjectA-SM6115-A14/91.源码与补丁索引/kernel_driver/pn7220/i2c_drv.c|i2c_drv.c]]`
+- **Example**: `[[10.NFC/01.NXP/PN7221/SM6115-A14/91.源码与补丁索引/kernel_driver/pn7220/i2c_drv.c|i2c_drv.c]]`
 - If the file is NOT yet archived, use plain text path + remote source tree note
 - Keep a `## 引用文件索引` section at the end of each document with all file references
 

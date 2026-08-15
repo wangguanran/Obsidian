@@ -4,7 +4,7 @@
 version: "1.0"
 ---
 
-## ProjectB NFC HAL主动崩溃触发逻辑说明
+##  NFC HAL主动崩溃触发逻辑说明
 
 ### 结论速览
 NFC HAL 的“主动崩溃”由 `phNxpNciHal_emergency_recovery()` 内部显式 `abort()` 触发，不是随机崩溃。
