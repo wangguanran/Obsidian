@@ -1,11 +1,11 @@
-# MT5205 gpio-userspace 驱动实现（SE reset / MDB reset）
+# ProjectC gpio-userspace 驱动实现（SE reset / MDB reset）
 
 ## 基本信息
 
 | 字段 | 值 |
 |:---|:---|
 | 问题类型 | 功能实现 / Secure Element GPIO 控制 |
-| 项目 | MT5205（bengal_515_32go） |
+| 项目 | ProjectC（bengal_515_32go） |
 | 驱动模块 | `kernel_platform/msm-kernel/drivers/misc/gpio-userspace.c` |
 | 芯片 | Qualcomm bengal（scuba-iot） |
 | 报告日期 | 2026-08-12 |
@@ -93,7 +93,7 @@ se-reset {
 ### init.target.rc 权限
 
 ```rc
-# MT5205 gpio-userspace
+# ProjectC gpio-userspace
 chown system system /sys/class/gpio_userspace/se_reset/value
 chmod 0666 /sys/class/gpio_userspace/se_reset/value
 chown system system /sys/class/gpio_userspace/mdb_reset/value
@@ -105,7 +105,7 @@ chmod 0666 /sys/class/gpio_userspace/mdb_reset/value
 ### 编译命令
 
 ```bash
-cd <MT5205 源码根目录>
+cd <ProjectC 源码根目录>
 JOBS=32 TMPDIR=<临时目录> ./build_boot_vendorboot_dtbo.sh
 ```
 
@@ -141,7 +141,7 @@ index 352b84557fc..e8feddd4183 100644
      setprop vendor.usb.qdss.inst.name "qdss_sw"
      setprop vendor.usb.controller 4e00000.dwc3
  
-+    # MT5205 gpio-userspace
++    # ProjectC gpio-userspace
 +    chown system system /sys/class/gpio_userspace/se_reset/value
 +    chmod 0666 /sys/class/gpio_userspace/se_reset/value
 +    chown system system /sys/class/gpio_userspace/mdb_reset/value
@@ -490,7 +490,7 @@ index 96adfa675a1..6c52b71a3ec 100755
  };
 +
 +/*
-+ * MT5205 gpio-userspace exports
++ * ProjectC gpio-userspace exports
 + *   GPIO102 SE_RESET -> Secure Element (SE) NRST (active-low), default high
 + *   GPIO36  MDB_RESET  -> STM32F103 NRST (active-low), default high
 + *

@@ -3,7 +3,7 @@
 最后修改时间: 2026年03月23日 上午 09:02:03 星期一
 ---
 
-## MT5825 NFC HAL主动崩溃触发逻辑说明
+## ProjectB NFC HAL主动崩溃触发逻辑说明
 
 ### 结论速览
 NFC HAL 的“主动崩溃”由 `phNxpNciHal_emergency_recovery()` 内部显式 `abort()` 触发，不是随机崩溃。
