@@ -16,6 +16,21 @@ configuration:
     - .DS_Store
     - "**/.assets"
     - "**/*.assets"
+    - ".git"
+    - ".github"
+    - "node_modules"
+    - "public"
+    - "quartz"
+    - "AI日记"
+    - "*.d.ts"
+    - "package.json"
+    - "package-lock.json"
+    - "tsconfig.json"
+    - "quartz.ts"
+    - "quartz.config.default.yaml"
+    - "Dockerfile"
+    - ".gitignore"
+    - "Activity Dashboard.md"
   theme:
     fontOrigin: googleFonts
     cdnCaching: true

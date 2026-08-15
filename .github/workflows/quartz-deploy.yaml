@@ -32,7 +32,7 @@ jobs:
         run: npm install --legacy-peer-deps
 
       - name: Build Quartz
-        run: npm run quartz build
+        run: npm run quartz build -- -d .
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
