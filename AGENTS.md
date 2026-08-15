@@ -43,13 +43,13 @@ Each chip-model directory is an **independent git repository**. When the same ch
     01.原理与架构/                 ← 驱动分析总结
     02.Bringup与配置/              ← 移植文档、Bringup 配置
     04.问题案例/                   ← 该平台的问题案例
-    91.源码与补丁索引/              ← 驱动源码+HAL+配置+固件+修改历史
-      kernel_driver/              ← 内核驱动源码 (.c/.h/Makefile/Kconfig)
-      vendor_hal/                 ← Vendor HAL 层代码
-      firmware/                   ← 固件文件
-      dt_config/                  ← DTS 配置
-      patches/                    ← format-patch 修改历史
-      modified_history.md         ← git log 修改历史摘要
+    02.Bringup与配置/91.源码与补丁索引/  ← 驱动源码+HAL+配置+固件+修改历史（与移植文档同目录）
+        kernel_driver/              ← 内核驱动源码 (.c/.h/Makefile/Kconfig)
+        vendor_hal/                 ← Vendor HAL 层代码
+        firmware/                   ← 固件文件
+        dt_config/                  ← DTS 配置
+        patches/                    ← format-patch 修改历史
+        modified_history.md         ← git log 修改历史摘要
     92.工具与软件/
   03.FAQ/                         ← 跨平台通用 FAQ
   90.参考资料/                     ← 跨平台通用资料（规格书、厂商文档）
