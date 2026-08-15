@@ -7,7 +7,7 @@ configuration:
   analytics:
     provider: null
   locale: zh-CN
-  baseUrl: wangguanran.github.io/Obsidian
+  baseUrl: wangguanran.github.io/tech-station
   ignorePatterns:
     - private
     - templates
