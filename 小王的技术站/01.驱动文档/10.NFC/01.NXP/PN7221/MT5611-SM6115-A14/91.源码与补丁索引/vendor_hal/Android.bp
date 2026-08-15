@@ -1,0 +1,13 @@
+cc_prebuilt_library_shared {
+    name: "libpn72xx_fw",
+    arch: {
+        arm64: {
+            srcs: ["hw/pn7220_i2cs/libpn72xx_fw.so"],
+        },
+    },
+    proprietary: true,
+    owner: "nxp",
+    strip: {
+        none: true,
+    }
+}

@@ -1,0 +1,4 @@
+binder_call(hal_emvco_client, hal_emvco_server)
+add_hwservice(hal_emvco_server, hal_emvco_service)
+binder_call(hal_emvco_server, servicemanager)
+allow hal_emvco_client hal_emvco_service:hwservice_manager find;

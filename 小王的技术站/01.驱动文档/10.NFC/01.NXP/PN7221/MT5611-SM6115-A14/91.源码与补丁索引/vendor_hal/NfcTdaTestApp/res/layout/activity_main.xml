@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".NfcTdaTestActivity">
+        <LinearLayout
+            android:id="@+id/action_bar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="parent"
+            >
+                <include layout="@layout/custom_toolbar"/>
+        </LinearLayout>
+        <Button
+            android:id="@+id/discoverTda"
+            android:layout_width="300dp"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="100dp"
+            android:text="DISCOVER TDA"
+            android:background="@color/orange"
+            android:onClick="onButtonClick"
+            android:textSize="24sp"
+           /> 
+        <LinearLayout
+            android:id="@+id/toggle_button"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/action_bar"
+            android:layout_marginTop="120dp"
+            android:layout_marginLeft="10dp"
+            android:layout_marginRight="10dp"
+            android:orientation="horizontal">
+
+                <CheckBox 
+                    android:id="@+id/tda_SAM1"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="0.25"
+                    android:text="SAM1"
+                    android:textSize="24sp"
+                    />
+                <CheckBox 
+                    android:id="@+id/tda_SAM2"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="0.25"
+                    android:text="SAM2"
+                    android:textSize="24sp"
+                    />
+                <Button
+                    android:id="@+id/openTda"
+                    android:layout_width="200dp"
+                    android:layout_height="wrap_content"
+                    android:layout_centerHorizontal="true"
+                    android:text="Open TDA"
+                    android:background="@color/orange"
+                    android:onClick="onButtonClick"
+                    android:textSize="24sp"
+                   />
+        </LinearLayout>
+        <TextView
+            android:id="@+id/sam1"
+            android:layout_width="3.1in"
+            android:layout_height="0.85in"
+            android:layout_marginTop="280dp"
+            android:layout_marginLeft="40dp"
+            android:layout_marginRight="10dp"
+            android:background="@drawable/box_background"
+            android:padding="16dp"
+            android:text="Discover TDA Info Not Available"
+            android:textColor="@android:color/black"
+            android:textSize="26sp"
+            />
+
+        <TextView
+            android:id="@+id/sam2"
+            android:layout_width="3.1in"
+            android:layout_height="0.85in"
+            android:layout_marginTop="580dp"
+            android:layout_marginLeft="40dp"
+            android:layout_marginRight="10dp"
+            android:background="@drawable/box_background"
+            android:padding="16dp"
+            android:text="Discover TDA Info Not Available"
+            android:textColor="@android:color/black"
+            android:textSize="26sp"
+            />
+        <LinearLayout
+            android:id="@+id/transceive_layout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/action_bar"
+            android:layout_marginTop="120dp"
+            android:layout_marginLeft="10dp"
+            android:layout_marginRight="10dp"
+            android:orientation="horizontal">
+            <TextView
+                android:id="@+id/trnsCmd"
+                android:layout_width="2.5in"
+                android:layout_height="0.25in"
+                android:layout_marginTop="1040dp"
+                android:layout_marginLeft="40dp"
+                android:layout_marginRight="10dp"
+                android:background="@drawable/box_background"
+                android:padding="16dp"
+                android:text="APDU CMD : "
+                android:textColor="@android:color/black"
+                android:textSize="24sp"
+                />
+
+            <Button
+                 android:id="@+id/trnsSend"
+                 android:layout_width="200dp"
+                 android:layout_height="wrap_content"
+                 android:layout_centerHorizontal="true"
+                 android:layout_marginTop="1040dp"
+                 android:layout_marginLeft="30dp"
+                 android:layout_marginRight="10dp"
+                 android:text="Send APDU"
+                 android:background="@color/orange"
+                 android:onClick="onButtonClick"
+                 android:textSize="24sp"
+                 />
+        </LinearLayout>
+        <TextView
+            android:id="@+id/trnsRsp"
+            android:layout_width="3.1in"
+            android:layout_height="0.25in"
+            android:layout_marginTop="1340dp"
+            android:layout_marginLeft="50dp"
+            android:layout_marginRight="10dp"
+            android:background="@drawable/box_background"
+            android:padding="16dp"
+            android:text="APDU RSP : "
+            android:textColor="@android:color/black"
+            android:textSize="24sp"
+            />
+        <Button
+             android:id="@+id/closeTda"
+             android:layout_width="200dp"
+             android:layout_height="wrap_content"
+             android:layout_centerHorizontal="true"
+             android:layout_marginTop="1480dp"
+             android:layout_marginLeft="30dp"
+             android:text="Close TDA"
+             android:background="@color/orange"
+             android:onClick="onButtonClick"
+             android:textSize="24sp"
+             />
+        <TextView
+            android:id="@+id/text_view"
+            android:layout_marginTop="20dp"
+            android:layout_marginLeft="10dp"
+            android:layout_marginRight="10dp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/status_button"
+            android:layout_alignLeft="@+id/status_button"
+             />
+
+</RelativeLayout>

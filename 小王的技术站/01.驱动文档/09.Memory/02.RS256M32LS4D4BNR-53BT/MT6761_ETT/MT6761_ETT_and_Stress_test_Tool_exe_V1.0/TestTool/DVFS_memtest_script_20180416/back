@@ -1,0 +1,10 @@
+### Mobile phone should be put in landscape direction
+# Start of Script
+type= user 
+count= 1
+speed= 1.0
+start data >>
+## Back to MainMenu
+UserWait(3000)
+DispatchPress(KEYCODE_BACK)
+

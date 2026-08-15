@@ -1,0 +1,16 @@
+copilot
+.DS_Store
+.copilot
+.smart-env
+.smtcmp_json_db
+.trash
+.smtcmp_vector_db.tar.gz
+cache
+node_modules/
+public/
+node_modules/
+public/
+.obsidian/
+AI日记/
+Activity Dashboard.md
+TODO.md

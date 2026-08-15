@@ -1,0 +1,8 @@
+# ==============================================
+# NXP Attribute declarations
+# ==============================================
+
+# hal_attribute(emvco);
+attribute hal_emvco;
+attribute hal_emvco_client;
+attribute hal_emvco_server;

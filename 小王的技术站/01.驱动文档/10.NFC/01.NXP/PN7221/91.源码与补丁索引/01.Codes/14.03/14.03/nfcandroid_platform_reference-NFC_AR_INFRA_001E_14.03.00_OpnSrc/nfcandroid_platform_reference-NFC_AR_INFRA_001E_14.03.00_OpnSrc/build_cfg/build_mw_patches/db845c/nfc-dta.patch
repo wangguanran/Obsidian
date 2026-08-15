@@ -1,0 +1,213 @@
+diff --git a/dtaLib/Android.bp b/dtaLib/Android.bp
+index 3dce361a..2537b8ef 100644
+--- a/dtaLib/Android.bp
++++ b/dtaLib/Android.bp
+@@ -40,8 +40,8 @@ cc_library_shared {
+         "system/nfc-dta/dtaPlatform/phInfra/inc",
+         "system/nfc-dta/dtaPlatform/phDtaOsal/inc",
+         "system/nfc-dta/dtaPlatform/phDtaOsal/src/comps/android/inc",
+-        "system/nfc/SN100x/src/gki/common/",
+-        "system/nfc/SN100x/src/gki/ulinux/",
++        "system/nfc/src/gki/common/",
++        "system/nfc/src/gki/ulinux/",
+     ],
+     local_include_dirs: [
+         "inc/",
+@@ -49,7 +49,7 @@ cc_library_shared {
+     cflags: [
+         "-DTHREAD_PRIO_SUPPORT=FALSE",
+         "-DNFC_NXP_P2P_PERFORMANCE_TESTING=FALSE",
+-        "-DP2P_ENABLE=TRUE",
++        "-DP2P_ENABLE=FALSE",
+     ],
+     srcs: [
+         "src/src/*.c",
+diff --git a/dtaLib/src/src/phDTALib.c b/dtaLib/src/src/phDTALib.c
+index 3d103ca3..907da65f 100755
+--- a/dtaLib/src/src/phDTALib.c
++++ b/dtaLib/src/src/phDTALib.c
+@@ -864,7 +864,9 @@ void phDtaLibi_CbMsgHandleThrd(void *param) {
+     MWIFSTATUS dwMwIfStatus = 0;
+     DTASTATUS  dwDtaStatus=0;
+     phMwIf_eProtocolType_t eProtocolype;
++#if (P2P_ENABLE == TRUE)
+     phMWIf_eDiscType_t eDiscType;
++#endif
+     phMWIf_eDeactivateType_t eDeactType;
+     BOOLEAN   bDiscStartReqd = TRUE;
+     BOOLEAN   bDiscStopReqd  = TRUE;
+diff --git a/dtaMwAl/src/comps/android/Android.bp b/dtaMwAl/src/comps/android/Android.bp
+index 649b3b61..1609d824 100644
+--- a/dtaMwAl/src/comps/android/Android.bp
++++ b/dtaMwAl/src/comps/android/Android.bp
+@@ -39,7 +39,7 @@ cc_library_shared {
+         "libc",
+         "libdl",
+         "liblog",
+-        "vendor.nxp.nxpnfc@2.0",
++        "vendor.nxp.nxpnfc@1.0",
+         "android.hardware.nfc@1.2",
+     ],
+     cflags: [
+@@ -52,10 +52,11 @@ cc_library_shared {
+         "-DANDROID_O=FALSE",
+         "-DANDROID_P=FALSE",
+         "-DANDROID_R=FALSE",
+-        "-DANDROID_S=FALSE",
++        "-DANDROID_S=TRUE",
+         "-DNXP_QTAG=TRUE",
+-        "-DANDROID_U=TRUE",
+-        "-DP2P_ENABLE=TRUE",
++        "-DANDROID_U=FALSE",
++        "-DP2P_ENABLE=FALSE",
++        "-DNXP_PLATFORM_PN7220=TRUE",
+     ],
+     srcs: [
+         "src/*.cpp"
+@@ -67,12 +68,12 @@ cc_library_shared {
+         "system/nfc-dta/dtaPlatform/phInfra/inc",
+         "system/nfc-dta/dtaMwAl/inc",
+         "frameworks/native/include",
+-        "system/nfc/SN100x/src/include",
+-        "system/nfc/SN100x/src/nfa/include",
+-        "system/nfc/SN100x/src/nfc/include",
+-        "system/nfc/SN100x/src/gki/ulinux",
+-        "system/nfc/SN100x/src/gki/common",
+-        "system/nfc/SN100x/utils/include",
++        "system/nfc/src/include",
++        "system/nfc/src/nfa/include",
++        "system/nfc/src/nfc/include",
++        "system/nfc/src/gki/ulinux",
++        "system/nfc/src/gki/common",
++        "system/nfc/utils/include",
+         "frameworks/base/media/mca/filterfw/native/base",
+     ],
+     local_include_dirs: [
+diff --git a/dtaMwAl/src/comps/android/src/phMwIfAndroid.cpp b/dtaMwAl/src/comps/android/src/phMwIfAndroid.cpp
+index cc1b0c04..bcca3b10 100755
+--- a/dtaMwAl/src/comps/android/src/phMwIfAndroid.cpp
++++ b/dtaMwAl/src/comps/android/src/phMwIfAndroid.cpp
+@@ -363,6 +363,7 @@ MWIFSTATUS phMwIf_ConfigParams(void* mwIfHandle, phMwIf_sConfigParams_t *sConfig
+         phMwIfi_SetConfig(mwIfHdl, PHMWIF_NCI_CONFIG_PF_BIT_RATE, 0x01, abConfigIDData);
+     }
+ #if (P2P_ENABLE == TRUE)
++#if (NXP_PLATFORM_PN7220 == FALSE)
+     if(sConfigParams->bNfcdepPollBitRateHigh == TRUE)
+     {
+         abConfigIDData[0] = 0x00;
+@@ -386,7 +387,7 @@ MWIFSTATUS phMwIf_ConfigParams(void* mwIfHandle, phMwIf_sConfigParams_t *sConfig
+         mwIfHdl->u8NfcDepLnWtConfigVal = abConfigIDData[0] = 0x08;
+         phMwIfi_SetConfig(mwIfHdl, PHMWIF_NCI_CONFIG_LN_WT, 0x01, abConfigIDData);
+     }
+-
++#endif
+     if ((strcmp(sConfigParams->aCertRelease, "CR12") == 0x00) ||
+         (strcmp(sConfigParams->aCertRelease, "CR13") == 0x00)) {
+       if (sConfigParams->sMwIfDiscCfgParams.discParams.dwP2pAcmIni) {
+@@ -439,6 +440,7 @@ MWIFSTATUS phMwIf_ConfigParams(void* mwIfHandle, phMwIf_sConfigParams_t *sConfig
+         phMwIfi_SetConfigProp(mwIfHdl, PHMWIF_NCI_CONFIG_PROP_LISTEN_PROFILE_SEL_CFG, 0x01, abConfigIDData);
+     }
+     ALOGD("MwIf>%s:Calling MwIf SetConfig ",__FUNCTION__);
++#if(NXP_PLATFORM_PN7220 == FALSE)
+     abConfigIDData[0] = 0x00;
+     phMwIfi_SetConfig(mwIfHdl, PHMWIF_NCI_CONFIG_PN_ATR_REQ_GEN_BYTES_CFG, 0, abConfigIDData);//ATR_REQ General bytes
+     abConfigIDData[0] = 0x00;
+@@ -446,6 +448,7 @@ MWIFSTATUS phMwIf_ConfigParams(void* mwIfHandle, phMwIf_sConfigParams_t *sConfig
+     abConfigIDData[0] = 0x30;
+     phMwIfi_SetConfig(mwIfHdl, PHMWIF_NCI_CONFIG_PN_ATR_REQ_CFG, 1, abConfigIDData);
+     abConfigIDData[0] = 0x00;
++#endif
+     phMwIfi_SetConfig(mwIfHdl, PHMWIF_NCI_CONFIG_PI_BIT_RATE, 0x01, abConfigIDData);
+     abConfigIDData[0] = 0x08;
+     phMwIfi_SetConfig(mwIfHdl, PHMWIF_NCI_CONFIG_LA_BIT_FRAME_SDD, 0x01, abConfigIDData);
+@@ -458,6 +461,7 @@ MWIFSTATUS phMwIf_ConfigParams(void* mwIfHandle, phMwIf_sConfigParams_t *sConfig
+     abConfigIDData[2] = 0x03;
+     abConfigIDData[3] = 0x04;
+     phMwIfi_SetConfig(mwIfHdl, PHMWIF_NCI_CONFIG_LA_NFCID1, 0x04, abConfigIDData);
++#if(NXP_PLATFORM_PN7220 == FALSE)
+     abConfigIDData[0] = 0x06;
+     phMwIfi_SetConfig(mwIfHdl, PHMWIF_NCI_CONFIG_LF_CON_BITR_F, 0x01, abConfigIDData);
+     if(sConfigParams->sMwIfDiscCfgParams.discParams.dwListenP2P == P2P_DISABLED)
+@@ -493,18 +497,21 @@ MWIFSTATUS phMwIf_ConfigParams(void* mwIfHandle, phMwIf_sConfigParams_t *sConfig
+         abConfigIDData[0] = 0x02; /** Protocol Type value */
+     }
+     phMwIfi_SetConfig(mwIfHdl, PHMWIF_NCI_CONFIG_LF_PROTOCOL_TYPE, 0x01, abConfigIDData);
++#endif
+     abConfigIDData[0] = 0x02;
+     phMwIfi_SetConfig(mwIfHdl, PHMWIF_NCI_CONFIG_LI_BIT_RATE, 0x01, abConfigIDData);
+     abConfigIDData[0] = 0x01;
+     phMwIfi_SetConfig(mwIfHdl, PHMWIF_NCI_CONFIG_RF_FIELD_INFO, 0x01, abConfigIDData);
+     abConfigIDData[0] = 0x01;
+     phMwIfi_SetConfig(mwIfHdl, PHMWIF_NCI_CONFIG_RF_NFCEE_ACTION, 0x01, abConfigIDData);
++#if (NXP_PLATFORM_PN7220 == FALSE)
+ #if (P2P_ENABLE == TRUE)
+     abConfigIDData[0] = 0x0E;
+     phMwIfi_SetConfig(mwIfHdl, PHMWIF_NCI_CONFIG_NFCDEP_OP, 0x01, abConfigIDData);
+ #endif
+     abConfigIDData[0] = 0x00;
+     phMwIfi_SetConfig(mwIfHdl, PHMWIF_NCI_CONFIG_PF_RC_CODE, 0x01, abConfigIDData);
++#endif
+     abConfigIDData[0] = 0xE8;
+     abConfigIDData[1] = 0x03;
+     phMwIfi_SetConfig(mwIfHdl, PHMWIF_NCI_CONFIG_TOTAL_DURATION, 0x02, abConfigIDData);
+@@ -2031,7 +2038,7 @@ tNFA_STATUS phMwIfi_SelectDevice(){
+                 {
+                     count = 0;
+                    // Android14 P2P (NFC_DEP protocol) is not supported, count=1 is set to send ISO_DEP protocol
+-                    #if(ANDROID_U == TRUE)
++                    #if(P2P_ENABLE == FALSE)
+                         if(strcmp(mwIfHdl->sPrevMwIfDiscCfgParams.Certification_Release,"CR13") == 0x00)
+                            count = 1;
+                     #endif
+diff --git a/dtaPlatform/phDtaOsal/src/comps/android/Android.bp b/dtaPlatform/phDtaOsal/src/comps/android/Android.bp
+index 02b8d020..2323d720 100644
+--- a/dtaPlatform/phDtaOsal/src/comps/android/Android.bp
++++ b/dtaPlatform/phDtaOsal/src/comps/android/Android.bp
+@@ -41,12 +41,12 @@ cc_library_shared {
+         "system/nfc-dta/dtaPlatform/phInfra/inc",
+         "system/nfc-dta/dtaPlatform/phDtaOsal/src/comps/android/inc",
+         "system/nfc-dta/dtaPlatform/phDtaOsal/inc",
+-        "system/nfc/SN100x/src/include",
+-        "system/nfc/SN100x/src/nfa/include",
+-        "system/nfc/SN100x/src/nfc/include",
+-        "system/nfc/SN100x/src/gki/ulinux",
+-        "system/nfc/SN100x/src/gki/common",
+-        "system/nfc/SN100x/utils/include",
++        "system/nfc/src/include",
++        "system/nfc/src/nfa/include",
++        "system/nfc/src/nfc/include",
++        "system/nfc/src/gki/ulinux",
++        "system/nfc/src/gki/common",
++        "system/nfc/utils/include",
+     ],
+ 
+     srcs: [
+diff --git a/dtaUI/dtaGui/src/comps/android/jni/Android.bp b/dtaUI/dtaGui/src/comps/android/jni/Android.bp
+index 0c40412c..fe224be9 100644
+--- a/dtaUI/dtaGui/src/comps/android/jni/Android.bp
++++ b/dtaUI/dtaGui/src/comps/android/jni/Android.bp
+@@ -22,7 +22,7 @@ cc_library_shared {
+         "-Wno-unused-parameter",
+         "-Werror",
+         "-fexceptions",
+-        "-DP2P_ENABLE=TRUE",
++        "-DP2P_ENABLE=FALSE",
+     ],
+ 
+     arch: {
+@@ -38,13 +38,12 @@ cc_library_shared {
+         "system/nfc-dta/dtaPlatform/phDtaOsal/inc",
+         "system/nfc-dta/dtaPlatform/phDtaOsal/src/comps/android/inc",
+         "system/nfc-dta/dtaMwAl/inc/",
+-        "system/nfc/SN100x/src/gki/common/",
+-        "system/nfc/SN100x/src/gki/ulinux/",
++        "system/nfc/src/gki/common/",
++        "system/nfc/src/gki/ulinux/",
+     ],
+     srcs: ["*.cpp"],
+ 
+     shared_libs: [
+-        "libandroidicu",
+         "libnativehelper",
+         "libdta",
+         "libcutils",

@@ -1,0 +1,27 @@
+From ac620b4b20889c2ddfb7dde43bbf7f6d2812bf95 Mon Sep 17 00:00:00 2001
+From: Tomasz Wasilczyk <twasilczyk@google.com>
+Date: Mon, 31 Jul 2023 11:23:04 -0700
+Subject: [PATCH] Link libbase to allow importing GetThreadId
+
+Bug: 289414897
+Test: it builds
+Change-Id: I17ed8739ab8dc4b2587265e8d7b1608458307fab
+---
+ stats/stats_log_api_gen/Android.bp | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/stats/stats_log_api_gen/Android.bp b/stats/stats_log_api_gen/Android.bp
+index 4c72d9e3..a8d57fbb 100644
+--- a/stats/stats_log_api_gen/Android.bp
++++ b/stats/stats_log_api_gen/Android.bp
+@@ -222,6 +222,7 @@ cc_library {
+         },
+         host: {
+             static_libs: [
++                "libbase",
+                 "libstatssocket",
+                 "libstatspull",
+                 "statsd-aidl-ndk",
+-- 
+2.41.0
+

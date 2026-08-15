@@ -1,0 +1,47 @@
+/*! \mainpage NXP's EMVCO Host Exchange Stack Archutecture and Directory Structure
+
+\section intro_sec Introduction
+
+This document describes interfaces and scenarios details of NXP's EMVCO Host Exchange Stack.
+NXP Semiconductors does not give any representations or warranties as to the accuracy or completeness of information 
+included herein and shall have no liability for the consequences of use of such information.
+
+\section Scope
+The scope of the specified details are limited to NXP's PN7220 NFC Controller.
+
+\section Architecture EMVCo Middleware Acrhitecture
+
+This diagram depicts layered architecture view of EMVCo middleware components and interface between them.
+
+\image html EMVCO_MW_ARCHITECTURE.png
+ 
+\section DocStruct EMVCo Host Data Exchange Stack Directory Structure
+
+This diagram depicts the directory structure of EMVCo host data exchange stack
+
+\image html EMVCO_DIRECTORY_STRUCTURE.png
+
+<br/>
+
+<strong>Please read</strong> also the \ref grp_liability. 
+
+<br/><br/><br/><br/>
+
+*/
+
+/*!
+
+  \defgroup grp_liability Liability Information
+
+<small>
+
+General Information in this document is believed to be accurate and reliable. However, NXP Semiconductors does not give any representations or warranties, expressed or implied, as to the accuracy or completeness of such information and shall have no liability for the consequences of use of such information. Right to make changes NXP Semiconductors reserves the right to make changes to 
+
+information published in this document, including without limitation specifications and product descriptions, at any time and without notice. This document supersedes and replaces all information supplied prior to the publication hereof. Suitability for use NXP Semiconductors products are not designed, authorized or warranted to be suitable for use in medical, military, aircraft, space or life support equipment, nor in applications where failure or malfunction of a NXP Semiconductors product can reasonably be expected to result in personal injury, death or severe property or environmental damage. NXP Semiconductors accepts no liability for inclusion and/or
+
+ use of NXP Semiconductors products in such equipment or applications and therefore such inclusion and/or use is for the customer’s own risk. Applications that are described herein for any of these products are for illustrative purposes only. NXP Semiconductors makes no representation or warranty that such applications will be suitable for the specified use without further testing or modification.
+
+</small><br/><br/>
+
+
+*/

@@ -1,0 +1,1 @@
+adb wait-for-devices && adb shell "sh /data/run.sh&"

@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: GPL-2.0-only
+config NXP_NFC_PN7220
+	tristate "nxp pn7220"
+	default m
+	help
+	  NXP PN7220 core driver.
+	  This is a driver based on the HCI NFC kernel layers and
+	  will thus not work with NXP libnfc library.
+

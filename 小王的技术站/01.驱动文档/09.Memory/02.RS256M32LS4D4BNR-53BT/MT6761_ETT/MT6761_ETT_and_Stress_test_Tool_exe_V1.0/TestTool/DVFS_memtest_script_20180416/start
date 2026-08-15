@@ -1,0 +1,7 @@
+type= user 
+count= 1
+speed= 1.0
+start data >>
+UserWait(3000)
+DispatchPointer(0, 0, 0, 277, 241, 1.100, 0.0, 0, 0.0, 0.0, 0, 0);
+DispatchPointer(0, 0, 1, 277, 241, 1.100, 0.0, 0, 0.0, 0.0, 0, 0);

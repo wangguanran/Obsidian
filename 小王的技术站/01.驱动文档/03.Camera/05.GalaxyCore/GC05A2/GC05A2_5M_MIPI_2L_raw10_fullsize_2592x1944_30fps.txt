@@ -1,0 +1,427 @@
+/*system* /
+ ff  0315  d4
+ ff  0d06  01
+ ff  0a70  80
+ ff  031a  00
+ ff  0314  00
+ ff  0130  08
+ ff  0132  01
+ ff  0135  01
+ ff  0136  38
+ ff  0137  03
+ ff  0134  5b
+ ff  031c  e0
+ ff  0d82  14
+ ff  0dd1  56
+           
+ /*gate_mode*/
+ ff  0af4  01
+ ff  0002  10
+ ff  00c3  34
+           
+ /*pre_setting*/
+ ff  0084  21
+ ff  0d05  cc
+ ff  0218  00
+ ff  005e  48
+ ff  0d06  01
+ ff  0007  16
+ ff  0101  00
+           
+ /*analog*/
+ ff  0342  07
+ ff  0343  28
+ ff  0220  07
+ ff  0221  d0
+ ff  0202  07
+ ff  0203  32
+ ff  0340  07
+ ff  0341  f0
+ ff  0219  00
+ ff  0346  00
+ ff  0347  04
+ ff  0d14  00
+ ff  0d13  05
+ ff  0d16  05
+ ff  0d15  1d
+ ff  00c0  0a
+ ff  00c1  30
+ ff  034a  07
+ ff  034b  a8
+ ff  0e0a  00
+ ff  0e0b  00
+ ff  0e0e  03
+ ff  0e0f  00
+ ff  0e06  0a
+ ff  0e23  15
+ ff  0e24  15
+ ff  0e2a  10
+ ff  0e2b  10
+ ff  0e17  49
+ ff  0e1b  1c
+ ff  0e3a  36
+ ff  0d11  84
+ ff  0e52  14
+ ff  000b  10
+ ff  0008  08
+ ff  0223  17
+ ff  0d27  39
+ ff  0d22  00
+ ff  03f6  0d
+ ff  0d04  07
+ ff  03f3  72
+ ff  03f4  b8
+ ff  03f5  bc
+ ff  0d02  73
+ 
+ /*auto load start*/
+ ff  00c4  00
+ ff  00c5  01
+ ff  0af6  00
+ ff  0ba0  17
+ ff  0ba1  00
+ ff  0ba2  00
+ ff  0ba3  00
+ 
+ ff  0ba4  03
+ ff  0ba5  00
+ ff  0ba6  00
+ ff  0ba7  00
+ 
+ ff  0ba8  40
+ ff  0ba9  00
+ ff  0baa  00
+ ff  0bab  00
+ 
+ ff  0bac  40
+ ff  0bad  00
+ ff  0bae  00
+ ff  0baf  00
+ 
+ ff  0bb0  02
+ ff  0bb1  00
+ ff  0bb2  00
+ ff  0bb3  00
+ 
+ ff  0bb8  02
+ ff  0bb9  00
+ ff  0bba  00
+ ff  0bbb  00
+ 
+ ff  0a70  80
+ ff  0a71  00
+ ff  0a72  00
+ ff  0a66  00
+ ff  0a67  80
+ ff  0a4d  4e
+ ff  0a50  00
+ ff  0a4f  0c
+ 
+ ff  0a66  00
+ ff  00ca  00
+ ff  00cb  00
+ ff  00cc  00
+ ff  00cd  00
+ ff  0aa1  00
+ ff  0aa2  e0
+ ff  0aa3  00
+ ff  0aa4  40
+ ff  0a90  03
+ ff  0a91  0e
+ ff  0a94  80
+ 
+ /*standby*/
+ ff  0af6  20
+ ff  0b00  91
+ ff  0b01  17
+ ff  0b02  01
+ ff  0b03  00
+           
+ ff  0b04  01
+ ff  0b05  17
+ ff  0b06  01
+ ff  0b07  00
+           
+ ff  0ae9  01
+ ff  0aea  02
+ ff  0ae8  53
+ ff  0ae8  43
+           
+  /*gain_partition*/
+ ff  0af6  30
+ ff  0b00  08
+ ff  0b01  0f
+ ff  0b02  00
+          
+ ff  0b04  1c
+ ff  0b05  24
+ ff  0b06  00
+  
+ ff  0b08  30
+ ff  0b09  40
+ ff  0b0a  00
+ 
+ ff  0b0c  0e
+ ff  0b0d  2a
+ ff  0b0e  00
+          
+ ff  0b10  0e
+ ff  0b11  2b
+ ff  0b12  00
+          
+ ff  0b14  0e
+ ff  0b15  23
+ ff  0b16  00
+          
+ ff  0b18  0e
+ ff  0b19  24
+ ff  0b1a  00
+          
+ ff  0b1c  0c
+ ff  0b1d  0c
+ ff  0b1e  00
+          
+ ff  0b20  03
+ ff  0b21  03
+ ff  0b22  00
+          
+ ff  0b24  0e
+ ff  0b25  0e
+ ff  0b26  00
+        
+ ff  0b28  03
+ ff  0b29  03
+ ff  0b2a  00
+         
+ ff  0b2c  12
+ ff  0b2d  12
+ ff  0b2e  00
+          
+ ff  0b30  08
+ ff  0b31  08
+ ff  0b32  00
+       
+ ff  0b34  14
+ ff  0b35  14
+ ff  0b36  00
+         
+ ff  0b38  10
+ ff  0b39  10
+ ff  0b3a  00
+        
+ ff  0b3c  16
+ ff  0b3d  16
+ ff  0b3e  00
+          
+ ff  0b40  10
+ ff  0b41  10
+ ff  0b42  00
+        
+ ff  0b44  19
+ ff  0b45  19
+ ff  0b46  00
+         
+ ff  0b48  16
+ ff  0b49  16
+ ff  0b4a  00
+        
+ ff  0b4c  19
+ ff  0b4d  19
+ ff  0b4e  00
+          
+ ff  0b50  16
+ ff  0b51  16
+ ff  0b52  00
+          
+ ff  0b80  01
+ ff  0b81  00
+ ff  0b82  00
+ ff  0b84  00
+ ff  0b85  00
+ ff  0b86  00
+          
+ ff  0b88  01
+ ff  0b89  6a
+ ff  0b8a  00
+ ff  0b8c  00
+ ff  0b8d  01
+ ff  0b8e  00
+          
+ ff  0b90  01
+ ff  0b91  f6
+ ff  0b92  00
+ ff  0b94  00
+ ff  0b95  02
+ ff  0b96  00
+          
+ ff  0b98  02
+ ff  0b99  c4
+ ff  0b9a  00
+ ff  0b9c  00
+ ff  0b9d  03
+ ff  0b9e  00
+          
+ ff  0ba0  03
+ ff  0ba1  d8
+ ff  0ba2  00
+ ff  0ba4  00
+ ff  0ba5  04
+ ff  0ba6  00
+          
+ ff  0ba8  05
+ ff  0ba9  4d
+ ff  0baa  00
+ ff  0bac  00
+ ff  0bad  05
+ ff  0bae  00
+          
+ ff  0bb0  07
+ ff  0bb1  3e
+ ff  0bb2  00
+ ff  0bb4  00
+ ff  0bb5  06
+ ff  0bb6  00
+          
+ ff  0bb8  0a
+ ff  0bb9  1a
+ ff  0bba  00
+ ff  0bbc  09
+ ff  0bbd  36
+ ff  0bbe  00
+          
+ ff  0bc0  0e
+ ff  0bc1  66
+ ff  0bc2  00
+ ff  0bc4  10
+ ff  0bc5  06
+ ff  0bc6  00
+          
+ ff  02c1  e0
+ ff  0207  04
+ ff  02c2  10
+ ff  02c3  74
+ ff  02c5  09
+ ff  02c1  e0 
+ ff  0207  04 
+ ff  02c2  10 
+ ff  02c5  09 
+ ff  02c1  e0 
+ ff  0207  04 
+ ff  02c2  10 
+ ff  02c5  09 
+           
+ /*auto load CH_GAIN*/
+ ff  0aa1  15
+ ff  0aa2  50
+ ff  0aa3  00
+ ff  0aa4  09
+ ff  0a90  25
+ ff  0a91  0e
+ ff  0a94  80
+           
+   /*ISP* /
+ ff  0050  00
+ ff  0089  83
+ ff  005a  40
+ ff  00c3  35
+ ff  00c4  80
+ ff  0080  10
+ ff  0040  12
+ ff  0053  0a
+ ff  0054  44
+ ff  0055  32
+ ff  0058  89
+ ff  004a  03
+ ff  0048  f0
+ ff  0049  0f
+ ff  0041  20
+ ff  0043  0a
+ ff  009d  08
+ ff  0236  40
+            
+ /*gain*/ 
+ ff  0204  04
+ ff  0205  00
+ ff  02b3  00
+ ff  02b4  00
+ ff  009e  01
+ ff  009f  94
+           
+ /*OUT 2592x1944*/
+ ff  0350  01
+ ff  0353  00
+ ff  0354  08
+ ff  034c  0a
+ ff  034d  20
+ ff  021f  14
+           
+ /*auto load REG*/
+ ff  0aa1  10
+ ff  0aa2  f8
+ ff  0aa3  00
+ ff  0aa4  1f
+ ff  0a90  11
+ ff  0a91  0e
+ ff  0a94  80
+ ff  03fe  00
+ ff  03fe  00
+ ff  03fe  00
+ ff  03fe  00
+ ff  03fe  00
+ ff  03fe  00
+ ff  03fe  00
+ ff  03fe  00
+ ff  03fe  00
+ ff  03fe  00
+ ff  03fe  00
+ ff  03fe  00
+ ff  0a90  00
+ ff  0a70  00
+ ff  0a67  00
+ ff  0af4  29
+           
+ /*DPHY*/ 
+ ff  0d80  07
+ ff  0dd3  18
+           
+ /*MIPI*/ 
+ ff  0107  05
+ ff  0117  01
+ ff  0d81  00
+ ff  0d84  0c
+ ff  0d85  a8
+ ff  0d86  06
+ ff  0d87  55
+ ff  0db3  06
+ ff  0db4  08
+ ff  0db5  1e
+ ff  0db6  02
+ ff  0db8  12
+ ff  0db9  0a
+ ff  0d93  06
+ ff  0d94  09
+ ff  0d95  0d
+ ff  0d99  0b
+ ff  0084  01
+           
+ /*CISCTL_Reset*/
+ ff  031c  80
+ ff  03fe  30
+ ff  0d17  06
+ ff  03fe  00
+ ff  0d17  00
+ ff  031c  93
+ ff  03fe  00
+ ff  03fe  00
+ ff  03fe  00
+ ff  03fe  00
+ ff  031c  80
+ ff  03fe  30
+ ff  0d17  06
+ ff  03fe  00
+ ff  0d17  00
+ ff  031c  93
+           
+ /*OUT*/  
+ ff  0110  01
+ ff  0100  01

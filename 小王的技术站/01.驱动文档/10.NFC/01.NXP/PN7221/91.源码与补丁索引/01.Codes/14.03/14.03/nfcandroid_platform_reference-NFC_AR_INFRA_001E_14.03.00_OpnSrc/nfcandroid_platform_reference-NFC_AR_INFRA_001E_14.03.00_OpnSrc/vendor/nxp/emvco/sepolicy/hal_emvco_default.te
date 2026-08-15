@@ -1,0 +1,5 @@
+type hal_emvco_default, domain;
+allow hal_emvco_default hal_emvco_service:hwservice_manager add;
+hal_server_domain(hal_emvco_default, hal_emvco)
+type hal_emvco_default_exec, exec_type, vendor_file_type, file_type;
+init_daemon_domain(hal_emvco_default)

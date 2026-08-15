@@ -1,0 +1,42 @@
+/*
+ * Copyright 2019-2021,2023-2024 NXP
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#pragma once
+
+#include <phNxpNciHal_ext.h>
+
+#include "phNfcStatus.h"
+
+#define AUTONOMOUS_SCREEN_OFF_LOCK_MASK 0x20
+#define SWITCH_OFF_MASK 0x02
+#define NCI_GET_CONFI_MIN_LEN 0x04
+#define NXP_MAX_RETRY_COUNT 0x03
+typedef struct {
+  uint8_t autonomous_mode;
+  uint8_t guard_timer_value;
+} nxp_nfc_config_ext_t;
+extern nxp_nfc_config_ext_t config_ext;
+
+/******************************************************************************
+ * Function         phNxpNciHal_updateAutonomousPwrState
+ *
+ * Description      This function can be used to update autonomous pwr state.
+ *                  num: value to check  switch off bit is set or not.
+ *
+ * Returns          uint8_t
+ *
+ ******************************************************************************/
+uint8_t phNxpNciHal_updateAutonomousPwrState(uint8_t num);

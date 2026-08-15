@@ -1,0 +1,3032 @@
+From ca240c4fb670a571604154536f153ae73c80dda1 Mon Sep 17 00:00:00 2001
+From: wangtao <wangtao@example.com>
+Date: Wed, 9 Apr 2025 08:08:57 +0000
+Subject: [PATCH] [MT5611][TaskID] 78270 [Description] nfc pn7221 porting
+ [Solution] vendor modify
+
+Change-Id: I3772fa360d6c5a430852e61b436da7a20a895f42
+---
+ .../msm-kernel/drivers/nfc/pn7220/Kconfig     |   9 +
+ .../msm-kernel/drivers/nfc/pn7220/Makefile    |   7 +
+ .../msm-kernel/drivers/nfc/pn7220/common.c    | 449 ++++++++++++++++
+ .../msm-kernel/drivers/nfc/pn7220/common.h    | 203 +++++++
+ .../msm-kernel/drivers/nfc/pn7220/i2c_drv.c   | 496 ++++++++++++++++++
+ .../msm-kernel/drivers/nfc/pn7220/i2c_drv.h   |  48 ++
+ vendor/nxp/nfc/BoardConfigNfc.mk              |  23 +
+ vendor/nxp/nfc/device-nfc.mk                  |  99 ++++
+ .../nfc/framework_compatibility_matrix.xml    |  10 +
+ vendor/nxp/nfc/hw/init.module.nfc.rc          |   3 +
+ vendor/nxp/nfc/hw/init.pn54x.nfc.rc           |   7 +
+ vendor/nxp/nfc/hw/pn7160/libnfc-nci.conf      |  97 ++++
+ vendor/nxp/nfc/hw/pn7160/libnfc-nxp.conf      | 231 ++++++++
+ .../nxp/nfc/hw/pn7160/libnfc-nxp_40x40.conf   | 234 +++++++++
+ .../nxp/nfc/hw/pn7220_i2cms/libnfc-nci.conf   |  91 ++++
+ .../hw/pn7220_i2cms/libnfc-nxp-eeprom.conf    |  91 ++++
+ .../nfc/hw/pn7220_i2cms/libnfc-nxp-rfExt.conf |  17 +
+ .../nxp/nfc/hw/pn7220_i2cms/libnfc-nxp.conf   | 160 ++++++
+ vendor/nxp/nfc/hw/pn7220_i2cs/libnfc-nci.conf |  91 ++++
+ .../nfc/hw/pn7220_i2cs/libnfc-nxp-eeprom.conf |  91 ++++
+ .../nfc/hw/pn7220_i2cs/libnfc-nxp-rfExt.conf  |  17 +
+ vendor/nxp/nfc/hw/pn7220_i2cs/libnfc-nxp.conf | 160 ++++++
+ vendor/nxp/nfc/sepolicy/file.te               |   2 +
+ vendor/nxp/nfc/sepolicy/file_contexts         |   7 +
+ vendor/nxp/nfc/sepolicy/hwservice.te          |   2 +
+ vendor/nxp/nfc/sepolicy/hwservice_contexts    |   2 +
+ .../nxp/nfc/sepolicy/nfc/hal_nfc_default.te   |  14 +
+ vendor/nxp/nfc/sepolicy/nfc/nfc.te            |  10 +
+ vendor/nxp/nfc/sepolicy/platform_app.te       |   2 +
+ vendor/nxp/nfc/sepolicy/property.te           |   1 +
+ vendor/nxp/nfc/sepolicy/property_contexts     |   3 +
+ vendor/nxp/nfc/sepolicy/service.te            |   5 +
+ vendor/nxp/nfc/sepolicy/service_contexts      |   2 +
+ vendor/nxp/nfc/sepolicy/vendor_init.te        |   5 +
+ ...dp-mc541.dts => bengal-nfc-idp-mt5611.dts} |   4 +-
+ ...-nfc-mc541.dtsi => bengal-nfc-mt5611.dtsi} |   8 +-
+ ...41.dtsi => bengal-nfc-pinctrl-mt5611.dtsi} |   0
+ 37 files changed, 2696 insertions(+), 5 deletions(-)
+ create mode 100755 kernel_platform/msm-kernel/drivers/nfc/pn7220/Kconfig
+ create mode 100755 kernel_platform/msm-kernel/drivers/nfc/pn7220/Makefile
+ create mode 100755 kernel_platform/msm-kernel/drivers/nfc/pn7220/common.c
+ create mode 100755 kernel_platform/msm-kernel/drivers/nfc/pn7220/common.h
+ create mode 100755 kernel_platform/msm-kernel/drivers/nfc/pn7220/i2c_drv.c
+ create mode 100755 kernel_platform/msm-kernel/drivers/nfc/pn7220/i2c_drv.h
+ create mode 100755 vendor/nxp/nfc/BoardConfigNfc.mk
+ create mode 100755 vendor/nxp/nfc/device-nfc.mk
+ create mode 100755 vendor/nxp/nfc/framework_compatibility_matrix.xml
+ create mode 100755 vendor/nxp/nfc/hw/init.module.nfc.rc
+ create mode 100755 vendor/nxp/nfc/hw/init.pn54x.nfc.rc
+ create mode 100755 vendor/nxp/nfc/hw/pn7160/libnfc-nci.conf
+ create mode 100755 vendor/nxp/nfc/hw/pn7160/libnfc-nxp.conf
+ create mode 100755 vendor/nxp/nfc/hw/pn7160/libnfc-nxp_40x40.conf
+ create mode 100755 vendor/nxp/nfc/hw/pn7220_i2cms/libnfc-nci.conf
+ create mode 100755 vendor/nxp/nfc/hw/pn7220_i2cms/libnfc-nxp-eeprom.conf
+ create mode 100755 vendor/nxp/nfc/hw/pn7220_i2cms/libnfc-nxp-rfExt.conf
+ create mode 100755 vendor/nxp/nfc/hw/pn7220_i2cms/libnfc-nxp.conf
+ create mode 100755 vendor/nxp/nfc/hw/pn7220_i2cs/libnfc-nci.conf
+ create mode 100755 vendor/nxp/nfc/hw/pn7220_i2cs/libnfc-nxp-eeprom.conf
+ create mode 100755 vendor/nxp/nfc/hw/pn7220_i2cs/libnfc-nxp-rfExt.conf
+ create mode 100755 vendor/nxp/nfc/hw/pn7220_i2cs/libnfc-nxp.conf
+ create mode 100755 vendor/nxp/nfc/sepolicy/file.te
+ create mode 100755 vendor/nxp/nfc/sepolicy/file_contexts
+ create mode 100755 vendor/nxp/nfc/sepolicy/hwservice.te
+ create mode 100755 vendor/nxp/nfc/sepolicy/hwservice_contexts
+ create mode 100755 vendor/nxp/nfc/sepolicy/nfc/hal_nfc_default.te
+ create mode 100755 vendor/nxp/nfc/sepolicy/nfc/nfc.te
+ create mode 100755 vendor/nxp/nfc/sepolicy/platform_app.te
+ create mode 100755 vendor/nxp/nfc/sepolicy/property.te
+ create mode 100755 vendor/nxp/nfc/sepolicy/property_contexts
+ create mode 100755 vendor/nxp/nfc/sepolicy/service.te
+ create mode 100755 vendor/nxp/nfc/sepolicy/service_contexts
+ create mode 100755 vendor/nxp/nfc/sepolicy/vendor_init.te
+ rename vendor/qcom/proprietary/nfc-devicetree/nxp/{bengal-nfc-idp-mc541.dts => bengal-nfc-idp-mt5611.dts} (74%)
+ rename vendor/qcom/proprietary/nfc-devicetree/nxp/{bengal-nfc-mc541.dtsi => bengal-nfc-mt5611.dtsi} (79%)
+ rename vendor/qcom/proprietary/nfc-devicetree/nxp/{bengal-nfc-pinctrl-mc541.dtsi => bengal-nfc-pinctrl-mt5611.dtsi} (100%)
+
+diff --git a/kernel_platform/msm-kernel/drivers/nfc/pn7220/Kconfig b/kernel_platform/msm-kernel/drivers/nfc/pn7220/Kconfig
+new file mode 100755
+index 00000000000..d3a7104b581
+--- /dev/null
++++ b/kernel_platform/msm-kernel/drivers/nfc/pn7220/Kconfig
+@@ -0,0 +1,9 @@
++# SPDX-License-Identifier: GPL-2.0-only
++config NXP_NFC_PN7220
++	tristate "nxp pn7220"
++	default m
++	help
++	  NXP PN7220 core driver.
++	  This is a driver based on the HCI NFC kernel layers and
++	  will thus not work with NXP libnfc library.
++
+diff --git a/kernel_platform/msm-kernel/drivers/nfc/pn7220/Makefile b/kernel_platform/msm-kernel/drivers/nfc/pn7220/Makefile
+new file mode 100755
+index 00000000000..f51eaa93651
+--- /dev/null
++++ b/kernel_platform/msm-kernel/drivers/nfc/pn7220/Makefile
+@@ -0,0 +1,7 @@
++ccflags-y += -Wall
++
++obj-$(CONFIG_NXP_NFC_PN7220) += nxp-nci.o
++ 
++ #source files
++nxp-nci-objs += common.o \
++ 		i2c_drv.o
+diff --git a/kernel_platform/msm-kernel/drivers/nfc/pn7220/common.c b/kernel_platform/msm-kernel/drivers/nfc/pn7220/common.c
+new file mode 100755
+index 00000000000..57b7c648e43
+--- /dev/null
++++ b/kernel_platform/msm-kernel/drivers/nfc/pn7220/common.c
+@@ -0,0 +1,449 @@
++/******************************************************************************
++ * Copyright (C) 2015, The Linux Foundation. All rights reserved.
++ * Copyright 2019-2023 NXP
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ *
++ ******************************************************************************/
++#include <linux/gpio.h>
++#include <linux/of_gpio.h>
++#include <linux/delay.h>
++
++#include "common.h"
++
++int nfc_parse_dt(struct device *dev, struct platform_configs *nfc_configs,
++		 uint8_t interface)
++{
++	struct device_node *np = dev->of_node;
++	struct platform_gpio *nfc_gpio = &nfc_configs->gpio;
++	unsigned int i = 0;
++
++	if (!np) {
++		pr_err("%s: nfc of_node NULL\n", __func__);
++		return -EINVAL;
++	}
++
++	/*Initialize all the gpios to -EINVAL*/
++	for (i = 0; i < sizeof(struct platform_gpio) / sizeof(unsigned int);
++	     i++) {
++		*((unsigned int *)nfc_gpio + i) = -EINVAL;
++	}
++	/* irq required for i2c based chips only */
++	if (interface == PLATFORM_IF_I2C || interface == PLATFORM_IF_SPI) {
++		nfc_gpio->irq = of_get_named_gpio(np, DTS_IRQ_GPIO_STR, 0);
++		if ((!gpio_is_valid(nfc_gpio->irq))) {
++			pr_err("%s: irq gpio invalid %d\n", __func__,
++			       nfc_gpio->irq);
++			return -EINVAL;
++		}
++		pr_err("%s: irq %d\n", __func__, nfc_gpio->irq);
++	}
++	nfc_gpio->ven = of_get_named_gpio(np, DTS_VEN_GPIO_STR, 0);
++	if ((!gpio_is_valid(nfc_gpio->ven))) {
++		pr_err("%s: ven gpio invalid %d\n", __func__, nfc_gpio->ven);
++		return -EINVAL;
++	}
++//	nfc_gpio->mode_sw_nfcc = of_get_named_gpio(np, DTS_MODE_SW_STR, 0);
++//	if ((!gpio_is_valid(nfc_gpio->mode_sw_nfcc)))
++//		pr_warn("%s: mode_sw_nfcc gpio invalid %d\n", __func__,
++//			nfc_gpio->mode_sw_nfcc);
++//
++//	nfc_gpio->led_red = of_get_named_gpio(np, DTS_RED_LED_STR, 0);
++//	if ((!gpio_is_valid(nfc_gpio->led_red)))
++//		pr_warn("%s: led_red gpio invalid %d\n", __func__,
++//			nfc_gpio->led_red);
++//
++//	nfc_gpio->led_green = of_get_named_gpio(np, DTS_GREEN_LED_STR, 0);
++//	if ((!gpio_is_valid(nfc_gpio->led_green)))
++//		pr_warn("%s: led_green gpio invalid %d\n", __func__,
++//			nfc_gpio->led_green);
++//	pr_info("%s: %d, %d, %d, %d, %d\n", __func__, nfc_gpio->irq,
++//		nfc_gpio->ven,nfc_gpio->mode_sw_nfcc,
++//		nfc_gpio->led_red, nfc_gpio->led_green);
++
++	pr_err("%s: irq(%d) val is (%d), ven(%d) val is (%d)\n", __func__, 
++		nfc_gpio->irq, gpio_get_value(nfc_gpio->irq), nfc_gpio->ven, gpio_get_value(nfc_gpio->ven));
++
++	return 0;
++}
++
++void set_valid_gpio(int gpio, int value)
++{
++	if (gpio_is_valid(gpio)) {
++		pr_debug("%s: gpio %d value %d\n", __func__, gpio, value);
++		gpio_set_value(gpio, value % 2);
++		/* hardware dependent delay */
++		usleep_range(NFC_GPIO_SET_WAIT_TIME_US,
++			     NFC_GPIO_SET_WAIT_TIME_US + 100);
++	}
++}
++
++int get_valid_gpio(int gpio)
++{
++	int value = -EINVAL;
++
++	if (gpio_is_valid(gpio)) {
++		value = gpio_get_value(gpio);
++		pr_debug("%s: gpio %d value %d\n", __func__, gpio, value);
++	}
++	return value;
++}
++
++void gpio_set_ven(struct nfc_dev *nfc_dev, int value)
++{
++	struct platform_gpio *nfc_gpio = &nfc_dev->configs.gpio;
++
++	if (gpio_get_value(nfc_gpio->ven) != value) {
++		pr_debug("%s: value %d\n", __func__, value);
++
++		gpio_set_value(nfc_gpio->ven, value);
++		/* hardware dependent delay */
++		usleep_range(NFC_GPIO_SET_WAIT_TIME_US,
++			     NFC_GPIO_SET_WAIT_TIME_US + 100);
++	}
++}
++
++int configure_gpio(unsigned int gpio, int flag)
++{
++	int ret;
++
++	pr_debug("%s: nfc gpio [%d] flag [%01x]\n", __func__, gpio, flag);
++	if (gpio_is_valid(gpio)) {
++		ret = gpio_request(gpio, "nfc_gpio");
++		if (ret) {
++			pr_err("%s: unable to request nfc gpio [%d]\n",
++			       __func__, gpio);
++			return ret;
++		}
++		/* set direction and value for output pin */
++		if (flag & GPIO_OUTPUT) {
++			ret = gpio_direction_output(gpio, (GPIO_HIGH & flag));
++			pr_debug("%s: nfc o/p gpio %d level %d\n", __func__,
++				 gpio, gpio_get_value(gpio));
++		} else {
++			ret = gpio_direction_input(gpio);
++			pr_debug("%s: nfc i/p gpio %d\n", __func__, gpio);
++		}
++
++		if (ret) {
++			pr_err
++			    ("%s: unable to set direction for nfc gpio [%d]\n",
++			     __func__, gpio);
++			gpio_free(gpio);
++			return ret;
++		}
++		/* Consider value as control for input IRQ pin */
++		if (flag & GPIO_IRQ) {
++			ret = gpio_to_irq(gpio);
++			if (ret < 0) {
++				pr_err("%s: unable to set irq [%d]\n", __func__,
++				       gpio);
++				gpio_free(gpio);
++				return ret;
++			}
++			pr_debug("%s: gpio_to_irq successful [%d]\n", __func__,
++				 gpio);
++			return ret;
++		}
++	} else {
++		pr_err("%s: invalid gpio\n", __func__);
++		ret = -EINVAL;
++	}
++	return ret;
++}
++
++/* Configuring board leds*/
++int configure_leds(struct platform_gpio *nfc_gpio)
++{
++	int ret = 0;
++
++//	ret = configure_gpio(nfc_gpio->led_green, GPIO_OUTPUT);
++//	if (ret) {
++//		pr_err
++//			("%s: unable to request mode switch sp interface gpio [%d]\n",
++//			 __func__, nfc_gpio->led_green);
++//	}
++//	ret = configure_gpio(nfc_gpio->led_red, GPIO_OUTPUT);
++//	if (ret) {
++//		pr_err
++//			("%s: unable to request mode switch sp interface gpio [%d]\n",
++//			 __func__, nfc_gpio->led_red);
++//	}
++	return ret;
++}
++
++void gpio_free_all(struct nfc_dev *nfc_dev)
++{
++	struct platform_gpio *nfc_gpio = &nfc_dev->configs.gpio;
++	unsigned int i = 0;
++
++	for (i = 0; i < sizeof(struct platform_gpio) / sizeof(unsigned int);
++	     i++) {
++		if (gpio_is_valid(*((unsigned int *)nfc_gpio + i)))
++			gpio_free(*((unsigned int *)nfc_gpio + i));
++	}
++}
++
++void nfc_misc_unregister(struct nfc_dev *nfc_dev, int count)
++{
++	pr_debug("%s: entry\n", __func__);
++	device_destroy(nfc_dev->nfc_class, nfc_dev->devno);
++	cdev_del(&nfc_dev->c_dev);
++	class_destroy(nfc_dev->nfc_class);
++	unregister_chrdev_region(nfc_dev->devno, count);
++}
++
++int nfc_misc_register(struct nfc_dev *nfc_dev,
++		      const struct file_operations *nfc_fops, int count,
++		      char *devname, char *classname)
++{
++	int ret = 0;
++
++	ret = alloc_chrdev_region(&nfc_dev->devno, 0, count, devname);
++	if (ret < 0) {
++		pr_err("%s: failed to alloc chrdev region ret %d\n", __func__,
++		       ret);
++		return ret;
++	}
++	nfc_dev->nfc_class = class_create(THIS_MODULE, classname);
++	if (IS_ERR(nfc_dev->nfc_class)) {
++		ret = PTR_ERR(nfc_dev->nfc_class);
++		pr_err("%s: failed to register device class ret %d\n", __func__,
++		       ret);
++		unregister_chrdev_region(nfc_dev->devno, count);
++		return ret;
++	}
++	cdev_init(&nfc_dev->c_dev, nfc_fops);
++	ret = cdev_add(&nfc_dev->c_dev, nfc_dev->devno, count);
++	if (ret < 0) {
++		pr_err("%s: failed to add cdev ret %d\n", __func__, ret);
++		class_destroy(nfc_dev->nfc_class);
++		unregister_chrdev_region(nfc_dev->devno, count);
++		return ret;
++	}
++	nfc_dev->nfc_device = device_create(nfc_dev->nfc_class, NULL,
++					    nfc_dev->devno, nfc_dev, "nxpnfc");
++	if (IS_ERR(nfc_dev->nfc_device)) {
++		ret = PTR_ERR(nfc_dev->nfc_device);
++		pr_err("%s: failed to create the device ret %d\n", __func__,
++		       ret);
++		cdev_del(&nfc_dev->c_dev);
++		class_destroy(nfc_dev->nfc_class);
++		unregister_chrdev_region(nfc_dev->devno, count);
++		return ret;
++	}
++	return 0;
++}
++
++static int led_switch_control_ioctl(struct nfc_dev *nfc_dev, unsigned long arg)
++{
++	int ret = 0;
++	//struct platform_gpio *nfc_gpio = &nfc_dev->configs.gpio;
++
++	if (arg == RED_LED_ON || arg == RED_LED_OFF) {
++		//set_valid_gpio(nfc_gpio->led_red, arg);
++	} else if (arg == GREEN_LED_ON || arg == GREEN_LED_OFF) {
++		//set_valid_gpio(nfc_gpio->led_green, arg);
++	} else {
++		pr_err("%s: bad arg %lu\n", __func__, arg);
++		ret = -ENOIOCTLCMD;
++	}
++	return ret;
++
++}
++
++static int mode_switch_nfcc_ioctl(struct nfc_dev *nfc_dev, unsigned long arg)
++{
++	int ret = 0;
++	//struct platform_gpio *nfc_gpio = &nfc_dev->configs.gpio;
++
++	if (arg == NCI_MODE) {
++		//set_valid_gpio(nfc_gpio->mode_sw_nfcc, 0);
++	} else if (arg == EMVCO_MODE) {
++		//set_valid_gpio(nfc_gpio->mode_sw_nfcc, 1);
++	} else {
++		pr_err("%s: bad arg %lu\n", __func__, arg);
++		ret = -ENOIOCTLCMD;
++	}
++	return ret;
++}
++
++/**
++ * nfc_ioctl_power_states() - power control
++ * @nfc_dev:    nfc device data structure
++ * @arg:    mode that we want to move to
++ *
++ * Device power control. Depending on the arg value, device moves to
++ * different states, refer common.h for args
++ *
++ * Return: -ENOIOCTLCMD if arg is not supported, 0 in any other case
++ */
++static int nfc_ioctl_power_states(struct nfc_dev *nfc_dev, unsigned long arg)
++{
++	int ret = 0;
++	// struct platform_gpio *nfc_gpio = &nfc_dev->configs.gpio;
++
++	if (arg == NFC_POWER_OFF) {
++		/*
++		 * We are attempting a hardware reset so let us disable
++		 * interrupts to avoid spurious notifications to upper
++		 * layers.
++		 */
++		nfc_dev->nfc_disable_intr(nfc_dev);
++		gpio_set_ven(nfc_dev, 0);
++		nfc_dev->nfc_ven_enabled = false;
++	} else if (arg == NFC_POWER_ON) {
++		nfc_dev->nfc_enable_intr(nfc_dev);
++		gpio_set_ven(nfc_dev, 1);
++		nfc_dev->nfc_ven_enabled = true;
++	}  else if (arg == NFC_FW_DWL_VEN_TOGGLE) {
++		/*
++		 * We are switching to download Mode, toggle the enable pin
++		 * in order to set the NFCC in the new mode
++		 */
++		nfc_dev->nfc_disable_intr(nfc_dev);
++		nfc_dev->nfc_state = NFC_STATE_FW_DWL;
++		gpio_set_ven(nfc_dev, 0);
++		gpio_set_ven(nfc_dev, 1);
++		nfc_dev->nfc_enable_intr(nfc_dev);
++	} else if (arg == NFC_FW_DWL_HIGH) {
++		/*
++		 * Setting firmware download gpio to HIGH
++		 * before FW download start
++		 */
++		nfc_dev->nfc_state = NFC_STATE_FW_DWL;
++
++	} else if (arg == NFC_FW_DWL_LOW) {
++		/*
++		 * Setting firmware download gpio to LOW
++		 * FW download finished
++		 */
++		nfc_dev->nfc_state = NFC_STATE_NCI;
++	} else if (arg == NFC_VEN_FORCED_HARD_RESET) {
++		nfc_dev->nfc_disable_intr(nfc_dev);
++		gpio_set_ven(nfc_dev, 0);
++		gpio_set_ven(nfc_dev, 1);
++		nfc_dev->nfc_enable_intr(nfc_dev);
++	} else {
++		pr_err("%s: bad arg %lu\n", __func__, arg);
++		ret = -ENOIOCTLCMD;
++	}
++	return ret;
++}
++
++/**
++ * nfc_dev_ioctl - used to set or get data from upper layer.
++ * @pfile   file node for opened device.
++ * @cmd     ioctl type from upper layer.
++ * @arg     ioctl arg from upper layer.
++ *
++ * NFC and ESE Device power control, based on the argument value
++ *
++ * Return: -ENOIOCTLCMD if arg is not supported, 0 or other in any other case
++ */
++long nfc_dev_ioctl(struct file *pfile, unsigned int cmd, unsigned long arg)
++{
++	int ret = 0;
++	struct nfc_dev *nfc_dev = pfile->private_data;
++
++	if (!nfc_dev)
++		return -ENODEV;
++
++	pr_debug("%s: cmd = %x arg = %zx\n", __func__, cmd, arg);
++	if (cmd == NFC_SET_PWR) {
++		ret = nfc_ioctl_power_states(nfc_dev, arg);
++	} else if (cmd == NFCC_PROFILE_SWITCH) {
++		ret = mode_switch_nfcc_ioctl(nfc_dev, arg);
++	} else if (cmd == LEDS_CONTROL) {
++		ret = led_switch_control_ioctl(nfc_dev, arg);
++	} else {
++		pr_err("%s: bad cmd %lu\n", __func__, arg);
++		ret = -ENOIOCTLCMD;
++	}
++	return ret;
++}
++
++int nfc_dev_open(struct inode *inode, struct file *filp)
++{
++	struct nfc_dev *nfc_dev =
++	    container_of(inode->i_cdev, struct nfc_dev, c_dev);
++
++	pr_debug("%s: %d, %d\n", __func__, imajor(inode), iminor(inode));
++
++	mutex_lock(&nfc_dev->dev_ref_mutex);
++
++	filp->private_data = nfc_dev;
++
++	if (nfc_dev->dev_ref_count == 0)
++		nfc_dev->nfc_enable_intr(nfc_dev);
++	nfc_dev->dev_ref_count = nfc_dev->dev_ref_count + 1;
++	mutex_unlock(&nfc_dev->dev_ref_mutex);
++	return 0;
++}
++
++int nfc_dev_close(struct inode *inode, struct file *filp)
++{
++	struct nfc_dev *nfc_dev =
++	    container_of(inode->i_cdev, struct nfc_dev, c_dev);
++
++	pr_debug("%s: %d, %d\n", __func__, imajor(inode), iminor(inode));
++	mutex_lock(&nfc_dev->dev_ref_mutex);
++	if (nfc_dev->dev_ref_count == 1)
++		nfc_dev->nfc_disable_intr(nfc_dev);
++	if (nfc_dev->dev_ref_count > 0)
++		nfc_dev->dev_ref_count = nfc_dev->dev_ref_count - 1;
++	filp->private_data = NULL;
++
++	mutex_unlock(&nfc_dev->dev_ref_mutex);
++	return 0;
++}
++
++int nfc_dev_flush(struct file *pfile, fl_owner_t id)
++{
++	struct nfc_dev *nfc_dev = pfile->private_data;
++
++	if (!nfc_dev)
++		return -ENODEV;
++	/*
++	 * release blocked user thread waiting for pending read during close
++	 */
++	if (!mutex_trylock(&nfc_dev->read_mutex)) {
++		nfc_dev->release_read = true;
++		nfc_dev->nfc_disable_intr(nfc_dev);
++		wake_up(&nfc_dev->read_wq);
++		pr_debug("%s: waiting for release of blocked read\n", __func__);
++		mutex_lock(&nfc_dev->read_mutex);
++		nfc_dev->release_read = false;
++	} else {
++		pr_debug("%s: read thread already released\n", __func__);
++	}
++	mutex_unlock(&nfc_dev->read_mutex);
++	return 0;
++}
++
++int validate_nfc_state_nci(struct nfc_dev *nfc_dev)
++{
++	struct platform_gpio *nfc_gpio = &nfc_dev->configs.gpio;
++
++	if (!gpio_get_value(nfc_gpio->ven)) {
++		pr_err("%s: ven low - nfcc powered off\n", __func__);
++		return -ENODEV;
++	}
++	if (nfc_dev->nfc_state != NFC_STATE_NCI) {
++		pr_err("%s: fw download state\n", __func__);
++		return -EBUSY;
++	}
++	return 0;
++}
+diff --git a/kernel_platform/msm-kernel/drivers/nfc/pn7220/common.h b/kernel_platform/msm-kernel/drivers/nfc/pn7220/common.h
+new file mode 100755
+index 00000000000..ba9baaeb83d
+--- /dev/null
++++ b/kernel_platform/msm-kernel/drivers/nfc/pn7220/common.h
+@@ -0,0 +1,203 @@
++/******************************************************************************
++ * Copyright (C) 2015, The Linux Foundation. All rights reserved.
++ * Copyright 2019-2023 NXP
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ *
++ ******************************************************************************/
++#ifndef _COMMON_H_
++#define _COMMON_H_
++
++#include <linux/cdev.h>
++#include "i2c_drv.h"
++
++/* Max device count for this driver */
++#define DEV_COUNT			1
++/* i2c device class */
++#define CLASS_NAME			"nxp-nfc"
++
++/* NFC character device name, this will be in /dev/ */
++#define NFC_CHAR_DEV_NAME		"nxpnfc"
++
++/* NCI packet details */
++#define NCI_CMD				(0x20)
++#define NCI_RSP				(0x40)
++#define NCI_HDR_LEN			(3)
++#define NCI_HDR_IDX			(0)
++#define NCI_HDR_OID_IDX			(1)
++#define NCI_PAYLOAD_IDX			(3)
++#define NCI_PAYLOAD_LEN_IDX		(2)
++
++/* FW DNLD packet details */
++#define DL_HDR_LEN			(2)
++#define DL_CRC_LEN			(2)
++
++#define MAX_NCI_PAYLOAD_LEN		(255)
++#define MAX_NCI_BUFFER_SIZE		(NCI_HDR_LEN + MAX_NCI_PAYLOAD_LEN)
++#define MAX_DL_PAYLOAD_LEN		(550)
++#define MAX_DL_BUFFER_SIZE		(DL_HDR_LEN + DL_CRC_LEN + \
++					MAX_DL_PAYLOAD_LEN)
++
++/* Retry count for normal write */
++#define NO_RETRY			(1)
++/* Maximum retry count for standby writes */
++#define MAX_RETRY_COUNT			(3)
++#define MAX_WRITE_IRQ_COUNT		(5)
++#define MAX_IRQ_WAIT_TIME		(90)
++#define WAKEUP_SRC_TIMEOUT		(2000)
++
++/* command response timeout */
++#define NCI_CMD_RSP_TIMEOUT_MS		(2000)
++/* Time to wait for NFCC to be ready again after any change in the GPIO */
++#define NFC_GPIO_SET_WAIT_TIME_US	(10000)
++/* Time to wait for IRQ low during write 5*3ms */
++#define NFC_WRITE_IRQ_WAIT_TIME_US	(3000)
++/* Time to wait before retrying i2c/I3C writes */
++#define WRITE_RETRY_WAIT_TIME_US	(1000)
++/* Time to wait before retrying read for some specific usecases */
++#define READ_RETRY_WAIT_TIME_US		(3500)
++#define NFC_MAGIC			(0xE9)
++
++/* Ioctls */
++/* The type should be aligned with MW HAL definitions */
++#define NFC_SET_PWR			_IOW(NFC_MAGIC, 0x01, uint32_t)
++#define NFCC_PROFILE_SWITCH         _IOW(NFC_MAGIC, 0x04, uint32_t)
++#define LEDS_CONTROL             _IOW(NFC_MAGIC, 0x06, uint32_t)
++
++#define DTS_IRQ_GPIO_STR		"nxp,nxpnfc-irq"
++#define DTS_VEN_GPIO_STR		"nxp,nxpnfc-ven"
++#define DTS_MODE_SW_STR         "nxp,nxpnfc-mode_sw"
++#define DTS_RED_LED_STR         "nxp,nxpnfc-led1"
++#define DTS_GREEN_LED_STR       "nxp,nxpnfc-led2"
++
++enum nfcc_ioctl_request {
++	/* NFC disable request with VEN LOW */
++	NFC_POWER_OFF = 0,
++	/* NFC enable request with VEN Toggle */
++	NFC_POWER_ON,
++	/* firmware download request with VEN Toggle */
++	NFC_FW_DWL_VEN_TOGGLE,
++	/* ISO reset request */
++	NFC_ISO_RESET,
++	/* request for firmware download gpio HIGH */
++	NFC_FW_DWL_HIGH,
++	/* VEN hard reset request */
++	NFC_VEN_FORCED_HARD_RESET,
++	/* request for firmware download gpio LOW */
++	NFC_FW_DWL_LOW,
++};
++
++/* nfc platform interface type */
++enum interface_flags {
++	/* I2C physical IF for NFCC */
++	PLATFORM_IF_I2C = 0,
++	PLATFORM_IF_SPI = 1,
++};
++
++/* NFCC profile type */
++enum nfcc_profile_flags {
++	NCI_MODE = 0,
++	EMVCO_MODE,
++};
++/* nfc state flags */
++enum nfc_state_flags {
++	/* nfc in unknown state */
++	NFC_STATE_UNKNOWN = 0,
++	/* nfc in download mode */
++	NFC_STATE_FW_DWL = 0x1,
++	/* nfc booted in NCI mode */
++	NFC_STATE_NCI = 0x2,
++	/* nfc booted in Fw teared mode */
++	NFC_STATE_FW_TEARED = 0x4,
++};
++
++/* Enum for GPIO values */
++enum gpio_values {
++	GPIO_INPUT = 0x0,
++	GPIO_OUTPUT = 0x1,
++	GPIO_HIGH = 0x2,
++	GPIO_OUTPUT_HIGH = 0x3,
++	GPIO_IRQ = 0x4,
++};
++
++/* NFC GPIO variables */
++struct platform_gpio {
++	unsigned int irq;
++	unsigned int ven;
++	//unsigned int mode_sw_nfcc;
++	//unsigned int led_red;
++	//unsigned int led_green;
++};
++
++/* NFC Struct to get all the required configs from DTS */
++struct platform_configs {
++	struct platform_gpio gpio;
++};
++
++/* Enum for status of LED*/
++enum led_flags {
++	RED_LED_OFF,
++	RED_LED_ON,
++	GREEN_LED_OFF,
++	GREEN_LED_ON,
++};
++
++/* Device specific structure */
++struct nfc_dev {
++	wait_queue_head_t read_wq;
++	struct mutex read_mutex;
++	struct mutex write_mutex;
++	uint8_t *read_kbuf;
++	uint8_t *write_kbuf;
++	struct mutex dev_ref_mutex;
++	unsigned int dev_ref_count;
++	struct class *nfc_class;
++	struct device *nfc_device;
++	struct cdev c_dev;
++	dev_t devno;
++	/* Interface flag */
++	uint8_t interface;
++	/* nfc state flags */
++	uint8_t nfc_state;
++	/* NFC VEN pin state */
++	bool nfc_ven_enabled;
++	bool release_read;
++	struct i2c_dev i2c_dev;
++	struct platform_configs configs;
++	/* function pointers for the common i2c functionality */
++	int (*nfc_read)(struct nfc_dev *dev, char *buf, size_t count);
++	int (*nfc_write)(struct nfc_dev *dev, const char *buf,
++			 const size_t count, int max_retry_cnt);
++	int (*nfc_enable_intr)(struct nfc_dev *dev);
++	int (*nfc_disable_intr)(struct nfc_dev *dev);
++};
++
++int nfc_dev_open(struct inode *inode, struct file *filp);
++int nfc_dev_close(struct inode *inode, struct file *filp);
++int nfc_dev_flush(struct file *pfile, fl_owner_t id);
++long nfc_dev_ioctl(struct file *pfile, unsigned int cmd, unsigned long arg);
++int nfc_parse_dt(struct device *dev, struct platform_configs *nfc_configs,
++		 uint8_t interface);
++int nfc_misc_register(struct nfc_dev *nfc_dev,
++		      const struct file_operations *nfc_fops, int count,
++		      char *devname, char *classname);
++void nfc_misc_unregister(struct nfc_dev *nfc_dev, int count);
++int configure_gpio(unsigned int gpio, int flag);
++int configure_leds(struct platform_gpio *nfc_gpio);
++void gpio_set_ven(struct nfc_dev *nfc_dev, int value);
++void gpio_free_all(struct nfc_dev *nfc_dev);
++int validate_nfc_state_nci(struct nfc_dev *nfc_dev);
++int get_valid_gpio(int gpio);
++#endif /* _COMMON_H_ */
+diff --git a/kernel_platform/msm-kernel/drivers/nfc/pn7220/i2c_drv.c b/kernel_platform/msm-kernel/drivers/nfc/pn7220/i2c_drv.c
+new file mode 100755
+index 00000000000..66bd3d76c07
+--- /dev/null
++++ b/kernel_platform/msm-kernel/drivers/nfc/pn7220/i2c_drv.c
+@@ -0,0 +1,496 @@
++/******************************************************************************
++ * Copyright (C) 2015, The Linux Foundation. All rights reserved.
++ * Copyright 2013-2023 NXP
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ *
++ ******************************************************************************/
++/*
++ * Copyright (C) 2010 Trusted Logic S.A.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ */
++
++#include <linux/module.h>
++#include <linux/interrupt.h>
++#include <linux/delay.h>
++#include <linux/uaccess.h>
++#include <linux/gpio.h>
++
++#include "common.h"
++
++/**
++ * i2c_disable_irq()
++ *
++ * Check if interrupt is disabled or not
++ * and disable interrupt
++ *
++ * Return: int
++ */
++int i2c_disable_irq(struct nfc_dev *dev)
++{
++	unsigned long flags;
++
++	spin_lock_irqsave(&dev->i2c_dev.irq_enabled_lock, flags);
++	if (dev->i2c_dev.irq_enabled) {
++		disable_irq_nosync(dev->i2c_dev.client->irq);
++		dev->i2c_dev.irq_enabled = false;
++	}
++	spin_unlock_irqrestore(&dev->i2c_dev.irq_enabled_lock, flags);
++
++	return 0;
++}
++
++/**
++ * i2c_enable_irq()
++ *
++ * Check if interrupt is enabled or not
++ * and enable interrupt
++ *
++ * Return: int
++ */
++int i2c_enable_irq(struct nfc_dev *dev)
++{
++	unsigned long flags;
++
++	spin_lock_irqsave(&dev->i2c_dev.irq_enabled_lock, flags);
++	if (!dev->i2c_dev.irq_enabled) {
++		dev->i2c_dev.irq_enabled = true;
++		enable_irq(dev->i2c_dev.client->irq);
++	}
++	spin_unlock_irqrestore(&dev->i2c_dev.irq_enabled_lock, flags);
++
++	return 0;
++}
++
++static irqreturn_t i2c_irq_handler(int irq, void *dev_id)
++{
++	struct nfc_dev *nfc_dev = dev_id;
++	struct i2c_dev *i2c_dev = &nfc_dev->i2c_dev;
++
++	if (device_may_wakeup(&i2c_dev->client->dev))
++		pm_wakeup_event(&i2c_dev->client->dev, WAKEUP_SRC_TIMEOUT);
++
++	i2c_disable_irq(nfc_dev);
++	wake_up(&nfc_dev->read_wq);
++
++	return IRQ_HANDLED;
++}
++
++int i2c_read(struct nfc_dev *nfc_dev, char *buf, size_t count)
++{
++	int ret;
++	struct i2c_dev *i2c_dev = &nfc_dev->i2c_dev;
++	struct platform_gpio *nfc_gpio = &nfc_dev->configs.gpio;
++
++	pr_debug("%s: reading %zu bytes.\n", __func__, count);
++
++	if (count > MAX_NCI_BUFFER_SIZE)
++		count = MAX_NCI_BUFFER_SIZE;
++
++	if (!gpio_get_value(nfc_gpio->irq)) {
++		while (1) {
++			ret = 0;
++			if (!i2c_dev->irq_enabled) {
++				i2c_dev->irq_enabled = true;
++				enable_irq(i2c_dev->client->irq);
++			}
++			if (!gpio_get_value(nfc_gpio->irq)) {
++				ret = wait_event_interruptible(nfc_dev->read_wq,
++								   !i2c_dev->
++								   irq_enabled);
++				if (ret) {
++					pr_err("%s: err wakeup of wq\n",
++						   __func__);
++					goto err;
++				}
++			}
++			i2c_disable_irq(nfc_dev);
++
++			if (gpio_get_value(nfc_gpio->irq))
++				break;
++			if (!gpio_get_value(nfc_gpio->ven)) {
++				pr_info("%s: releasing read\n", __func__);
++				ret = -EIO;
++				goto err;
++			}
++			/*
++			 * NFC service wanted to close the driver so,
++			 * release the calling reader thread asap.
++			 *
++			 * This can happen in case of nfc node close call from
++			 * eSE HAL in that case the NFC HAL reader thread
++			 * will again call read system call
++			 */
++			if (nfc_dev->release_read) {
++				pr_debug("%s: releasing read\n", __func__);
++				return 0;
++			}
++			pr_warn("%s: spurious interrupt detected\n", __func__);
++		}
++	}
++
++	memset(buf, 0x00, count);
++	/* Read data */
++	ret = i2c_master_recv(nfc_dev->i2c_dev.client, buf, count);
++	if (ret <= 0) {
++		pr_err("%s: returned %d\n", __func__, ret);
++		goto err;
++	}
++err:
++	return ret;
++}
++
++int i2c_write(struct nfc_dev *nfc_dev, const char *buf, size_t count,
++		  int max_retry_cnt)
++{
++	int ret = -EINVAL;
++	int retry_cnt;
++	struct platform_gpio *nfc_gpio = &nfc_dev->configs.gpio;
++
++	if (count > MAX_DL_BUFFER_SIZE)
++		count = MAX_DL_BUFFER_SIZE;
++
++	pr_debug("%s: writing %zu bytes.\n", __func__, count);
++	/*
++	 * Wait for any pending read for max 15ms before write
++	 * This is to avoid any packet corruption during read, when
++	 * the host cmds resets NFCC during any parallel read operation
++	 */
++	for (retry_cnt = 1; retry_cnt <= MAX_WRITE_IRQ_COUNT; retry_cnt++) {
++		if (gpio_get_value(nfc_gpio->irq)) {
++			pr_warn("%s: irq high during write, wait\n", __func__);
++			usleep_range(NFC_WRITE_IRQ_WAIT_TIME_US,
++					 NFC_WRITE_IRQ_WAIT_TIME_US + 100);
++		} else {
++			break;
++		}
++		if (retry_cnt == MAX_WRITE_IRQ_COUNT &&
++			gpio_get_value(nfc_gpio->irq)) {
++			pr_warn("%s: allow after maximum wait\n", __func__);
++		}
++	}
++
++	for (retry_cnt = 1; retry_cnt <= max_retry_cnt; retry_cnt++) {
++		ret = i2c_master_send(nfc_dev->i2c_dev.client, buf, count);
++		if (ret <= 0) {
++			pr_warn("%s: write failed ret(%d), maybe in standby\n",
++				__func__, ret);
++			usleep_range(WRITE_RETRY_WAIT_TIME_US,
++					 WRITE_RETRY_WAIT_TIME_US + 100);
++		} else if (ret != count) {
++			pr_err("%s: failed to write %d\n", __func__, ret);
++			ret = -EIO;
++		} else if (ret == count)
++			break;
++	}
++	return ret;
++}
++
++ssize_t nfc_i2c_dev_read(struct file *filp, char __user *buf, size_t count,
++			 loff_t *offset)
++{
++	int ret;
++	struct nfc_dev *nfc_dev = (struct nfc_dev *)filp->private_data;
++
++	if (!nfc_dev) {
++		pr_err("%s: device doesn't exist anymore\n", __func__);
++		return -ENODEV;
++	}
++	mutex_lock(&nfc_dev->read_mutex);
++	if (filp->f_flags & O_NONBLOCK) {
++		ret = i2c_master_recv(nfc_dev->i2c_dev.client, nfc_dev->read_kbuf, count);
++		pr_debug("%s: NONBLOCK read ret = %d\n", __func__, ret);
++	} else {
++		ret = i2c_read(nfc_dev, nfc_dev->read_kbuf, count);
++	}
++	if (ret > 0) {
++		if (copy_to_user(buf, nfc_dev->read_kbuf, ret)) {
++			pr_warn("%s: failed to copy to user space\n", __func__);
++			ret = -EFAULT;
++		}
++	}
++	mutex_unlock(&nfc_dev->read_mutex);
++	return ret;
++}
++
++ssize_t nfc_i2c_dev_write(struct file *filp, const char __user *buf,
++			  size_t count, loff_t *offset)
++{
++	int ret;
++	struct nfc_dev *nfc_dev = (struct nfc_dev *)filp->private_data;
++
++	if (count > MAX_DL_BUFFER_SIZE)
++		count = MAX_DL_BUFFER_SIZE;
++
++	mutex_lock(&nfc_dev->write_mutex);
++	if (copy_from_user(nfc_dev->write_kbuf, buf, count)) {
++		pr_err("%s: failed to copy from user space\n", __func__);
++		mutex_unlock(&nfc_dev->write_mutex);
++		return -EFAULT;
++	}
++	ret = i2c_write(nfc_dev, nfc_dev->write_kbuf, count, NO_RETRY);
++	mutex_unlock(&nfc_dev->write_mutex);
++	return ret;
++}
++
++static const struct file_operations nfc_i2c_dev_fops = {
++	.owner = THIS_MODULE,
++	.llseek = no_llseek,
++	.read = nfc_i2c_dev_read,
++	.write = nfc_i2c_dev_write,
++	.open = nfc_dev_open,
++	.release = nfc_dev_close,
++	.flush   = nfc_dev_flush,
++	.unlocked_ioctl = nfc_dev_ioctl,
++};
++
++int nfc_i2c_dev_probe(struct i2c_client *client, const struct i2c_device_id *id)
++{
++	int ret = 0;
++	struct nfc_dev *nfc_dev = NULL;
++	struct i2c_dev *i2c_dev = NULL;
++	struct platform_configs nfc_configs;
++	struct platform_gpio *nfc_gpio = &nfc_configs.gpio;
++
++	pr_err("%s: i2c slave address 0x%x", __func__, client->addr);
++	/* retrieve details of gpios from dt */
++	ret = nfc_parse_dt(&client->dev, &nfc_configs, PLATFORM_IF_I2C);
++	if (ret) {
++		pr_err("%s: failed to parse dt\n", __func__);
++		goto err;
++	}
++	if (!i2c_check_functionality(client->adapter, I2C_FUNC_I2C)) {
++		pr_err("%s: need I2C_FUNC_I2C\n", __func__);
++		ret = -ENODEV;
++		goto err;
++	}
++	nfc_dev = kzalloc(sizeof(struct nfc_dev), GFP_KERNEL);
++	if (nfc_dev == NULL) {
++		ret = -ENOMEM;
++		goto err;
++	}
++	nfc_dev->read_kbuf = kzalloc(MAX_NCI_BUFFER_SIZE, GFP_DMA | GFP_KERNEL);
++	if (!nfc_dev->read_kbuf) {
++		ret = -ENOMEM;
++		goto err_free_nfc_dev;
++	}
++	nfc_dev->write_kbuf = kzalloc(MAX_DL_BUFFER_SIZE, GFP_DMA | GFP_KERNEL);
++	if (!nfc_dev->write_kbuf) {
++		ret = -ENOMEM;
++		goto err_free_read_kbuf;
++	}
++	nfc_dev->interface = PLATFORM_IF_I2C;
++	nfc_dev->nfc_state = NFC_STATE_NCI;
++	nfc_dev->i2c_dev.client = client;
++	i2c_dev = &nfc_dev->i2c_dev;
++	nfc_dev->nfc_read = i2c_read;
++	nfc_dev->nfc_write = i2c_write;
++	nfc_dev->nfc_enable_intr = i2c_enable_irq;
++	nfc_dev->nfc_disable_intr = i2c_disable_irq;
++	ret = configure_gpio(nfc_gpio->ven, GPIO_OUTPUT);
++	if (ret) {
++		pr_err("%s: unable to request nfc reset gpio [%d]\n", __func__,
++			   nfc_gpio->ven);
++		goto err_free_write_kbuf;
++	}
++	ret = configure_gpio(nfc_gpio->irq, GPIO_IRQ);
++	if (ret <= 0) {
++		pr_err("%s: unable to request nfc irq gpio [%d]\n", __func__,
++			   nfc_gpio->irq);
++		goto err_free_gpio;
++	}
++	client->irq = ret;
++	//ret = configure_gpio(nfc_gpio->mode_sw_nfcc, GPIO_OUTPUT);
++	//if (ret) {
++	//	pr_err
++	//		("%s: unable to request mode switch interface gpio [%d]\n",
++	//		 __func__, nfc_gpio->mode_sw_nfcc);
++	//	goto err_free_gpio;
++	//}
++	#ifdef CONFIG_NXP_DEBUG_BOARD
++	/* configure board leds as OUTPUT gpios */
++	configure_leds(nfc_gpio);
++	#endif
++	/* copy the retrieved gpio details from DT */
++	memcpy(&nfc_dev->configs, &nfc_configs,
++		   sizeof(struct platform_configs));
++
++	/* init mutex and queues */
++	init_waitqueue_head(&nfc_dev->read_wq);
++	mutex_init(&nfc_dev->read_mutex);
++	mutex_init(&nfc_dev->write_mutex);
++	mutex_init(&nfc_dev->dev_ref_mutex);
++	spin_lock_init(&i2c_dev->irq_enabled_lock);
++	ret = nfc_misc_register(nfc_dev, &nfc_i2c_dev_fops, DEV_COUNT,
++				NFC_CHAR_DEV_NAME, CLASS_NAME);
++	if (ret) {
++		pr_err("%s: nfc_misc_register failed\n", __func__);
++		goto err_mutex_destroy;
++	}
++	/* interrupt initializations */
++	pr_info("%s: requesting IRQ %d\n", __func__, client->irq);
++	i2c_dev->irq_enabled = true;
++	ret = request_irq(client->irq, i2c_irq_handler, IRQF_TRIGGER_HIGH,
++			  client->name, nfc_dev);
++	if (ret) {
++		pr_err("%s: request_irq failed\n", __func__);
++		goto err_nfc_misc_unregister;
++	}
++	i2c_disable_irq(nfc_dev);
++	gpio_set_ven(nfc_dev, 1);
++	gpio_set_ven(nfc_dev, 0);
++	gpio_set_ven(nfc_dev, 1);
++	device_init_wakeup(&client->dev, true);
++	i2c_set_clientdata(client, nfc_dev);
++	i2c_dev->irq_wake_up = false;
++	pr_info("%s: probing nfc i2c successfully\n", __func__);
++	return 0;
++err_nfc_misc_unregister:
++	nfc_misc_unregister(nfc_dev, DEV_COUNT);
++err_mutex_destroy:
++	mutex_destroy(&nfc_dev->dev_ref_mutex);
++	mutex_destroy(&nfc_dev->read_mutex);
++	mutex_destroy(&nfc_dev->write_mutex);
++err_free_gpio:
++	gpio_free_all(nfc_dev);
++err_free_write_kbuf:
++	kfree(nfc_dev->write_kbuf);
++err_free_read_kbuf:
++	kfree(nfc_dev->read_kbuf);
++err_free_nfc_dev:
++	kfree(nfc_dev);
++err:
++	pr_err("%s: probing not successful, check hardware\n", __func__);
++	return ret;
++}
++
++int nfc_i2c_dev_remove(struct i2c_client *client)
++{
++	int ret = 0;
++	struct nfc_dev *nfc_dev = NULL;
++
++	pr_info("%s: remove device\n", __func__);
++	nfc_dev = i2c_get_clientdata(client);
++	if (!nfc_dev) {
++		pr_err("%s: device doesn't exist anymore\n", __func__);
++		ret = -ENODEV;
++		return ret;
++	}
++	if (nfc_dev->dev_ref_count > 0) {
++		pr_err("%s: device already in use\n", __func__);
++		return -EBUSY;
++	}
++	device_init_wakeup(&client->dev, false);
++	free_irq(client->irq, nfc_dev);
++	nfc_misc_unregister(nfc_dev, DEV_COUNT);
++	mutex_destroy(&nfc_dev->read_mutex);
++	mutex_destroy(&nfc_dev->write_mutex);
++	gpio_free_all(nfc_dev);
++	kfree(nfc_dev->read_kbuf);
++	kfree(nfc_dev->write_kbuf);
++	kfree(nfc_dev);
++	return ret;
++}
++
++int nfc_i2c_dev_suspend(struct device *device)
++{
++	struct i2c_client *client = to_i2c_client(device);
++	struct nfc_dev *nfc_dev = i2c_get_clientdata(client);
++	struct i2c_dev *i2c_dev = &nfc_dev->i2c_dev;
++
++	if (device_may_wakeup(&client->dev) && i2c_dev->irq_enabled) {
++		if (!enable_irq_wake(client->irq))
++			i2c_dev->irq_wake_up = true;
++	}
++	return 0;
++}
++
++int nfc_i2c_dev_resume(struct device *device)
++{
++	struct i2c_client *client = to_i2c_client(device);
++	struct nfc_dev *nfc_dev = i2c_get_clientdata(client);
++	struct i2c_dev *i2c_dev = &nfc_dev->i2c_dev;
++
++	if (device_may_wakeup(&client->dev) && i2c_dev->irq_wake_up) {
++		if (!disable_irq_wake(client->irq))
++			i2c_dev->irq_wake_up = false;
++	}
++	return 0;
++}
++
++static const struct i2c_device_id nfc_i2c_dev_id[] = { { NFC_I2C_DEV_ID, 0 },
++{ }
++};
++
++static const struct of_device_id nfc_i2c_dev_match_table[] = {
++	{
++	 .compatible = NFC_I2C_DRV_STR,
++	  },
++	{ }
++};
++
++static const struct dev_pm_ops nfc_i2c_dev_pm_ops = {
++	SET_SYSTEM_SLEEP_PM_OPS(nfc_i2c_dev_suspend, nfc_i2c_dev_resume)
++};
++
++static struct i2c_driver nfc_i2c_dev_driver = {
++	.id_table = nfc_i2c_dev_id,
++	.probe = nfc_i2c_dev_probe,
++	.remove = nfc_i2c_dev_remove,
++	.driver = {
++		   .name = NFC_I2C_DRV_STR,
++		   .pm = &nfc_i2c_dev_pm_ops,
++		   .of_match_table = nfc_i2c_dev_match_table,
++		   .probe_type = PROBE_PREFER_ASYNCHRONOUS,
++			},
++};
++
++MODULE_DEVICE_TABLE(of, nfc_i2c_dev_match_table);
++static int __init nfc_i2c_dev_init(void)
++{
++	int ret = 0;
++
++	pr_err("%s: Loading NXP NFC I2C driver\n", __func__);
++	ret = i2c_add_driver(&nfc_i2c_dev_driver);
++	if (ret != 0)
++		pr_err("%s: NFC I2C add driver error ret %d\n", __func__, ret);
++	return ret;
++}
++
++module_init(nfc_i2c_dev_init);
++
++static void __exit nfc_i2c_dev_exit(void)
++{
++	pr_info("%s: Unloading NXP NFC I2C driver\n", __func__);
++	i2c_del_driver(&nfc_i2c_dev_driver);
++}
++
++module_exit(nfc_i2c_dev_exit);
++
++MODULE_DESCRIPTION("NXP NFC I2C driver");
++MODULE_LICENSE("GPL");
+diff --git a/kernel_platform/msm-kernel/drivers/nfc/pn7220/i2c_drv.h b/kernel_platform/msm-kernel/drivers/nfc/pn7220/i2c_drv.h
+new file mode 100755
+index 00000000000..a21e5c224f6
+--- /dev/null
++++ b/kernel_platform/msm-kernel/drivers/nfc/pn7220/i2c_drv.h
+@@ -0,0 +1,48 @@
++/******************************************************************************
++ * Copyright (C) 2015, The Linux Foundation. All rights reserved.
++ * Copyright 2019-2023 NXP
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ *
++ ******************************************************************************/
++#ifndef _I2C_DRV_H_
++#define _I2C_DRV_H_
++
++#include <linux/i2c.h>
++
++/* kept same as dts */
++#define NFC_I2C_DRV_STR			"qcom,sn-nci"
++#define NFC_I2C_M_DRV_STR		"nxp,nxpnfc_m"
++#define NFC_I2C_DEV_ID			"nxpnfc"
++#define NFC_I2C_M_DEV_ID		"nxpnfc_m"
++#define CONFIG_NXP_DEBUG_BOARD   y
++/* Interface specific parameters */
++struct i2c_dev {
++	struct i2c_client *client;
++	/* IRQ parameters */
++	bool irq_enabled;
++	spinlock_t irq_enabled_lock;
++	/* NFC_IRQ wake-up state */
++	bool irq_wake_up;
++};
++
++long nfc_i2c_dev_ioctl(struct file *pfile, unsigned int cmd, unsigned long arg);
++int nfc_i2c_dev_probe(struct i2c_client *client,
++		      const struct i2c_device_id *id);
++int nfc_i2c_dev_remove(struct i2c_client *client);
++int nfc_i2c_dev_suspend(struct device *device);
++int nfc_i2c_dev_resume(struct device *device);
++
++#endif /* _I2C_DRV_H_ */
+diff --git a/vendor/nxp/nfc/BoardConfigNfc.mk b/vendor/nxp/nfc/BoardConfigNfc.mk
+new file mode 100755
+index 00000000000..13d9b912a48
+--- /dev/null
++++ b/vendor/nxp/nfc/BoardConfigNfc.mk
+@@ -0,0 +1,23 @@
++# Copyright 2018 The Android Open Source Project
++#
++# Licensed under the Apache License, Version 2.0 (the "License");
++# you may not use this file except in compliance with the License.
++# You may obtain a copy of the License at
++#
++#      http://www.apache.org/licenses/LICENSE-2.0
++#
++# Unless required by applicable law or agreed to in writing, software
++# distributed under the License is distributed on an "AS IS" BASIS,
++# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++# See the License for the specific language governing permissions and
++# limitations under the License.
++
++LOCAL_STEM := nfc/BoardConfigNfcPartial.mk
++#TODO This need to commented once sepolicy updated for emvco hal.
++BOARD_KERNEL_CMDLINE += androidboot.selinux=permissive
++#TODO: Check and remove BUILD_BROKEN_DUP_RULES usage (artf995547).
++#DEVICE_FRAMEWORK_COMPATIBILITY_MATRIX_FILE := vendor/nxp/nfc/framework_compatibility_matrix.xml
++#DEVICE_FRAMEWORK_COMPATIBILITY_MATRIX_FILE += vendor/nxp/emvco/emvco_framework_compatibility_matrix.xml
++BUILD_BROKEN_DUP_RULES := true
++
++-include vendor/nxp/$(LOCAL_STEM)
+diff --git a/vendor/nxp/nfc/device-nfc.mk b/vendor/nxp/nfc/device-nfc.mk
+new file mode 100755
+index 00000000000..deb0f0a616c
+--- /dev/null
++++ b/vendor/nxp/nfc/device-nfc.mk
+@@ -0,0 +1,99 @@
++#####
++##### NXP NFC Device Configuration makefile
++######
++NXP_NFC_HOST := $(TARGET_PRODUCT)
++ifndef TARGET_NXP_NFC_HW
++NXP_NFC_HW := pn7220_i2cs
++else
++NXP_NFC_HW := $(TARGET_NXP_NFC_HW)
++endif
++NXP_NFC_PLATFORM := pn54x
++NXP_VENDOR_DIR := nxp
++NXP_I2CM_S := $(TARGET_NXP_I2C_M_S)
++
++
++ifeq ($(strip $(TARGET_NXP_I2C_M_S)),)
++    NXP_I2CM_S := FALSE
++endif
++
++# These are the hardware-specific features
++PRODUCT_COPY_FILES += \
++    frameworks/native/data/etc/android.hardware.nfc.hce.xml:system/etc/permissions/android.hardware.nfc.hce.xml \
++    frameworks/native/data/etc/android.hardware.nfc.hcef.xml:system/etc/permissions/android.hardware.nfc.hcef.xml \
++    frameworks/native/data/etc/android.hardware.nfc.xml:system/etc/permissions/android.hardware.nfc.xml \
++    vendor/$(NXP_VENDOR_DIR)/frameworks/nfc/com.nxp.nfc.xml:system/etc/permissions/com.nxp.nfc.xml
++# NFC config files
++PRODUCT_COPY_FILES += \
++    vendor/$(NXP_VENDOR_DIR)/nfc/hw/$(NXP_NFC_HW)/libnfc-nci.conf:system/etc/libnfc-nci.conf \
++    vendor/$(NXP_VENDOR_DIR)/nfc/hw/$(NXP_NFC_HW)/libnfc-nxp.conf:vendor/etc/libnfc-nxp.conf \
++    vendor/$(NXP_VENDOR_DIR)/nfc/hw/init.module.nfc.rc:vendor/etc/init/init.module.nfc.rc
++
++ifneq ($(NXP_NFC_HW),pn7160)
++PRODUCT_COPY_FILES += \
++    vendor/$(NXP_VENDOR_DIR)/nfc/hw/$(NXP_NFC_HW)/libnfc-nxp-eeprom.conf:vendor/etc/libnfc-nxp-eeprom.conf
++endif
++
++ifeq ($(NXP_NFC_HW),pn7220_i2cs)
++PRODUCT_COPY_FILES += \
++    vendor/$(NXP_VENDOR_DIR)/nfc/hw/$(NXP_NFC_HW)/libnfc-nxp-rfExt.conf:vendor/etc/libnfc-nxp-rfExt.conf
++endif
++
++ifeq ($(NXP_NFC_HW),pn7221_i2cs)
++PRODUCT_COPY_FILES += \
++    vendor/$(NXP_VENDOR_DIR)/nfc/hw/$(NXP_NFC_HW)/libnfc-nxp-rfExt.conf:vendor/etc/libnfc-nxp-rfExt.conf
++endif
++
++# NFC Init Files
++PRODUCT_COPY_FILES += \
++     vendor/$(NXP_VENDOR_DIR)/nfc/hw/init.$(NXP_NFC_PLATFORM).nfc.rc:vendor/etc/init/init.$(NXP_NFC_HOST).nfc.rc
++
++# Service framework, Jar and VTS packages required for all products
++PRODUCT_PACKAGES += \
++    NfcNci \
++    Tag \
++    VtsAidlHalNfcTargetTest \
++    com.nxp.nfc \
++    NxpDTA \
++    nfc_tda \
++    NfcTdaTestApp \
++    JrcpProxyPallas
++
++
++# Add NFC TDA and SMCU for only PN7220 I2CMS product
++ifeq ($(NXP_NFC_HW),pn7220_i2cms)
++PRODUCT_PACKAGES += \
++   SmcuSwitchV2_0
++endif
++
++
++# Add T4T for only 7160
++ifeq ($(NXP_NFC_HW),pn7160)
++PRODUCT_PACKAGES += \
++   T4TDemo \
++   SelfTestHalAidlNfc
++endif
++
++PRODUCT_PACKAGES += \
++    android.hardware.nfc-service.nxp
++
++PRODUCT_PACKAGES += android.hardware.nfc_pn72xx@1.1-service
++PRODUCT_PACKAGES += android.hardware.nfc_pn72xx@1.2-service
++
++
++ifeq ($(ENABLE_TREBLE), true)
++PRODUCT_PACKAGES += \
++    vendor.nxp.nxpnfc@1.0-impl \
++    vendor.nxp.nxpnfc@1.0-service
++endif
++ifeq ($(strip $(NXP_I2CM_S)),TRUE)
++    I2CM_S_ENABLED = 1
++else
++    I2CM_S_ENABLED = 0
++endif
++PRODUCT_PROPERTY_OVERRIDES += \
++     ro.hardware.nfc_nci=$(NXP_NFC_PLATFORM) \
++     persist.vendor.nxp.i2cms.enabled=$(I2CM_S_ENABLED)
++
++BOARD_SEPOLICY_DIRS += \
++    vendor/$(NXP_VENDOR_DIR)/nfc/sepolicy \
++    vendor/$(NXP_VENDOR_DIR)/nfc/sepolicy/nfc
+diff --git a/vendor/nxp/nfc/framework_compatibility_matrix.xml b/vendor/nxp/nfc/framework_compatibility_matrix.xml
+new file mode 100755
+index 00000000000..b27c989003d
+--- /dev/null
++++ b/vendor/nxp/nfc/framework_compatibility_matrix.xml
+@@ -0,0 +1,10 @@
++<compatibility-matrix version="1.0" type="framework">
++    <hal format="hidl" optional="true">
++        <name>vendor.nxp.nxpnfc</name>
++        <version>2.0</version>
++        <interface>
++            <name>INxpNfc</name>
++            <instance>default</instance>
++        </interface>
++    </hal>
++</compatibility-matrix>
+diff --git a/vendor/nxp/nfc/hw/init.module.nfc.rc b/vendor/nxp/nfc/hw/init.module.nfc.rc
+new file mode 100755
+index 00000000000..f3d54de1328
+--- /dev/null
++++ b/vendor/nxp/nfc/hw/init.module.nfc.rc
+@@ -0,0 +1,3 @@
++on zygote-start
++exec u:r:vendor_modprobe:s0 -- /vendor/bin/modprobe -a -d \
++    /vendor/lib/modules nxpnfc_i2c i2c_sw_param=${persist.vendor.nxp.i2cms.enabled}
+diff --git a/vendor/nxp/nfc/hw/init.pn54x.nfc.rc b/vendor/nxp/nfc/hw/init.pn54x.nfc.rc
+new file mode 100755
+index 00000000000..96982fedc00
+--- /dev/null
++++ b/vendor/nxp/nfc/hw/init.pn54x.nfc.rc
+@@ -0,0 +1,7 @@
++on post-fs-data
++    setprop ro.nfc.port "I2C"
++    mkdir /data/vendor 0777 nfc nfc
++    mkdir /data/vendor/nfc 0777 nfc nfc
++    mkdir /data/vendor/nfc/param 0777 nfc nfc
++    chmod 0660 /dev/nxpnfc
++    chown nfc nfc /dev/nxpnfc
+diff --git a/vendor/nxp/nfc/hw/pn7160/libnfc-nci.conf b/vendor/nxp/nfc/hw/pn7160/libnfc-nci.conf
+new file mode 100755
+index 00000000000..80d378477dd
+--- /dev/null
++++ b/vendor/nxp/nfc/hw/pn7160/libnfc-nci.conf
+@@ -0,0 +1,97 @@
++########################### PN7160 libnfc-nci.conf ############################
++
++###############################################################################
++# Application options
++APPL_TRACE_LEVEL=0xFF
++PROTOCOL_TRACE_LEVEL=0xFFFFFFFF
++
++NFC_DEBUG_ENABLED=0x01
++
++###############################################################################
++# File used for NFA storage
++NFA_STORAGE="/data/vendor/nfc"
++
++###############################################################################
++# Forcing HOST to listen for a selected protocol
++# 0x00 : Disable Host Listen
++# 0x01 : Enable Host to Listen (A)  for ISO-DEP tech A
++# 0x02 : Enable Host to Listen (B)  for ISO-DEP tech B
++# 0x04 : Enable Host to Listen (F)  for T3T Tag Type Protocol tech F
++# 0x07 : Enable Host to Listen (ABF)for ISO-DEP tech AB & T3T Tag Type Protocol tech F
++HOST_LISTEN_TECH_MASK=0x07
++
++###############################################################################
++# When screen is turned off, specify the desired power state of the controller.
++# 0: power-off-sleep state; DEFAULT
++# 1: full-power state
++# 2: screen-off card-emulation (CE4/CE3/CE1 modes are used)
++SCREEN_OFF_POWER_STATE=1
++
++###############################################################################
++# NCI Hal Module name
++NCI_HAL_MODULE="nfc_nci.pn54x"
++
++###############################################################################
++# Force tag polling for the following technology(s).
++# The bits are defined as tNFA_TECHNOLOGY_MASK in nfa_api.h.
++# Default is NFA_TECHNOLOGY_MASK_A | NFA_TECHNOLOGY_MASK_B |
++#            NFA_TECHNOLOGY_MASK_F | NFA_TECHNOLOGY_MASK_ISO15693 |
++#            NFA_TECHNOLOGY_MASK_KOVIO | NFA_TECHNOLOGY_MASK_A_ACTIVE |
++#            NFA_TECHNOLOGY_MASK_F_ACTIVE
++#
++# Notable bits:
++# NFA_TECHNOLOGY_MASK_A             0x01    /* NFC Technology A             */
++# NFA_TECHNOLOGY_MASK_B             0x02    /* NFC Technology B             */
++# NFA_TECHNOLOGY_MASK_F             0x04    /* NFC Technology F             */
++# NFA_TECHNOLOGY_MASK_ISO15693	    0x08    /* Proprietary Technology       */
++# NFA_TECHNOLOGY_MASK_KOVIO	        0x20    /* Proprietary Technology       */
++# NFA_TECHNOLOGY_MASK_A_ACTIVE      0x40    /* NFC Technology A active mode */
++# NFA_TECHNOLOGY_MASK_F_ACTIVE      0x80    /* NFC Technology F active mode */
++# This flag when set to zero will disable Reader mode.
++POLLING_TECH_MASK=0xEF
++
++###############################################################################
++# Force P2P to only listen for the following technology(s).
++# The bits are defined as tNFA_TECHNOLOGY_MASK in nfa_api.h.
++# Default is NFA_TECHNOLOGY_MASK_A | NFA_TECHNOLOGY_MASK_F |
++#            NFA_TECHNOLOGY_MASK_A_ACTIVE | NFA_TECHNOLOGY_MASK_F_ACTIVE
++#
++# Notable bits:
++# NFA_TECHNOLOGY_MASK_A	            0x01    /* NFC Technology A             */
++# NFA_TECHNOLOGY_MASK_F	            0x04    /* NFC Technology F             */
++# NFA_TECHNOLOGY_MASK_A_ACTIVE      0x40    /* NFC Technology A active mode */
++# NFA_TECHNOLOGY_MASK_F_ACTIVE      0x80    /* NFC Technology F active mode */
++# This flag when set to zero will disable P2P Listen mode.
++P2P_LISTEN_TECH_MASK=0xC5
++
++PRESERVE_STORAGE=0x01
++
++###############################################################################
++# AID_MATCHING constants
++# AID_MATCHING_EXACT_ONLY 0x00
++# AID_MATCHING_EXACT_OR_PREFIX 0x01
++# AID_MATCHING_PREFIX_ONLY 0x02
++# AID_MATCHING_EXACT_OR_SUBSET_OR_PREFIX 0x03
++AID_MATCHING_MODE=0x03
++
++###############################################################################
++# Override the stack default for NFA_EE_MAX_EE_SUPPORTED set in nfc_target.h.
++# Maximum EE supported number
++NFA_MAX_EE_SUPPORTED=0x01
++
++###############################################################################
++#Set the OffHost AID supported power state:
++OFFHOST_AID_ROUTE_PWR_STATE=0x3B
++
++###############################################################################
++# NCI_RESET_TYPE options
++# Default 0x00, reset configurations everytime.
++# 0x01, reset configurations only once every boot.
++# 0x02, keep configurations.
++NCI_RESET_TYPE=0x02
++
++###############################################################################
++## Default poll duration (in ms)
++## The default is 500ms if not set
++NFA_DM_DISC_DURATION_POLL=500
++###############################################################################
+diff --git a/vendor/nxp/nfc/hw/pn7160/libnfc-nxp.conf b/vendor/nxp/nfc/hw/pn7160/libnfc-nxp.conf
+new file mode 100755
+index 00000000000..d7957ff8199
+--- /dev/null
++++ b/vendor/nxp/nfc/hw/pn7160/libnfc-nxp.conf
+@@ -0,0 +1,231 @@
++########################### PN7160 libnfc-nxp.conf ############################
++
++###############################################################################
++# Logging Levels. Suggested value for debugging is 0x03.
++#  NXPLOG_GLOBAL_LOGLEVEL - Configuration for Global logging level
++#  NXPLOG_EXTNS_LOGLEVEL - Configuration for extns logging level
++#  NXPLOG_NCIHAL_LOGLEVEL - Configuration for enabling logging of HAL
++#  NXPLOG_NCIX_LOGLEVEL - Configuration for enabling logging of NCI TX packets
++#  NXPLOG_NCIR_LOGLEVEL - Configuration for enabling logging of NCI RX packets
++#  NXPLOG_FWDNLD_LOGLEVEL - Configuration for enabling logging of FW download functionality
++#  NXPLOG_TML_LOGLEVEL - Configuration for enabling logging of TML
++# Logging Levels
++#  NXPLOG_DEFAULT_LOGLEVEL    0x01
++#  NXPLOG_DEBUG_LOGLEVEL      0x03
++#  NXPLOG_WARN_LOGLEVEL       0x02
++#  NXPLOG_ERROR_LOGLEVEL      0x01
++#  NXPLOG_SILENT_LOGLEVEL     0x00
++NXPLOG_EXTNS_LOGLEVEL=0x03
++NXPLOG_NCIHAL_LOGLEVEL=0x03
++NXPLOG_NCIX_LOGLEVEL=0x03
++NXPLOG_NCIR_LOGLEVEL=0x03
++NXPLOG_FWDNLD_LOGLEVEL=0x03
++NXPLOG_TML_LOGLEVEL=0x03
++
++###############################################################################
++# Nfc Device Node name
++NXP_NFC_DEV_NODE="/dev/nxpnfc"
++
++###############################################################################
++# Extension for Mifare reader enable
++MIFARE_READER_ENABLE=0x01
++
++###############################################################################
++# Firmware file type
++#.so file   0x01
++#.bin file  0x02
++NXP_FW_TYPE=0x01
++
++###############################################################################
++# System clock source selection configuration
++#define CLK_SRC_XTAL       1
++#define CLK_SRC_PLL        2
++NXP_SYS_CLK_SRC_SEL=0x02
++
++###############################################################################
++# Dynamic RSSI feature enable
++# Disable           0x00
++# Enable            0x01
++NXP_AGC_DEBUG_ENABLE=0x00
++
++###############################################################################
++# NXP proprietary settings
++NXP_ACT_PROP_EXTN={2F, 02, 00}
++
++###############################################################################
++# NFC forum profile settings
++NXP_NFC_PROFILE_EXTN={20, 02, 05, 01, A0, 44, 01, 00}
++
++
++###############################################################################
++# To enable i2c fragmentation set i2c fragmentation enable 0x01 to disable set
++# to 0x00
++NXP_I2C_FRAGMENTATION_ENABLED=0x00
++
++###############################################################################
++# Vendor Specific Proprietary Protocol & Discovery Configuration
++# Set to 0xFF if unsupported
++#  byte[0] NCI_PROTOCOL_18092_ACTIVE
++#  byte[1] NCI_PROTOCOL_B_PRIME
++#  byte[2] NCI_PROTOCOL_DUAL
++#  byte[3] NCI_PROTOCOL_15693
++#  byte[4] NCI_PROTOCOL_KOVIO
++#  byte[5] NCI_PROTOCOL_MIFARE
++#  byte[6] NCI_DISCOVERY_TYPE_POLL_KOVIO
++#  byte[7] NCI_DISCOVERY_TYPE_POLL_B_PRIME
++#  byte[8] NCI_DISCOVERY_TYPE_LISTEN_B_PRIME
++NFA_PROPRIETARY_CFG={05, FF, FF, 06, 81, 80, 70, FF, FF}
++
++###############################################################################
++# System clock frequency selection configuration
++#define CLK_FREQ_13MHZ         0x0A
++#define CLK_FREQ_19_2MHZ       0x0B
++#define CLK_FREQ_24MHZ         0x03
++#define CLK_FREQ_26MHZ         0x0C
++#define CLK_FREQ_38_4MHZ       0x0D
++#define CLK_FREQ_52MHZ         0x0E
++#define CLK_FREQ_32MHZ         0x07
++#define CLK_FREQ_48MHZ         0x08
++NXP_SYS_CLK_FREQ_SEL=0x0B
++
++###############################################################################
++# The timeout value to be used for clock request acknowledgment
++# min value = 0x01 to max = 0x06
++NXP_SYS_CLOCK_TO_CFG=0x06
++
++###############################################################################
++# TVDD configurations settings
++# Allow NFCC to configure External TVDD
++# There are two possible configurations (0x01 or 0x02):
++#    CFG1: Vbat is used to generate the VDD(TX) through TXLDO
++#    CFG2: external 5V is used to generate the VDD(TX) through TXLDO
++NXP_EXT_TVDD_CFG=0x02
++
++# CFG1: 3.3V for both Reader and Card modes
++NXP_EXT_TVDD_CFG_1={20, 02, 0F, 01, A0, 0E, 0B, 31, 01, 01, 31, 00, 00, 00, 01, 00, D0, 0C}
++
++# CFG2: VBAT2 to 5V and 4.7V for both Reader and Card modes
++NXP_EXT_TVDD_CFG_2={20, 02, 0F, 01, A0, 0E, 0B, 11, 01, C2, B2, 00, B2, 1E, 11, 00, D0, 0C}
++
++###############################################################################
++# Core configuration settings
++NXP_CORE_CONF={ 20, 02, 31, 0F,
++    85, 01, 01,
++    28, 01, 00,
++    21, 01, 00,
++    30, 01, 08,
++    31, 01, 03,
++    32, 01, 60,
++    38, 01, 01,
++    33, 04, 01, 02, 03, 04,
++    54, 01, 06,
++    50, 01, 02,
++    5B, 01, 00,
++    80, 01, 01,
++    81, 01, 01,
++    82, 01, 0E,
++    18, 01, 01
++}
++
++###############################################################################
++# NXP Proprietary core configuration extensions
++# For more details refer to the NFC Controller User Manual
++NXP_CORE_CONF_EXTN={20, 02, 09, 02,
++    A0, 5E, 01, 01,
++    A0, 40, 01, 00
++}
++
++##############################################################################
++# RF configuration settings
++# Below settings relates to better RF performance on RB3 Platform board not applicable for Hikey960
++# Disable this config for Hikey960 board.
++NXP_RF_CONF_BLK_1={ 20, 02, 25, 04,
++     A0, 0D, 06, 3C, 44, 33, 0A, 00, 00,
++     A0, 0D, 06, 4C, 44, 33, 0A, 00, 00,
++     A0, 0D, 06, 5E, 44, 33, 0A, 00, 00,
++     A0, 0D, 06, 60, 44, 33, 0A, 00, 00
++}
++
++###############################################################################
++# RF configuration settings
++# Below settings relates to OM5578 demo kit RF performance optimization
++#NXP_RF_CONF_BLK_1={ 20, 02, A3, 13,
++#    A0, 0D, 06, 04, 35, 90, 01, F4, 01,
++#    A0, 0D, 06, 06, 44, 01, 90, 03, 00,
++#    A0, 0D, 06, 06, 30, B0, 01, 10, 00,
++#    A0, 0D, 06, 06, 42, 02, 00, FF, FF,
++#    A0, 0D, 03, 06, 3F, 04,
++#    A0, 0D, 06, 20, 42, 88, 00, FF, FF,
++#    A0, 0D, 04, 22, 44, 22, 00,
++#    A0, 0D, 06, 22, 2D, 50, 34, 0C, 00,
++#    A0, 0D, 06, 32, 42, F8, 00, FF, FF,
++#    A0, 0D, 06, 34, 2D, 24, 37, 0C, 00,
++#    A0, 0D, 06, 34, 33, 86, 80, 00, 70,
++#    A0, 0D, 04, 34, 44, 22, 00,
++#    A0, 0D, 06, 42, 2D, 15, 45, 0D, 00,
++#    A0, 0D, 04, 46, 44, 22, 00,
++#    A0, 0D, 06, 46, 2D, 05, 59, 0E, 00,
++#    A0, 0D, 06, 44, 42, 88, 00, FF, FF,
++#    A0, 0D, 06, 56, 2D, 05, 9F, 0C, 00,
++#    A0, 0D, 06, 54, 42, 88, 00, FF, FF,
++#    A0, 0D, 06, 0A, 33, 80, 86, 00, 70
++#}
++
++###############################################################################
++# Extended APDU length for ISO_DEP
++ISO_DEP_MAX_TRANSCEIVE=0xFEFF
++
++###############################################################################
++# Choose the presence-check algorithm for type-4 tag.  If not defined, the default value is 1.
++# 0 NFA_RW_PRES_CHK_DEFAULT; Let stack selects an algorithm
++# 1 NFA_RW_PRES_CHK_I_BLOCK; ISO-DEP protocol's empty I-block
++# 2 NFA_RW_PRES_CHK_ISO_DEP_NAK; ISO-DEP protocol's nak presence check command
++PRESENCE_CHECK_ALGORITHM=2
++
++###############################################################################
++#T4T NFCEE ENABLE
++#bit pos 0 = Enable T4T NFCEE from NFCC (Only wired R/W activated, RF read  only activated)
++NXP_T4T_NFCEE_ENABLE=0x01
++
++###############################################################################
++#Set the T4TNfcee AID Power state :
++#This settings will be used when application does not set this parameter
++# bit pos 0 = Switch On
++# bit pos 1 = Switch Off
++# bit pos 2 = Battery Off
++# bit pos 3 = Screen off unlock
++# bit pos 4 = Screen On lock
++# bit pos 5 = Screen Off lock
++DEFAULT_T4TNFCEE_AID_POWER_STATE=0x3B
++
++###############################################################################
++# Flashing Options Configurations
++# FLASH_UPPER_VERSION 0x01
++# FLASH_DIFFERENT_VERSION 0x02 (default value)
++# FLASH_ALWAYS 0x03
++# FLASH_BLOCKED 0x04
++NXP_FLASH_CONFIG=0x02
++
++###############################################################################
++#INFRA_CHIP_VERSION
++#pn7160 , 0x01
++#pn7220, 0x04
++NXP_CHIP_TYPE=0x01
++
++###############################################################################
++# Enable(0x01) or disable(0x00) non-standard tag reading
++# Disable Non-standard card read         0x00
++# Enable Non-standard card read          0x01
++NXP_SUPPORT_NON_STD_CARD=0x00
++#################################################################################
++
++# Valid time difference range within for non-standard tag detection from first
++# Activation fail to next discovery
++# Note :- 1. This will take effect only when NXP_SUPPORT_NON_STD_CARD is enabled
++#         2. The number will be multiplied by 100ms by MW.
++# Default:
++# Set to 00 if not supported
++#  byte[0] MIFARE_CLASSIC 100ms
++#  byte[1] ISO_DEP        300ms
++NXP_NON_STD_CARD_TIMEDIFF={01, 03}
++###############################################################################
+\ No newline at end of file
+diff --git a/vendor/nxp/nfc/hw/pn7160/libnfc-nxp_40x40.conf b/vendor/nxp/nfc/hw/pn7160/libnfc-nxp_40x40.conf
+new file mode 100755
+index 00000000000..ca35e89e7f9
+--- /dev/null
++++ b/vendor/nxp/nfc/hw/pn7160/libnfc-nxp_40x40.conf
+@@ -0,0 +1,234 @@
++########################### PN7160 libnfc-nxp.conf ############################
++
++###############################################################################
++# Logging Levels. Suggested value for debugging is 0x03.
++#  NXPLOG_GLOBAL_LOGLEVEL - Configuration for Global logging level
++#  NXPLOG_EXTNS_LOGLEVEL - Configuration for extns logging level
++#  NXPLOG_NCIHAL_LOGLEVEL - Configuration for enabling logging of HAL
++#  NXPLOG_NCIX_LOGLEVEL - Configuration for enabling logging of NCI TX packets
++#  NXPLOG_NCIR_LOGLEVEL - Configuration for enabling logging of NCI RX packets
++#  NXPLOG_FWDNLD_LOGLEVEL - Configuration for enabling logging of FW download functionality
++#  NXPLOG_TML_LOGLEVEL - Configuration for enabling logging of TML
++# Logging Levels
++#  NXPLOG_DEFAULT_LOGLEVEL    0x01
++#  NXPLOG_DEBUG_LOGLEVEL      0x03
++#  NXPLOG_WARN_LOGLEVEL       0x02
++#  NXPLOG_ERROR_LOGLEVEL      0x01
++#  NXPLOG_SILENT_LOGLEVEL     0x00
++NXPLOG_EXTNS_LOGLEVEL=0x03
++NXPLOG_NCIHAL_LOGLEVEL=0x03
++NXPLOG_NCIX_LOGLEVEL=0x03
++NXPLOG_NCIR_LOGLEVEL=0x03
++NXPLOG_FWDNLD_LOGLEVEL=0x03
++NXPLOG_TML_LOGLEVEL=0x03
++
++###############################################################################
++# Nfc Device Node name
++NXP_NFC_DEV_NODE="/dev/nxpnfc"
++
++###############################################################################
++# Extension for Mifare reader enable
++MIFARE_READER_ENABLE=0x01
++
++###############################################################################
++# Firmware file type
++#.so file   0x01
++#.bin file  0x02
++NXP_FW_TYPE=0x01
++
++###############################################################################
++# System clock source selection configuration
++#define CLK_SRC_XTAL       1
++#define CLK_SRC_PLL        2
++NXP_SYS_CLK_SRC_SEL=0x01
++
++###############################################################################
++# Dynamic RSSI feature enable
++# Disable           0x00
++# Enable            0x01
++NXP_AGC_DEBUG_ENABLE=0x00
++
++###############################################################################
++# NXP proprietary settings
++NXP_ACT_PROP_EXTN={2F, 02, 00}
++
++###############################################################################
++# NFC forum profile settings
++NXP_NFC_PROFILE_EXTN={20, 02, 05, 01, A0, 44, 01, 00}
++
++
++###############################################################################
++# To enable i2c fragmentation set i2c fragmentation enable 0x01 to disable set
++# to 0x00
++NXP_I2C_FRAGMENTATION_ENABLED=0x00
++
++###############################################################################
++# Vendor Specific Proprietary Protocol & Discovery Configuration
++# Set to 0xFF if unsupported
++#  byte[0] NCI_PROTOCOL_18092_ACTIVE
++#  byte[1] NCI_PROTOCOL_B_PRIME
++#  byte[2] NCI_PROTOCOL_DUAL
++#  byte[3] NCI_PROTOCOL_15693
++#  byte[4] NCI_PROTOCOL_KOVIO
++#  byte[5] NCI_PROTOCOL_MIFARE
++#  byte[6] NCI_DISCOVERY_TYPE_POLL_KOVIO
++#  byte[7] NCI_DISCOVERY_TYPE_POLL_B_PRIME
++#  byte[8] NCI_DISCOVERY_TYPE_LISTEN_B_PRIME
++NFA_PROPRIETARY_CFG={05, FF, FF, 06, 81, 80, 70, FF, FF}
++
++###############################################################################
++# System clock frequency selection configuration
++#define CLK_FREQ_13MHZ         1
++#define CLK_FREQ_19_2MHZ       2
++#define CLK_FREQ_24MHZ         3
++#define CLK_FREQ_26MHZ         4
++#define CLK_FREQ_38_4MHZ       5
++#define CLK_FREQ_52MHZ         6
++NXP_SYS_CLK_FREQ_SEL=0x02
++
++###############################################################################
++# The timeout value to be used for clock request acknowledgment
++# min value = 0x01 to max = 0x06
++NXP_SYS_CLOCK_TO_CFG=0x06
++
++###############################################################################
++# TVDD configurations settings
++# Allow NFCC to configure External TVDD
++# There are two possible configurations (0x01 or 0x02):
++#    CFG1: Vbat is used to generate the VDD(TX) through TXLDO
++#    CFG2: external 5V is used to generate the VDD(TX) through TXLDO
++NXP_EXT_TVDD_CFG=0x02
++
++# CFG1: 3.3V for both Reader and Card modes
++NXP_EXT_TVDD_CFG_1={20, 02, 0F, 01, A0, 0E, 0B, 31, 01, 01, 31, 00, 00, 00, 01, 00, D0, 0C}
++
++# CFG2: VBAT2 to 5V and 4.7V for both Reader and Card modes
++NXP_EXT_TVDD_CFG_2={20, 02, 0F, 01, A0, 0E, 0B, 11, 01, 01, 01, 00, 00, 00, 40, 00, D0, 0C}
++
++###############################################################################
++# Core configuration settings
++NXP_CORE_CONF={ 20, 02, 31, 0F,
++    85, 01, 01,
++    28, 01, 00,
++    21, 01, 00,
++    30, 01, 08,
++    31, 01, 03,
++    32, 01, 60,
++    38, 01, 01,
++    33, 04, 01, 02, 03, 04,
++    54, 01, 06,
++    50, 01, 02,
++    5B, 01, 00,
++    80, 01, 01,
++    81, 01, 01,
++    82, 01, 0E,
++    18, 01, 01
++}
++
++###############################################################################
++# NXP Proprietary core configuration extensions
++# For more details refer to the NFC Controller User Manual
++NXP_CORE_CONF_EXTN={20, 02, 09, 02,
++    A0, 5E, 01, 01,
++    A0, 40, 01, 00
++}
++
++# NXP RF register settings
++# This section needs to be updated with the correct values based on the platform
++NXP_RF_CONF_BLK_1={ 20, 02, 4C, 09,
++    A0, 0D, 03, 78, 0D, 02,
++    A0, 0D, 03, 78, 14, 02,
++    A0, 0D, 06, 4C, 44, 65, 09, 00, 00,
++    A0, 0D, 06, 4C, 2D, 05, 35, 1E, 01,
++    A0, 0D, 06, 82, 4A, 55, 07, 00, 07,
++    A0, 0D, 06, 44, 44, 03, 04, C4, 00,
++    A0, 0D, 06, 46, 30, 50, 00, 18, 00,
++    A0, 0D, 06, 48, 30, 50, 00, 18, 00,
++    A0, 0D, 06, 4A, 30, 50, 00, 08, 00
++}
++
++###############################################################################
++# NFCLD ON-Threshold set to 300mA/m
++# RSSI Rext Register
++# DLMA CTRL Register
++# This section needs to be updated with the correct values based on the platform
++NXP_RF_CONF_BLK_2={
++    20, 02, 1E, 03,
++    A0, 38, 04, 24, 10, 0B, 00,
++    A0, AA, 04, 38, 04, 98, 08,
++    A0, AF, 0C, 83, D5, 78, 80, 00, 83, D5, 78, 80, 00, 77, 08
++}
++
++###############################################################################
++# DPC_SETTINGS for 180mA Target Current
++# This section needs to be updated with the correct values based on the platform
++NXP_RF_CONF_BLK_3={
++    20, 02, 5B, 01,
++    A0, 0B, 57, F1, 91, 90, 50, 0F, 4E, 00, 4B, 15, B7, AA, 4B, 1F, A7, 99, 61, 9F, 97, 99, 6C, 9F, 97, 99, 6F, 9F, 97, 99, 7A, 9F, 97, 00, 7C, 9F, 07, 00, 87, 1F, 07, 00, 8C, 9F, 07, 00, 94, 9F, 07, 00, 97, 9F, 07, 00, A2, 9F, 04, 00, A4, 9F, 04, 00, AF, 9F, 04, 00, B1, 9F, 04, 00, BC, 9F, 02, 00, C5, 9F, 00, 00, CC, 9F, 00, 00, D7, 1F, 00, 00, E2, 1F, 00, 00
++}
++
++###############################################################################
++# APC RSSI Table Configuration
++# This section needs to be updated with the correct values based on the platform
++NXP_RF_CONF_BLK_4={
++    20, 02, 98, 01,
++    A0, 34, 94, 23, 04, 18, CB, 00, 00, 59, 01, 00, D9, 01, 00, 44, 02, 00, A5, 02, 00, 78, 03, 00, 45, 04, 00, 20, 05, 00, 77, 06, 00, 77, 06, 00, 77, 06, 00, 77, 06, 00, 77, 06, 00, 77, 06, 00, 77, 06, 00, 77, 06, 00, 77, 06, 00, 77, 06, 00, 77, 06, 00, 77, 06, 00, 77, 06, 00, 77, 06, 00, 77, 06, 00, 77, 06, 00, 18, CB, 00, 00, 59, 01, 00, D9, 01, 00, 44, 02, 00, A5, 02, 00, 78, 03, 00, 45, 04, 00, 20, 05, 00, 77, 06, 00, 77, 06, 00, 77, 06, 00, 77, 06, 00, 77, 06, 00, 77, 06, 00, 77, 06, 00, 77, 06, 00, 77, 06, 00, 77, 06, 00, 77, 06, 00, 77, 06, 00, 77, 06, 00, 77, 06, 00, 77, 06, 00, 77, 06, 00
++}
++
++###############################################################################
++# NXP RF configuration APC TX Table Configuration
++# This section needs to be updated with the correct values based on the platform
++NXP_RF_CONF_BLK_5={
++    20, 02, A4, 01,
++    A0, A9, A0, 00, C1, 00, 0A, 01, 80, 41, 0A, 02, 81, 83, 0A, 03, C0, 42, 06, 04, 80, 46, 06, 05, C3, 01, 03, 06, C2, 05, 03, 07, C2, 4A, 03, 08, 41, 00, 0A, 08, C0, D4, 06, 08, C3, 8B, 03, 09, 01, 82, 0A, 09, C3, 92, 03, 0A, 40, 02, 06, 0A, C4, CC, 03, 0B, 00, 06, 06, 0B, 40, D4, 03, 0C, 44, 00, 03, 0D, 42, 04, 03, 0E, 42, 48, 03, 0F, 43, 50, 03, 10, 43, 91, 03, 11, 44, 95, 03, 12, 46, 8E, 01, 13, 47, C4, 01, 14, 48, CA, 01, 15, 49, D0, 01, 16, 4B, D4, 01, 17, 4D, D6, 01, 18, 49, 72, 03, 19, 4E, 68, 01, 1A, 52, 70, 01, 1B, 53, 74, 01, 1C, 54, B4, 01, 1D, 52, EA, 01, 1E, 53, F0, 01, 1F, 53, F0, 00, 1F, 53, F0, 00, 1F, 53, F0, 00, 1F, 53, F0, 00
++}
++
++###############################################################################
++# Extended APDU length for ISO_DEP
++ISO_DEP_MAX_TRANSCEIVE=0xFEFF
++
++###############################################################################
++# Choose the presence-check algorithm for type-4 tag.  If not defined, the default value is 1.
++# 0 NFA_RW_PRES_CHK_DEFAULT; Let stack selects an algorithm
++# 1 NFA_RW_PRES_CHK_I_BLOCK; ISO-DEP protocol's empty I-block
++# 2 NFA_RW_PRES_CHK_ISO_DEP_NAK; ISO-DEP protocol's nak presence check command
++PRESENCE_CHECK_ALGORITHM=2
++
++###############################################################################
++#T4T NFCEE ENABLE
++#bit pos 0 = Enable T4T NFCEE from NFCC (Only wired R/W activated, RF read  only activated)
++NXP_T4T_NFCEE_ENABLE=0x01
++
++###############################################################################
++#Set the T4TNfcee AID Power state :
++#This settings will be used when application does not set this parameter
++# bit pos 0 = Switch On
++# bit pos 1 = Switch Off
++# bit pos 2 = Battery Off
++# bit pos 3 = Screen off unlock
++# bit pos 4 = Screen On lock
++# bit pos 5 = Screen Off lock
++DEFAULT_T4TNFCEE_AID_POWER_STATE=0x3B
++
++###############################################################################
++#INFRA_CHIP_VERSION
++#pn7160 , 0x01
++#pn7220, 0x04
++NXP_CHIP_TYPE=0x01
++###############################################################################
++# Enable(0x01) or disable(0x00) non-standard tag reading
++# Disable Non-standard card read         0x00
++# Enable Non-standard card read          0x01
++NXP_SUPPORT_NON_STD_CARD=0x00
++#################################################################################
++
++# Valid time difference range within for non-standard tag detection from first
++# Activation fail to next discovery
++# Note :- 1. This will take effect only when NXP_SUPPORT_NON_STD_CARD is enabled
++#         2. The number will be multiplied by 100ms by MW.
++# Default:
++# Set to 00 if not supported
++#  byte[0] MIFARE_CLASSIC 100ms
++#  byte[1] ISO_DEP        300ms
++NXP_NON_STD_CARD_TIMEDIFF={01, 03}
++###############################################################################
+\ No newline at end of file
+diff --git a/vendor/nxp/nfc/hw/pn7220_i2cms/libnfc-nci.conf b/vendor/nxp/nfc/hw/pn7220_i2cms/libnfc-nci.conf
+new file mode 100755
+index 00000000000..e8eda21b834
+--- /dev/null
++++ b/vendor/nxp/nfc/hw/pn7220_i2cms/libnfc-nci.conf
+@@ -0,0 +1,91 @@
++########################### PN7220 libnfc-nci.conf ############################
++
++###############################################################################
++# Application options
++APPL_TRACE_LEVEL=0xFF
++PROTOCOL_TRACE_LEVEL=0xFFFFFFFF
++
++NFC_DEBUG_ENABLED=0x01
++
++###############################################################################
++# File used for NFA storage
++NFA_STORAGE="/data/vendor/nfc"
++
++###############################################################################
++# Forcing HOST to listen for a selected protocol
++# 0x00 : Disable Host Listen
++# 0x01 : Enable Host to Listen (A)  for ISO-DEP tech A
++# 0x02 : Enable Host to Listen (B)  for ISO-DEP tech B
++# 0x04 : Enable Host to Listen (F)  for T3T Tag Type Protocol tech F
++# 0x07 : Enable Host to Listen (ABF)for ISO-DEP tech AB & T3T Tag Type Protocol tech F
++HOST_LISTEN_TECH_MASK=0x01
++
++###############################################################################
++# When screen is turned off, specify the desired power state of the controller.
++# 0: power-off-sleep state; DEFAULT
++# 1: full-power state
++# 2: screen-off card-emulation (CE4/CE3/CE1 modes are used)
++SCREEN_OFF_POWER_STATE=1
++
++###############################################################################
++# NCI Hal Module name
++NCI_HAL_MODULE="nfc_nci.pn54x"
++
++###############################################################################
++# Force tag polling for the following technology(s).
++# The bits are defined as tNFA_TECHNOLOGY_MASK in nfa_api.h.
++# Default is NFA_TECHNOLOGY_MASK_A | NFA_TECHNOLOGY_MASK_B |
++#            NFA_TECHNOLOGY_MASK_F | NFA_TECHNOLOGY_MASK_ISO15693 |
++#            NFA_TECHNOLOGY_MASK_KOVIO | NFA_TECHNOLOGY_MASK_A_ACTIVE |
++#            NFA_TECHNOLOGY_MASK_F_ACTIVE
++#
++# Notable bits:
++# NFA_TECHNOLOGY_MASK_A             0x01    /* NFC Technology A             */
++# NFA_TECHNOLOGY_MASK_B             0x02    /* NFC Technology B             */
++# NFA_TECHNOLOGY_MASK_F             0x04    /* NFC Technology F             */
++# NFA_TECHNOLOGY_MASK_ISO15693	    0x08    /* Proprietary Technology       */
++# NFA_TECHNOLOGY_MASK_KOVIO	        0x20    /* Proprietary Technology       */
++# NFA_TECHNOLOGY_MASK_A_ACTIVE      0x40    /* NFC Technology A active mode */
++# NFA_TECHNOLOGY_MASK_F_ACTIVE      0x80    /* NFC Technology F active mode */
++# This flag when set to zero will disable Reader mode.
++POLLING_TECH_MASK=0x0F
++
++###############################################################################
++# Force P2P to only listen for the following technology(s).
++# The bits are defined as tNFA_TECHNOLOGY_MASK in nfa_api.h.
++# Default is NFA_TECHNOLOGY_MASK_A | NFA_TECHNOLOGY_MASK_F |
++#            NFA_TECHNOLOGY_MASK_A_ACTIVE | NFA_TECHNOLOGY_MASK_F_ACTIVE
++#
++# Notable bits:
++# NFA_TECHNOLOGY_MASK_A	            0x01    /* NFC Technology A             */
++# NFA_TECHNOLOGY_MASK_F	            0x04    /* NFC Technology F             */
++# NFA_TECHNOLOGY_MASK_A_ACTIVE      0x40    /* NFC Technology A active mode */
++# NFA_TECHNOLOGY_MASK_F_ACTIVE      0x80    /* NFC Technology F active mode */
++# This flag when set to zero will disable P2P Listen mode.
++P2P_LISTEN_TECH_MASK=0xC5
++
++PRESERVE_STORAGE=0x01
++
++###############################################################################
++# AID_MATCHING constants
++# AID_MATCHING_EXACT_ONLY 0x00
++# AID_MATCHING_EXACT_OR_PREFIX 0x01
++# AID_MATCHING_PREFIX_ONLY 0x02
++# AID_MATCHING_EXACT_OR_SUBSET_OR_PREFIX 0x03
++AID_MATCHING_MODE=0x03
++
++###############################################################################
++# Override the stack default for NFA_EE_MAX_EE_SUPPORTED set in nfc_target.h.
++# Maximum EE supported number
++NFA_MAX_EE_SUPPORTED=0x01
++
++###############################################################################
++#Set the OffHost AID supported power state:
++OFFHOST_AID_ROUTE_PWR_STATE=0x3B
++
++###############################################################################
++
++## Default poll duration (in ms)
++## The default is 500ms if not set
++NFA_DM_DISC_DURATION_POLL=500
++###############################################################################
+diff --git a/vendor/nxp/nfc/hw/pn7220_i2cms/libnfc-nxp-eeprom.conf b/vendor/nxp/nfc/hw/pn7220_i2cms/libnfc-nxp-eeprom.conf
+new file mode 100755
+index 00000000000..b6756ea640b
+--- /dev/null
++++ b/vendor/nxp/nfc/hw/pn7220_i2cms/libnfc-nxp-eeprom.conf
+@@ -0,0 +1,91 @@
++######################## PN7220 libnfc-nxp-eeprom.conf ########################
++
++###############################################################################
++# System clock source selection configuration
++#define CLK_SRC_XTAL       1
++#define CLK_SRC_PLL        2
++NXP_SYS_CLK_SRC_SEL=0x01
++###############################################################################
++
++###############################################################################
++# System clock frequency selection configuration
++# Only 24MHz, 32MHz, 48MHz and XTAL configuration supported, others are RFUs.
++#
++#define CLK_FREQ_8MHZ          0    (RFU)
++#define CLK_FREQ_12MHZ         1    (RFU)
++#define CLK_FREQ_16MHZ         2    (RFU)
++#define CLK_FREQ_24MHZ         3    (Supported)
++#define CLK_FREQ_32MHZ         4    (Supported)
++#define CLK_FREQ_48MHZ         5    (Supported)
++#define CLK_FREQ_22_5MHZ_HFO   7    (RFU)
++#define CLK_FREQ_XTAL          8    (Supported)
++NXP_SYS_CLK_FREQ_SEL=0x08
++###############################################################################
++
++###############################################################################
++# Option to enable or disable stanby mode.
++# Note : NXP_ENABLE_DISABLE_STANBY must be enable if NXP_ENABLE_DISABLE_LPCD is enabled.
++# ENABLE_STANDBY 0x01 (default value)
++# DISABLE_STANDBY 0x00
++NXP_ENABLE_DISABLE_STANBY=0x00
++###############################################################################
++
++###############################################################################
++# Option to enable or disable LPCD. LPCD is substate of standby so standby will
++# be enabled internally based on NXP_ENABLE_DISABLE_STANBY configuration  while enabling LPCD.
++# ENABLE_LPCD 0x01
++# DISABLE_LPCD 0x00 (default value)
++NXP_ENABLE_DISABLE_LPCD=0x00
++###############################################################################
++
++###############################################################################
++#NXP_HCE_SENS_RES : Response to ReqA / ATQA in order byte 0, byte 1
++#NXP_HCE_NFC_ID1  : in order byte 0, byte 1, byte 2; the first NFCID1 byte is
++#                   fixed to 08h and the check byte is calculated automatically
++#NXP_HCE_SEL_RES  : Response to Select : SAK
++#NXP_HCE_RNDM_UID_ENB : Random UID Enable
++#                       0 - Use UID stored in EEPROM
++#                       1 - Randomly generate the UID
++# Note : Below param are default value.
++NXP_HCE_SENS_RES={ 04, 00 }
++NXP_HCE_NFC_ID1={ AA, BB, CC }
++NXP_HCE_SEL_RES=0x20
++NXP_HCE_RNDM_UID_ENB=0x00
++###############################################################################
++
++###############################################################################
++# Enabling the bit shows TDA IC is not connected on board and only single slot
++# is directly interfaced with PN722x IC.
++# 0 : TDA chip present (Default)
++# 1 : TDA chip absent
++NXP_IS_TDA_CHIP_PRESENT=0x00
++###############################################################################
++
++###############################################################################
++# This is independent configuration applicable on all slots irrespective of TDA
++# connected or not. This feature (if enabled) is applicable on slots configured
++# as ISO and NOT on EMVCo slot.
++# 0 : PPS Exchange Disabled (Default)
++# 1 : PPS Exchange Enabled
++NXP_ENABLE_DISBLE_PPS_EXCHANGE=0x00
++###############################################################################
++
++###############################################################################
++#Configuration to set polling delay between 2 phases (between 5,1ms and 10ms)
++#and default value is EC, 13 (5100us)
++NXP_PCD_SETTINGS={20, 02, 07, 01, A0, 64, 03, EC, 13, 06}
++###############################################################################
++
++###############################################################################
++# NXP Proprietary core configuration extensions
++# For more details refer to the NFC Controller User Manual
++# Eg. NXP_CORE_CONF_EXTN={20, 02, 09, 01, A0, 5E, 01, 01} Dummy Data
++#NXP_CORE_CONF_EXTN={00, 00, 00, 00}
++###############################################################################
++
++###############################################################################
++# This config will be use to enable/disable flush SRAM data to Flash memory
++# 0 : SRAM flush data Disabled (Default)
++# 1 : SRAM flush data Enabled
++NXP_FLUSH_SRAM_TO_FLASH_ENABLE=0x00
++###############################################################################
+diff --git a/vendor/nxp/nfc/hw/pn7220_i2cms/libnfc-nxp-rfExt.conf b/vendor/nxp/nfc/hw/pn7220_i2cms/libnfc-nxp-rfExt.conf
+new file mode 100755
+index 00000000000..e3025a66fc6
+--- /dev/null
++++ b/vendor/nxp/nfc/hw/pn7220_i2cms/libnfc-nxp-rfExt.conf
+@@ -0,0 +1,17 @@
++######################## PN7220 libnfc-nxp-rfext.conf ########################
++
++###############################################################################
++# NXP_NUM_OF_RFEXT_CONFIG : Number of the RF configuration needs to be set.
++# MW will read the value of this macro and read the that many config from the
++# config file. eg NXP_NUM_OF_RFEXT_CONFIG is 0x02 MW will read NXP_RFEXT_CONFIG_1
++# and NXP_RFEXT_CONFIG_2.
++
++NXP_NUM_OF_RFEXT_CONFIG=0x02
++###############################################################################
++# RF-EXT Configuration, Fill the NXP_RFEXT_CONFIG_x with valid NCI pkt.
++# eg. NXP_RFEXT_CONFIG_1={20, 03, 03, 01, A2, 00}
++
++NXP_RFEXT_CONFIG_1={}
++NXP_RFEXT_CONFIG_2={}
++###############################################################################
++
+diff --git a/vendor/nxp/nfc/hw/pn7220_i2cms/libnfc-nxp.conf b/vendor/nxp/nfc/hw/pn7220_i2cms/libnfc-nxp.conf
+new file mode 100755
+index 00000000000..91a2874383f
+--- /dev/null
++++ b/vendor/nxp/nfc/hw/pn7220_i2cms/libnfc-nxp.conf
+@@ -0,0 +1,160 @@
++########################### PN7220 libnfc-nxp.conf ############################
++
++###############################################################################
++# Logging Levels. Suggested value for debugging is 0x03.
++#  NXPLOG_GLOBAL_LOGLEVEL - Configuration for Global logging level
++#  NXPLOG_EXTNS_LOGLEVEL - Configuration for extns logging level
++#  NXPLOG_NCIHAL_LOGLEVEL - Configuration for enabling logging of HAL
++#  NXPLOG_NCIX_LOGLEVEL - Configuration for enabling logging of NCI TX packets
++#  NXPLOG_NCIR_LOGLEVEL - Configuration for enabling logging of NCI RX packets
++#  NXPLOG_FWDNLD_LOGLEVEL - Configuration for enabling logging of FW download functionality
++#  NXPLOG_TML_LOGLEVEL - Configuration for enabling logging of TML
++# Logging Levels
++#  NXPLOG_DEFAULT_LOGLEVEL    0x01
++#  NXPLOG_DEBUG_LOGLEVEL      0x03
++#  NXPLOG_WARN_LOGLEVEL       0x02
++#  NXPLOG_ERROR_LOGLEVEL      0x01
++#  NXPLOG_SILENT_LOGLEVEL     0x00
++NXPLOG_EXTNS_LOGLEVEL=0x03
++NXPLOG_NCIHAL_LOGLEVEL=0x03
++NXPLOG_NCIX_LOGLEVEL=0x03
++NXPLOG_NCIR_LOGLEVEL=0x03
++NXPLOG_FWDNLD_LOGLEVEL=0x03
++NXPLOG_TML_LOGLEVEL=0x03
++
++
++###############################################################################
++# Nfc Device Node name
++NXP_NFC_DEV_NODE="/dev/nxpnfc"
++
++###############################################################################
++# Extension for Mifare reader enable
++MIFARE_READER_ENABLE=0x01
++
++###############################################################################
++# Firmware file type
++#.so file   0x01
++#.bin file  0x02
++NXP_FW_TYPE=0x01
++
++###############################################################################
++# Dynamic RSSI feature enable
++# Disable           0x00
++# Enable            0x01
++NXP_AGC_DEBUG_ENABLE=0x00
++
++###############################################################################
++# NXP proprietary settings
++NXP_ACT_PROP_EXTN={2F, 02, 00}
++
++###############################################################################
++# NFC forum profile settings
++NXP_NFC_PROFILE_EXTN={20, 02, 05, 01, A0, 44, 01, 00}
++
++
++###############################################################################
++# To enable i2c fragmentation set i2c fragmentation enable 0x01 to disable set
++# to 0x00
++NXP_I2C_FRAGMENTATION_ENABLED=0x00
++
++###############################################################################
++# Vendor Specific Proprietary Protocol & Discovery Configuration
++# Set to 0xFF if unsupported
++#  byte[0] NCI_PROTOCOL_18092_ACTIVE
++#  byte[1] NCI_PROTOCOL_B_PRIME
++#  byte[2] NCI_PROTOCOL_DUAL
++#  byte[3] NCI_PROTOCOL_15693
++#  byte[4] NCI_PROTOCOL_KOVIO
++#  byte[5] NCI_PROTOCOL_MIFARE
++#  byte[6] NCI_DISCOVERY_TYPE_POLL_KOVIO
++#  byte[7] NCI_DISCOVERY_TYPE_POLL_B_PRIME
++#  byte[8] NCI_DISCOVERY_TYPE_LISTEN_B_PRIME
++NFA_PROPRIETARY_CFG={05, FF, FF, 06, 81, 80, 70, FF, FF}
++
++###############################################################################
++# TVDD configurations settings
++# Allow NFCC to configure External TVDD
++# There are two possible configurations (0x01 or 0x02):
++#    CFG1: Vbat is used to generate the VDD(TX) through TXLDO
++#    CFG2: external 5V is used to generate the VDD(TX) through TXLDO
++NXP_EXT_TVDD_CFG=0x02
++
++# CFG1: 3.3V for both Reader and Card modes
++NXP_EXT_TVDD_CFG_1={20, 02, 0F, 01, A0, 0E, 0B, 31, 01, 01, 31, 00, 00, 00, 01, 00, D0, 0C}
++
++# CFG2: VBAT2 to 5V and 4.7V for both Reader and Card modes
++NXP_EXT_TVDD_CFG_2={20, 02, 0F, 01, A0, 0E, 0B, 11, 01, C2, B2, 00, B2, 1E, 1F, 00, D0, 0C}
++
++###############################################################################
++# Core configuration settings
++#NXP_CORE_CONF={ 20, 02, 07, 02, 21, 01, 01, 18, 01, 02 }
++
++###############################################################################
++# Sent NXP_CORE_CONF & NXP_CORE_CONF_EXTN ON MODIFY 0x00 (Default)
++# Sent NXP_CORE_CONF & NXP_CORE_CONF_EXTN	 ALWAYS 0x01
++NXP_SET_CONFIG_ALWAYS=0x00
++
++###############################################################################
++# RF configuration settings
++# Below settings relates to OM5578 demo kit RF performance optimization
++#NXP_RF_CONF_BLK_1={ 20, 02, A3, 13,
++#    A0, 0D, 06, 04, 35, 90, 01, F4, 01,
++#    A0, 0D, 06, 06, 44, 01, 90, 03, 00,
++#    A0, 0D, 06, 06, 30, B0, 01, 10, 00,
++#    A0, 0D, 06, 06, 42, 02, 00, FF, FF,
++#    A0, 0D, 03, 06, 3F, 04,
++#    A0, 0D, 06, 20, 42, 88, 00, FF, FF,
++#    A0, 0D, 04, 22, 44, 22, 00,
++#    A0, 0D, 06, 22, 2D, 50, 34, 0C, 00,
++#    A0, 0D, 06, 32, 42, F8, 00, FF, FF,
++#    A0, 0D, 06, 34, 2D, 24, 37, 0C, 00,
++#    A0, 0D, 06, 34, 33, 86, 80, 00, 70,
++#    A0, 0D, 04, 34, 44, 22, 00,
++#    A0, 0D, 06, 42, 2D, 15, 45, 0D, 00,
++#    A0, 0D, 04, 46, 44, 22, 00,
++#    A0, 0D, 06, 46, 2D, 05, 59, 0E, 00,
++#    A0, 0D, 06, 44, 42, 88, 00, FF, FF,
++#    A0, 0D, 06, 56, 2D, 05, 9F, 0C, 00,
++#    A0, 0D, 06, 54, 42, 88, 00, FF, FF,
++#    A0, 0D, 06, 0A, 33, 80, 86, 00, 70
++#}
++
++###############################################################################
++# Extended APDU length for ISO_DEP
++ISO_DEP_MAX_TRANSCEIVE=0xFEFF
++
++###############################################################################
++# Choose the presence-check algorithm for type-4 tag.  If not defined, the default value is 1.
++# 0 NFA_RW_PRES_CHK_DEFAULT; Let stack selects an algorithm
++# 1 NFA_RW_PRES_CHK_I_BLOCK; ISO-DEP protocol's empty I-block
++# 2 NFA_RW_PRES_CHK_ISO_DEP_NAK; ISO-DEP protocol's nak presence check command
++PRESENCE_CHECK_ALGORITHM=2
++
++###############################################################################
++# Flashing Options Configurations
++# FLASH_UPPER_VERSION 0x01
++# FLASH_DIFFERENT_VERSION 0x02
++# FLASH_ALWAYS 0x03
++# FLASH_BLOCKED 0x04 (default value)
++NXP_FLASH_CONFIG=0x04
++###############################################################################
++#INFRA_CHIP_VERSION
++#pn7160 , 0x01
++#pn7220, 0x04
++NXP_CHIP_TYPE=0x04
++###############################################################################
++# Enable(0x01) or disable(0x00) non-standard tag reading
++# Disable Non-standard card read         0x00
++# Enable Non-standard card read          0x01
++NXP_SUPPORT_NON_STD_CARD=0x00
++#################################################################################
++# Valid time difference range within for non-standard tag detection from first
++# Activation fail to next discovery
++# Note :- 1. This will take effect only when NXP_SUPPORT_NON_STD_CARD is enabled
++#         2. The number will be multiplied by 100ms by MW.
++# Default:
++# Set to 00 if not supported
++#  byte[0] MIFARE_CLASSIC 100ms
++#  byte[1] ISO_DEP        300ms
++NXP_NON_STD_CARD_TIMEDIFF={01, 03}
++###############################################################################
+diff --git a/vendor/nxp/nfc/hw/pn7220_i2cs/libnfc-nci.conf b/vendor/nxp/nfc/hw/pn7220_i2cs/libnfc-nci.conf
+new file mode 100755
+index 00000000000..e8eda21b834
+--- /dev/null
++++ b/vendor/nxp/nfc/hw/pn7220_i2cs/libnfc-nci.conf
+@@ -0,0 +1,91 @@
++########################### PN7220 libnfc-nci.conf ############################
++
++###############################################################################
++# Application options
++APPL_TRACE_LEVEL=0xFF
++PROTOCOL_TRACE_LEVEL=0xFFFFFFFF
++
++NFC_DEBUG_ENABLED=0x01
++
++###############################################################################
++# File used for NFA storage
++NFA_STORAGE="/data/vendor/nfc"
++
++###############################################################################
++# Forcing HOST to listen for a selected protocol
++# 0x00 : Disable Host Listen
++# 0x01 : Enable Host to Listen (A)  for ISO-DEP tech A
++# 0x02 : Enable Host to Listen (B)  for ISO-DEP tech B
++# 0x04 : Enable Host to Listen (F)  for T3T Tag Type Protocol tech F
++# 0x07 : Enable Host to Listen (ABF)for ISO-DEP tech AB & T3T Tag Type Protocol tech F
++HOST_LISTEN_TECH_MASK=0x01
++
++###############################################################################
++# When screen is turned off, specify the desired power state of the controller.
++# 0: power-off-sleep state; DEFAULT
++# 1: full-power state
++# 2: screen-off card-emulation (CE4/CE3/CE1 modes are used)
++SCREEN_OFF_POWER_STATE=1
++
++###############################################################################
++# NCI Hal Module name
++NCI_HAL_MODULE="nfc_nci.pn54x"
++
++###############################################################################
++# Force tag polling for the following technology(s).
++# The bits are defined as tNFA_TECHNOLOGY_MASK in nfa_api.h.
++# Default is NFA_TECHNOLOGY_MASK_A | NFA_TECHNOLOGY_MASK_B |
++#            NFA_TECHNOLOGY_MASK_F | NFA_TECHNOLOGY_MASK_ISO15693 |
++#            NFA_TECHNOLOGY_MASK_KOVIO | NFA_TECHNOLOGY_MASK_A_ACTIVE |
++#            NFA_TECHNOLOGY_MASK_F_ACTIVE
++#
++# Notable bits:
++# NFA_TECHNOLOGY_MASK_A             0x01    /* NFC Technology A             */
++# NFA_TECHNOLOGY_MASK_B             0x02    /* NFC Technology B             */
++# NFA_TECHNOLOGY_MASK_F             0x04    /* NFC Technology F             */
++# NFA_TECHNOLOGY_MASK_ISO15693	    0x08    /* Proprietary Technology       */
++# NFA_TECHNOLOGY_MASK_KOVIO	        0x20    /* Proprietary Technology       */
++# NFA_TECHNOLOGY_MASK_A_ACTIVE      0x40    /* NFC Technology A active mode */
++# NFA_TECHNOLOGY_MASK_F_ACTIVE      0x80    /* NFC Technology F active mode */
++# This flag when set to zero will disable Reader mode.
++POLLING_TECH_MASK=0x0F
++
++###############################################################################
++# Force P2P to only listen for the following technology(s).
++# The bits are defined as tNFA_TECHNOLOGY_MASK in nfa_api.h.
++# Default is NFA_TECHNOLOGY_MASK_A | NFA_TECHNOLOGY_MASK_F |
++#            NFA_TECHNOLOGY_MASK_A_ACTIVE | NFA_TECHNOLOGY_MASK_F_ACTIVE
++#
++# Notable bits:
++# NFA_TECHNOLOGY_MASK_A	            0x01    /* NFC Technology A             */
++# NFA_TECHNOLOGY_MASK_F	            0x04    /* NFC Technology F             */
++# NFA_TECHNOLOGY_MASK_A_ACTIVE      0x40    /* NFC Technology A active mode */
++# NFA_TECHNOLOGY_MASK_F_ACTIVE      0x80    /* NFC Technology F active mode */
++# This flag when set to zero will disable P2P Listen mode.
++P2P_LISTEN_TECH_MASK=0xC5
++
++PRESERVE_STORAGE=0x01
++
++###############################################################################
++# AID_MATCHING constants
++# AID_MATCHING_EXACT_ONLY 0x00
++# AID_MATCHING_EXACT_OR_PREFIX 0x01
++# AID_MATCHING_PREFIX_ONLY 0x02
++# AID_MATCHING_EXACT_OR_SUBSET_OR_PREFIX 0x03
++AID_MATCHING_MODE=0x03
++
++###############################################################################
++# Override the stack default for NFA_EE_MAX_EE_SUPPORTED set in nfc_target.h.
++# Maximum EE supported number
++NFA_MAX_EE_SUPPORTED=0x01
++
++###############################################################################
++#Set the OffHost AID supported power state:
++OFFHOST_AID_ROUTE_PWR_STATE=0x3B
++
++###############################################################################
++
++## Default poll duration (in ms)
++## The default is 500ms if not set
++NFA_DM_DISC_DURATION_POLL=500
++###############################################################################
+diff --git a/vendor/nxp/nfc/hw/pn7220_i2cs/libnfc-nxp-eeprom.conf b/vendor/nxp/nfc/hw/pn7220_i2cs/libnfc-nxp-eeprom.conf
+new file mode 100755
+index 00000000000..b6756ea640b
+--- /dev/null
++++ b/vendor/nxp/nfc/hw/pn7220_i2cs/libnfc-nxp-eeprom.conf
+@@ -0,0 +1,91 @@
++######################## PN7220 libnfc-nxp-eeprom.conf ########################
++
++###############################################################################
++# System clock source selection configuration
++#define CLK_SRC_XTAL       1
++#define CLK_SRC_PLL        2
++NXP_SYS_CLK_SRC_SEL=0x01
++###############################################################################
++
++###############################################################################
++# System clock frequency selection configuration
++# Only 24MHz, 32MHz, 48MHz and XTAL configuration supported, others are RFUs.
++#
++#define CLK_FREQ_8MHZ          0    (RFU)
++#define CLK_FREQ_12MHZ         1    (RFU)
++#define CLK_FREQ_16MHZ         2    (RFU)
++#define CLK_FREQ_24MHZ         3    (Supported)
++#define CLK_FREQ_32MHZ         4    (Supported)
++#define CLK_FREQ_48MHZ         5    (Supported)
++#define CLK_FREQ_22_5MHZ_HFO   7    (RFU)
++#define CLK_FREQ_XTAL          8    (Supported)
++NXP_SYS_CLK_FREQ_SEL=0x08
++###############################################################################
++
++###############################################################################
++# Option to enable or disable stanby mode.
++# Note : NXP_ENABLE_DISABLE_STANBY must be enable if NXP_ENABLE_DISABLE_LPCD is enabled.
++# ENABLE_STANDBY 0x01 (default value)
++# DISABLE_STANDBY 0x00
++NXP_ENABLE_DISABLE_STANBY=0x00
++###############################################################################
++
++###############################################################################
++# Option to enable or disable LPCD. LPCD is substate of standby so standby will
++# be enabled internally based on NXP_ENABLE_DISABLE_STANBY configuration  while enabling LPCD.
++# ENABLE_LPCD 0x01
++# DISABLE_LPCD 0x00 (default value)
++NXP_ENABLE_DISABLE_LPCD=0x00
++###############################################################################
++
++###############################################################################
++#NXP_HCE_SENS_RES : Response to ReqA / ATQA in order byte 0, byte 1
++#NXP_HCE_NFC_ID1  : in order byte 0, byte 1, byte 2; the first NFCID1 byte is
++#                   fixed to 08h and the check byte is calculated automatically
++#NXP_HCE_SEL_RES  : Response to Select : SAK
++#NXP_HCE_RNDM_UID_ENB : Random UID Enable
++#                       0 - Use UID stored in EEPROM
++#                       1 - Randomly generate the UID
++# Note : Below param are default value.
++NXP_HCE_SENS_RES={ 04, 00 }
++NXP_HCE_NFC_ID1={ AA, BB, CC }
++NXP_HCE_SEL_RES=0x20
++NXP_HCE_RNDM_UID_ENB=0x00
++###############################################################################
++
++###############################################################################
++# Enabling the bit shows TDA IC is not connected on board and only single slot
++# is directly interfaced with PN722x IC.
++# 0 : TDA chip present (Default)
++# 1 : TDA chip absent
++NXP_IS_TDA_CHIP_PRESENT=0x00
++###############################################################################
++
++###############################################################################
++# This is independent configuration applicable on all slots irrespective of TDA
++# connected or not. This feature (if enabled) is applicable on slots configured
++# as ISO and NOT on EMVCo slot.
++# 0 : PPS Exchange Disabled (Default)
++# 1 : PPS Exchange Enabled
++NXP_ENABLE_DISBLE_PPS_EXCHANGE=0x00
++###############################################################################
++
++###############################################################################
++#Configuration to set polling delay between 2 phases (between 5,1ms and 10ms)
++#and default value is EC, 13 (5100us)
++NXP_PCD_SETTINGS={20, 02, 07, 01, A0, 64, 03, EC, 13, 06}
++###############################################################################
++
++###############################################################################
++# NXP Proprietary core configuration extensions
++# For more details refer to the NFC Controller User Manual
++# Eg. NXP_CORE_CONF_EXTN={20, 02, 09, 01, A0, 5E, 01, 01} Dummy Data
++#NXP_CORE_CONF_EXTN={00, 00, 00, 00}
++###############################################################################
++
++###############################################################################
++# This config will be use to enable/disable flush SRAM data to Flash memory
++# 0 : SRAM flush data Disabled (Default)
++# 1 : SRAM flush data Enabled
++NXP_FLUSH_SRAM_TO_FLASH_ENABLE=0x00
++###############################################################################
+diff --git a/vendor/nxp/nfc/hw/pn7220_i2cs/libnfc-nxp-rfExt.conf b/vendor/nxp/nfc/hw/pn7220_i2cs/libnfc-nxp-rfExt.conf
+new file mode 100755
+index 00000000000..e3025a66fc6
+--- /dev/null
++++ b/vendor/nxp/nfc/hw/pn7220_i2cs/libnfc-nxp-rfExt.conf
+@@ -0,0 +1,17 @@
++######################## PN7220 libnfc-nxp-rfext.conf ########################
++
++###############################################################################
++# NXP_NUM_OF_RFEXT_CONFIG : Number of the RF configuration needs to be set.
++# MW will read the value of this macro and read the that many config from the
++# config file. eg NXP_NUM_OF_RFEXT_CONFIG is 0x02 MW will read NXP_RFEXT_CONFIG_1
++# and NXP_RFEXT_CONFIG_2.
++
++NXP_NUM_OF_RFEXT_CONFIG=0x02
++###############################################################################
++# RF-EXT Configuration, Fill the NXP_RFEXT_CONFIG_x with valid NCI pkt.
++# eg. NXP_RFEXT_CONFIG_1={20, 03, 03, 01, A2, 00}
++
++NXP_RFEXT_CONFIG_1={}
++NXP_RFEXT_CONFIG_2={}
++###############################################################################
++
+diff --git a/vendor/nxp/nfc/hw/pn7220_i2cs/libnfc-nxp.conf b/vendor/nxp/nfc/hw/pn7220_i2cs/libnfc-nxp.conf
+new file mode 100755
+index 00000000000..ca9721032d4
+--- /dev/null
++++ b/vendor/nxp/nfc/hw/pn7220_i2cs/libnfc-nxp.conf
+@@ -0,0 +1,160 @@
++########################### PN7220 libnfc-nxp.conf ############################
++
++###############################################################################
++# Logging Levels. Suggested value for debugging is 0x03.
++#  NXPLOG_GLOBAL_LOGLEVEL - Configuration for Global logging level
++#  NXPLOG_EXTNS_LOGLEVEL - Configuration for extns logging level
++#  NXPLOG_NCIHAL_LOGLEVEL - Configuration for enabling logging of HAL
++#  NXPLOG_NCIX_LOGLEVEL - Configuration for enabling logging of NCI TX packets
++#  NXPLOG_NCIR_LOGLEVEL - Configuration for enabling logging of NCI RX packets
++#  NXPLOG_FWDNLD_LOGLEVEL - Configuration for enabling logging of FW download functionality
++#  NXPLOG_TML_LOGLEVEL - Configuration for enabling logging of TML
++# Logging Levels
++#  NXPLOG_DEFAULT_LOGLEVEL    0x01
++#  NXPLOG_DEBUG_LOGLEVEL      0x03
++#  NXPLOG_WARN_LOGLEVEL       0x02
++#  NXPLOG_ERROR_LOGLEVEL      0x01
++#  NXPLOG_SILENT_LOGLEVEL     0x00
++NXPLOG_EXTNS_LOGLEVEL=0x03
++NXPLOG_NCIHAL_LOGLEVEL=0x03
++NXPLOG_NCIX_LOGLEVEL=0x03
++NXPLOG_NCIR_LOGLEVEL=0x03
++NXPLOG_FWDNLD_LOGLEVEL=0x03
++NXPLOG_TML_LOGLEVEL=0x03
++
++
++###############################################################################
++# Nfc Device Node name
++NXP_NFC_DEV_NODE="/dev/nxpnfc"
++
++###############################################################################
++# Extension for Mifare reader enable
++MIFARE_READER_ENABLE=0x01
++
++###############################################################################
++# Firmware file type
++#.so file   0x01
++#.bin file  0x02
++NXP_FW_TYPE=0x01
++
++###############################################################################
++# Dynamic RSSI feature enable
++# Disable           0x00
++# Enable            0x01
++NXP_AGC_DEBUG_ENABLE=0x00
++
++###############################################################################
++# NXP proprietary settings
++NXP_ACT_PROP_EXTN={2F, 02, 00}
++
++###############################################################################
++# NFC forum profile settings
++NXP_NFC_PROFILE_EXTN={20, 02, 05, 01, A0, 44, 01, 00}
++
++
++###############################################################################
++# To enable i2c fragmentation set i2c fragmentation enable 0x01 to disable set
++# to 0x00
++NXP_I2C_FRAGMENTATION_ENABLED=0x00
++
++###############################################################################
++# Vendor Specific Proprietary Protocol & Discovery Configuration
++# Set to 0xFF if unsupported
++#  byte[0] NCI_PROTOCOL_18092_ACTIVE
++#  byte[1] NCI_PROTOCOL_B_PRIME
++#  byte[2] NCI_PROTOCOL_DUAL
++#  byte[3] NCI_PROTOCOL_15693
++#  byte[4] NCI_PROTOCOL_KOVIO
++#  byte[5] NCI_PROTOCOL_MIFARE
++#  byte[6] NCI_DISCOVERY_TYPE_POLL_KOVIO
++#  byte[7] NCI_DISCOVERY_TYPE_POLL_B_PRIME
++#  byte[8] NCI_DISCOVERY_TYPE_LISTEN_B_PRIME
++NFA_PROPRIETARY_CFG={05, FF, FF, 06, 81, 80, 70, FF, FF}
++
++###############################################################################
++# TVDD configurations settings
++# Allow NFCC to configure External TVDD
++# There are two possible configurations (0x01 or 0x02):
++#    CFG1: Vbat is used to generate the VDD(TX) through TXLDO
++#    CFG2: external 5V is used to generate the VDD(TX) through TXLDO
++NXP_EXT_TVDD_CFG=0x01
++
++# CFG1: 3.3V for both Reader and Card modes
++NXP_EXT_TVDD_CFG_1={20, 02, 0F, 01, A0, 0E, 0B, 31, 01, 01, 31, 00, 00, 00, 01, 00, D0, 0C}
++
++# CFG2: VBAT2 to 5V and 4.7V for both Reader and Card modes
++NXP_EXT_TVDD_CFG_2={20, 02, 0F, 01, A0, 0E, 0B, 11, 01, C2, B2, 00, B2, 1E, 1F, 00, D0, 0C}
++
++###############################################################################
++# Core configuration settings
++#NXP_CORE_CONF={ 20, 02, 07, 02, 21, 01, 01, 18, 01, 02 }
++
++###############################################################################
++# Sent NXP_CORE_CONF & NXP_CORE_CONF_EXTN ON MODIFY 0x00 (Default)
++# Sent NXP_CORE_CONF & NXP_CORE_CONF_EXTN	 ALWAYS 0x01
++NXP_SET_CONFIG_ALWAYS=0x00
++
++###############################################################################
++# RF configuration settings
++# Below settings relates to OM5578 demo kit RF performance optimization
++#NXP_RF_CONF_BLK_1={ 20, 02, A3, 13,
++#    A0, 0D, 06, 04, 35, 90, 01, F4, 01,
++#    A0, 0D, 06, 06, 44, 01, 90, 03, 00,
++#    A0, 0D, 06, 06, 30, B0, 01, 10, 00,
++#    A0, 0D, 06, 06, 42, 02, 00, FF, FF,
++#    A0, 0D, 03, 06, 3F, 04,
++#    A0, 0D, 06, 20, 42, 88, 00, FF, FF,
++#    A0, 0D, 04, 22, 44, 22, 00,
++#    A0, 0D, 06, 22, 2D, 50, 34, 0C, 00,
++#    A0, 0D, 06, 32, 42, F8, 00, FF, FF,
++#    A0, 0D, 06, 34, 2D, 24, 37, 0C, 00,
++#    A0, 0D, 06, 34, 33, 86, 80, 00, 70,
++#    A0, 0D, 04, 34, 44, 22, 00,
++#    A0, 0D, 06, 42, 2D, 15, 45, 0D, 00,
++#    A0, 0D, 04, 46, 44, 22, 00,
++#    A0, 0D, 06, 46, 2D, 05, 59, 0E, 00,
++#    A0, 0D, 06, 44, 42, 88, 00, FF, FF,
++#    A0, 0D, 06, 56, 2D, 05, 9F, 0C, 00,
++#    A0, 0D, 06, 54, 42, 88, 00, FF, FF,
++#    A0, 0D, 06, 0A, 33, 80, 86, 00, 70
++#}
++
++###############################################################################
++# Extended APDU length for ISO_DEP
++ISO_DEP_MAX_TRANSCEIVE=0xFEFF
++
++###############################################################################
++# Choose the presence-check algorithm for type-4 tag.  If not defined, the default value is 1.
++# 0 NFA_RW_PRES_CHK_DEFAULT; Let stack selects an algorithm
++# 1 NFA_RW_PRES_CHK_I_BLOCK; ISO-DEP protocol's empty I-block
++# 2 NFA_RW_PRES_CHK_ISO_DEP_NAK; ISO-DEP protocol's nak presence check command
++PRESENCE_CHECK_ALGORITHM=2
++
++###############################################################################
++# Flashing Options Configurations
++# FLASH_UPPER_VERSION 0x01
++# FLASH_DIFFERENT_VERSION 0x02
++# FLASH_ALWAYS 0x03
++# FLASH_BLOCKED 0x04 (default value)
++NXP_FLASH_CONFIG=0x04
++###############################################################################
++#INFRA_CHIP_VERSION
++#pn7160 , 0x01
++#pn7220, 0x04
++NXP_CHIP_TYPE=0x04
++###############################################################################
++# Enable(0x01) or disable(0x00) non-standard tag reading
++# Disable Non-standard card read         0x00
++# Enable Non-standard card read          0x01
++NXP_SUPPORT_NON_STD_CARD=0x00
++#################################################################################
++# Valid time difference range within for non-standard tag detection from first
++# Activation fail to next discovery
++# Note :- 1. This will take effect only when NXP_SUPPORT_NON_STD_CARD is enabled
++#         2. The number will be multiplied by 100ms by MW.
++# Default:
++# Set to 00 if not supported
++#  byte[0] MIFARE_CLASSIC 100ms
++#  byte[1] ISO_DEP        300ms
++NXP_NON_STD_CARD_TIMEDIFF={01, 03}
++###############################################################################
+diff --git a/vendor/nxp/nfc/sepolicy/file.te b/vendor/nxp/nfc/sepolicy/file.te
+new file mode 100755
+index 00000000000..a2206a70bbc
+--- /dev/null
++++ b/vendor/nxp/nfc/sepolicy/file.te
+@@ -0,0 +1,2 @@
++type nfc_vendor_data_file, file_type, data_file_type;
++
+diff --git a/vendor/nxp/nfc/sepolicy/file_contexts b/vendor/nxp/nfc/sepolicy/file_contexts
+new file mode 100755
+index 00000000000..cf9ec6dafb0
+--- /dev/null
++++ b/vendor/nxp/nfc/sepolicy/file_contexts
+@@ -0,0 +1,7 @@
++# NFC labeling
++/dev/nxpnfc             u:object_r:nfc_device:s0
++#/data/nfc(/.*)?        u:object_r:nfc_data_file:s0
++/data/vendor/nfc(/.*)? u:object_r:nfc_vendor_data_file:s0
++/(vendor|system/vendor)/bin/hw/android\.hardware\.nfc_pn72xx@1\.1-service            u:object_r:hal_nfc_default_exec:s0
++/(vendor|system/vendor)/bin/hw/android\.hardware\.nfc_pn72xx@1\.2-service            u:object_r:hal_nfc_default_exec:s0
++/(vendor|system/vendor)/bin/hw/android\.hardware\.nfc-service\.nxp            u:object_r:hal_nfc_default_exec:s0
+diff --git a/vendor/nxp/nfc/sepolicy/hwservice.te b/vendor/nxp/nfc/sepolicy/hwservice.te
+new file mode 100755
+index 00000000000..f4fc1fe0475
+--- /dev/null
++++ b/vendor/nxp/nfc/sepolicy/hwservice.te
+@@ -0,0 +1,2 @@
++type hal_nxpnfc_hwservice, hwservice_manager_type;
++
+diff --git a/vendor/nxp/nfc/sepolicy/hwservice_contexts b/vendor/nxp/nfc/sepolicy/hwservice_contexts
+new file mode 100755
+index 00000000000..ca7be95703b
+--- /dev/null
++++ b/vendor/nxp/nfc/sepolicy/hwservice_contexts
+@@ -0,0 +1,2 @@
++vendor.nxp.nxpnfc::INxpNfc                                  u:object_r:hal_nxpnfc_hwservice:s0
++vendor.nxp.nxpnfc::INfc                                  u:object_r:hal_nfc_hwservice:s0
+diff --git a/vendor/nxp/nfc/sepolicy/nfc/hal_nfc_default.te b/vendor/nxp/nfc/sepolicy/nfc/hal_nfc_default.te
+new file mode 100755
+index 00000000000..bf603fa2652
+--- /dev/null
++++ b/vendor/nxp/nfc/sepolicy/nfc/hal_nfc_default.te
+@@ -0,0 +1,14 @@
++#============= hal_nfc_default ==============
++allow hal_nfc_default hal_nxpnfc_hwservice:hwservice_manager { add find };
++allow hal_nfc_default hal_nxpnfc_service:service_manager add;
++
++set_prop(hal_nfc, vendor_nfc_prop)
++
++allow hal_nfc_default nfc_device:chr_file { read write };
++allow hal_nfc_default nfc_data_file:file getattr;
++
++allow hal_nfc_default vendor_nfc_prop:file { read open map getattr };
++allow hal_nfc_default vendor_nfc_prop:property_service set;
++
++allow hal_nfc_default nfc_vendor_data_file:dir { getattr add_name read write search remove_name };
++allow hal_nfc_default nfc_vendor_data_file:file { getattr open create read write unlink setattr append };
+diff --git a/vendor/nxp/nfc/sepolicy/nfc/nfc.te b/vendor/nxp/nfc/sepolicy/nfc/nfc.te
+new file mode 100755
+index 00000000000..d777c891c6f
+--- /dev/null
++++ b/vendor/nxp/nfc/sepolicy/nfc/nfc.te
+@@ -0,0 +1,10 @@
++# allow NFC process to call into the NFC HAL
++#allow nfc nfc_data_file:dir create_dir_perms;
++allow nfc hal_nxpnfc_hwservice:hwservice_manager find;
++allow nfc hal_emvco_service:service_manager find;
++allow nfc hal_nxpnfc_service:service_manager find;
++allow nfc nfc_service:service_manager find;
++allow nfc hal_emvco_default:binder { call transfer };
++allow nfc hal_nfc_default:binder call;
++allow nfc nfc_vendor_data_file:dir { create_dir_perms add_name search read write create remove_name };
++allow nfc nfc_vendor_data_file:file create_file_perms;
+diff --git a/vendor/nxp/nfc/sepolicy/platform_app.te b/vendor/nxp/nfc/sepolicy/platform_app.te
+new file mode 100755
+index 00000000000..01c54c5ea7c
+--- /dev/null
++++ b/vendor/nxp/nfc/sepolicy/platform_app.te
+@@ -0,0 +1,2 @@
++#============= platform_app ==============
++allow platform_app nfc_service:service_manager find;
+diff --git a/vendor/nxp/nfc/sepolicy/property.te b/vendor/nxp/nfc/sepolicy/property.te
+new file mode 100755
+index 00000000000..ef757748c47
+--- /dev/null
++++ b/vendor/nxp/nfc/sepolicy/property.te
+@@ -0,0 +1 @@
++vendor_internal_prop(vendor_nfc_prop)
+diff --git a/vendor/nxp/nfc/sepolicy/property_contexts b/vendor/nxp/nfc/sepolicy/property_contexts
+new file mode 100755
+index 00000000000..e85f66528e0
+--- /dev/null
++++ b/vendor/nxp/nfc/sepolicy/property_contexts
+@@ -0,0 +1,3 @@
++# NFC properties
++persist.vendor.nfc.            u:object_r:vendor_nfc_prop:s0
++persist.vendor.nxp.i2cms.enabled u:object_r:vendor_nfc_prop:s0
+diff --git a/vendor/nxp/nfc/sepolicy/service.te b/vendor/nxp/nfc/sepolicy/service.te
+new file mode 100755
+index 00000000000..14915ced75f
+--- /dev/null
++++ b/vendor/nxp/nfc/sepolicy/service.te
+@@ -0,0 +1,5 @@
++###
++### HAL Services
++###
++type hal_nxpnfc_service, vendor_service, service_manager_type;
++
+diff --git a/vendor/nxp/nfc/sepolicy/service_contexts b/vendor/nxp/nfc/sepolicy/service_contexts
+new file mode 100755
+index 00000000000..747c6aea3f1
+--- /dev/null
++++ b/vendor/nxp/nfc/sepolicy/service_contexts
+@@ -0,0 +1,2 @@
++vendor.nxp.nxpnfc.INxpNfc/default                             u:object_r:hal_nxpnfc_service:s0
++vendor.nxp.nxpnfc.INfc/default                             u:object_r:hal_nfc_service:s0
+diff --git a/vendor/nxp/nfc/sepolicy/vendor_init.te b/vendor/nxp/nfc/sepolicy/vendor_init.te
+new file mode 100755
+index 00000000000..ee86460f929
+--- /dev/null
++++ b/vendor/nxp/nfc/sepolicy/vendor_init.te
+@@ -0,0 +1,5 @@
++set_prop(vendor_init, vendor_nfc_prop)
++
++#============= vendor_init ==============
++allow vendor_init vendor_nfc_prop:property_service set;
++
+diff --git a/vendor/qcom/proprietary/nfc-devicetree/nxp/bengal-nfc-idp-mc541.dts b/vendor/qcom/proprietary/nfc-devicetree/nxp/bengal-nfc-idp-mt5611.dts
+similarity index 74%
+rename from vendor/qcom/proprietary/nfc-devicetree/nxp/bengal-nfc-idp-mc541.dts
+rename to vendor/qcom/proprietary/nfc-devicetree/nxp/bengal-nfc-idp-mt5611.dts
+index 83f192625ad..59cb81703c5 100755
+--- a/vendor/qcom/proprietary/nfc-devicetree/nxp/bengal-nfc-idp-mc541.dts
++++ b/vendor/qcom/proprietary/nfc-devicetree/nxp/bengal-nfc-idp-mt5611.dts
+@@ -1,10 +1,10 @@
+ /dts-v1/;
+ /plugin/;
+ 
+-#include "bengal-nfc-mc541.dtsi"
++#include "bengal-nfc-mt5611.dtsi"
+ / {
+ 	model = "Qualcomm Technologies, Inc. BENGAL IDP";
+ 	compatible = "qcom,bengal-idp", "qcom,bengal";
+ 	qcom,msm-id = <417 0x10000>, <444 0x10000>;
+-	qcom,board-id = <50 0>;
++	qcom,board-id = <49 0>;
+ };
+diff --git a/vendor/qcom/proprietary/nfc-devicetree/nxp/bengal-nfc-mc541.dtsi b/vendor/qcom/proprietary/nfc-devicetree/nxp/bengal-nfc-mt5611.dtsi
+similarity index 79%
+rename from vendor/qcom/proprietary/nfc-devicetree/nxp/bengal-nfc-mc541.dtsi
+rename to vendor/qcom/proprietary/nfc-devicetree/nxp/bengal-nfc-mt5611.dtsi
+index 79719abe2a9..93aa40fa622 100755
+--- a/vendor/qcom/proprietary/nfc-devicetree/nxp/bengal-nfc-mc541.dtsi
++++ b/vendor/qcom/proprietary/nfc-devicetree/nxp/bengal-nfc-mt5611.dtsi
+@@ -1,13 +1,15 @@
+ #include "bengal-nfc-common.dtsi"
+-#include "bengal-nfc-pinctrl-mc541.dtsi"
++#include "bengal-nfc-pinctrl-mt5611.dtsi"
+ #include <dt-bindings/clock/qcom,rpmcc.h>
+ 
+ &nxp_nfc{
+                compatible = "qcom,sn-nci";
+                reg = <0x28>;
+-               qcom,sn-irq = <&tlmm 70 0x00>;
+-               qcom,sn-ven = <&tlmm 69 0x00>;
++               /delete-property/ qcom,sn-irq;
++               /delete-property/ qcom,sn-ven;
+ 			   /delete-property/ qcom,sn-firm;
++			   nxp,nxpnfc-irq = <&tlmm 70 0x00>;
++			   nxp,nxpnfc-ven = <&tlmm 69 0x00>;
+                qcom,sn-clkreq = <&tlmm 86 0x00>;
+                qcom,sn-vdd-1p8-supply = <&L9A>;
+                qcom,sn-vdd-1p8-voltage = <1800000 1800000>;
+diff --git a/vendor/qcom/proprietary/nfc-devicetree/nxp/bengal-nfc-pinctrl-mc541.dtsi b/vendor/qcom/proprietary/nfc-devicetree/nxp/bengal-nfc-pinctrl-mt5611.dtsi
+similarity index 100%
+rename from vendor/qcom/proprietary/nfc-devicetree/nxp/bengal-nfc-pinctrl-mc541.dtsi
+rename to vendor/qcom/proprietary/nfc-devicetree/nxp/bengal-nfc-pinctrl-mt5611.dtsi
+-- 
+2.34.1
+

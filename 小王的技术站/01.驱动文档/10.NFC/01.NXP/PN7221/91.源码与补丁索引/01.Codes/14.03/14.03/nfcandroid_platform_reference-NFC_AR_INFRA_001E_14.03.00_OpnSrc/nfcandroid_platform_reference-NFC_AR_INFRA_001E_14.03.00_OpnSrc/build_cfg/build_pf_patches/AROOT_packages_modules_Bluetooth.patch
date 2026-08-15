@@ -1,0 +1,37 @@
+From 54abb4a5bf267e36f400493a26fb7871f0372c64 Mon Sep 17 00:00:00 2001
+From: Tomasz Wasilczyk <twasilczyk@google.com>
+Date: Mon, 31 Jul 2023 11:39:10 -0700
+Subject: [PATCH] Link libbase to allow importing GetThreadId
+
+Bug: 289414897
+Test: m libstatslog_bt
+Change-Id: I5c5e99a845f9cd813c9db215db5a81e8f6b4a76c
+---
+ system/btif/Android.bp | 4 +---
+ 1 file changed, 1 insertion(+), 3 deletions(-)
+
+diff --git a/system/btif/Android.bp b/system/btif/Android.bp
+index 81fad0bbca..c2b9275c28 100644
+--- a/system/btif/Android.bp
++++ b/system/btif/Android.bp
+@@ -39,9 +39,6 @@ cc_library {
+     generated_sources: ["statslog_bt.cpp"],
+     generated_headers: ["statslog_bt.h"],
+     export_generated_headers: ["statslog_bt.h"],
+-    shared_libs: [
+-        "libcutils",
+-    ],
+     apex_available: [
+         "com.android.btservices",
+     ],
+@@ -57,6 +54,7 @@ cc_library {
+         },
+         host: {
+             static_libs: [
++                "libbase",
+                 "libstatssocket",
+             ],
+             export_static_lib_headers: [
+-- 
+2.41.0
+

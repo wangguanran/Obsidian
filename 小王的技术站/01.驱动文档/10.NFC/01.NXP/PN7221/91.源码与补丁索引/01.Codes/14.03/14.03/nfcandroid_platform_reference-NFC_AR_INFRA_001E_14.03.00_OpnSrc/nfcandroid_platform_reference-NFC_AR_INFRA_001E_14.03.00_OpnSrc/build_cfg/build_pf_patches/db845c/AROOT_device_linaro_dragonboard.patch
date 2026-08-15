@@ -1,0 +1,110 @@
+diff --git a/db845c.mk b/db845c.mk
+index e949af1..d6e7bf7 100644
+--- a/db845c.mk
++++ b/db845c.mk
+@@ -7,3 +7,6 @@ TARGET_USES_BOOT_HDR_V3 ?= true
+ PRODUCT_NAME := db845c
+ PRODUCT_DEVICE := db845c
+ PRODUCT_BRAND := Android
++
++$(call inherit-product, vendor/nxp/nfc/device-nfc.mk)
++$(call inherit-product, vendor/nxp/emvco/device-emvco.mk)
+diff --git a/db845c/BoardConfig.mk b/db845c/BoardConfig.mk
+index 644f9a8..71b6f81 100644
+--- a/db845c/BoardConfig.mk
++++ b/db845c/BoardConfig.mk
+@@ -1,4 +1,5 @@
+ include device/linaro/dragonboard/BoardConfigCommon.mk
++include vendor/nxp/nfc/BoardConfigNfc.mk
+ 
+ # Primary Arch
+ TARGET_ARCH := arm64
+@@ -34,6 +35,7 @@ BOARD_KERNEL_PAGESIZE := 4096
+ BOARD_KERNEL_CMDLINE += earlycon firmware_class.path=/vendor/firmware/
+ BOARD_KERNEL_CMDLINE += init=/init printk.devkmsg=on
+ BOARD_KERNEL_CMDLINE += deferred_probe_timeout=30
++BOARD_KERNEL_CMDLINE += video=HDMI-A-1:1920x1080@60e drm.edid_firmware=edid/1920x1080.bin
+ BOARD_KERNEL_CMDLINE += pcie_pme=nomsi #For WiFi to work on rb5
+ BOARD_KERNEL_CMDLINE += qcom_geni_serial.con_enabled=1
+ BOARD_KERNEL_CMDLINE += console=ttyMSM0,115200n8
+diff --git a/db845c/device.mk b/db845c/device.mk
+index ef754c1..cd3e1c2 100644
+--- a/db845c/device.mk
++++ b/db845c/device.mk
+@@ -54,5 +54,6 @@ $(call inherit-product-if-exists, vendor/linaro/rb5/$(EXPECTED_LINARO_VENDOR_VER
+ 
+ TARGET_HARDWARE := db845c
+ TARGET_KERNEL_USE ?= 5.15
++TARGET_KERNEL_USE ?= 5.10
+ 
+ include device/linaro/dragonboard/device-common.mk
+diff --git a/device-common.mk b/device-common.mk
+index d2d2036..5a61ef2 100644
+--- a/device-common.mk
++++ b/device-common.mk
+@@ -23,6 +23,10 @@ ifeq ($(TARGET_USES_GKI), true)
+   ifneq ($(TARGET_MODS),)
+     BOARD_DO_NOT_STRIP_VENDOR_RAMDISK_MODULES := true
+     BOARD_VENDOR_RAMDISK_KERNEL_MODULES := $(TARGET_MODS)
++    DB845C_ONLY_VENDOR := $(wildcard $(TARGET_KERNEL_DIR)/nxpnfc_i2c.ko)
++    BOARD_VENDOR_KERNEL_MODULES += $(DB845C_ONLY_VENDOR)
++    BOARD_VENDOR_RAMDISK_KERNEL_MODULES := $(filter-out $(DB845C_ONLY_VENDOR),$(TARGET_MODS))
++
+   endif
+ endif
+ 
+diff --git a/full.mk b/full.mk
+index e2fd3ee..445dbc6 100644
+--- a/full.mk
++++ b/full.mk
+@@ -132,8 +132,10 @@ PRODUCT_PACKAGES += \
+ #
+ # PowerStats HAL
+ #
++ifneq ($(POWER_TRACKER_FEATURE), true)
+ PRODUCT_PACKAGES += \
+     android.hardware.power.stats-service.example
++endif
+ 
+ 
+ # Audio
+diff --git a/overlay/frameworks/base/core/res/res/values/config.xml b/overlay/frameworks/base/core/res/res/values/config.xml
+index 1cbe785..9e65886 100644
+--- a/overlay/frameworks/base/core/res/res/values/config.xml
++++ b/overlay/frameworks/base/core/res/res/values/config.xml
+@@ -77,5 +77,10 @@
+         <item>1</item>
+         <item>7</item>
+     </integer-array>
++    <!--  Maximum number of supported users -->
++    <integer name="config_multiuserMaximumUsers">2</integer>
++
++    <!-- Whether UI for multi user should be shown -->
++    <bool name="config_enableMultiUserUI">true</bool>
+ 
+ </resources>
+diff --git a/qcom/init.qcom.rc b/qcom/init.qcom.rc
+index 38d8d00..377e41f 100644
+--- a/qcom/init.qcom.rc
++++ b/qcom/init.qcom.rc
+@@ -49,6 +49,7 @@ on post-fs-data
+     mkdir /data/vendor/readonly/firmware
+     mkdir /data/vendor/readonly/firmware/image
+     write /sys/class/firmware/timeout 1
++    write /sys/power/wake_lock nosleep
+     start tqftpserv
+     start rmtfs
+ 
+diff --git a/ueventd.common.rc b/ueventd.common.rc
+index 8ae7d94..387d04f 100644
+--- a/ueventd.common.rc
++++ b/ueventd.common.rc
+@@ -13,3 +13,8 @@ subsystem usbmisc
+ # usb webcam?
+ /dev/video0 0660 system camera
+ /dev/video1 0660 system camera
++
++/dev/ttyACM0     0666 nfc nfc
++/dev/ttyACM1     0666 nfc nfc
++/dev/nxpnfc     0666 nfc nfc
++

@@ -1,0 +1,1690 @@
+/////////////////////////////////////////////////////////
+//
+//
+/////////////////////////////////////////////////////////
+//2020-10-19
+// 1. update CVBS output from 1920x480i/576i to 720x480i/576i.
+//
+//2020-11-02
+// 1. update reg0x45=0x01 to make PTZ output stable.
+//
+//2021-01-27
+// 1. update reg0x06=0x32 for PAL.
+//
+//2021-02-23
+// 1. update V delay from 0x19->0x1b for AHD 720p25/30.
+// 2. update V delay from 0x29->0x2a for AHD 10800p25/30.
+//
+//2021-02-25
+// 1. add 960p25/30@MIPI_4CH4LANE_445M.
+//
+//2021-03-02
+// 1. add QHDp25/30 setting
+//
+//2021-03-11
+// 1. add HD30HDR@MIPI_4CH4LANE_396M
+//
+//2021-03-16
+// 1. add TVI HD60/50
+//
+//2021-03-30
+// 1. correct HD30HDR reg0x35/36 setting
+//
+//2021-04-30
+// 1. add UTC test setting to check V blanking 
+//
+//2021-05-17
+// 1. add reg0x07/0x0b in CVBS  
+//
+//2021-08-12
+// 1. update reg0x26 in 960P  
+//
+//2021-10-13
+// 1. add A960p3@MIPI_4CH4LANE_378M  
+// 2. add F960p3@MIPI_4CH4LANE_432M  
+//
+enum{
+    CH_1=0,   //
+    CH_2=1,   //
+    CH_3=2,   //
+    CH_4=3,   //   
+    CH_ALL=4,   //     
+    MIPI_PAGE=8,
+};
+enum{
+    STD_TVI, //TVI
+    STD_HDA, //AHD
+};
+enum{
+    PAL,
+    NTSC,
+    HD25,    //720p25
+    HD30,    //720p30
+    FHD25,   //1080p25
+    FHD30,   //1080p30
+    FHD50,   //1080p50
+    FHD60,   //1080p60  
+    QHD25,   //2560x1440p25 
+    QHD30,   //2560x1440p30      
+    UVGA25,  //1280x960p25, must use with MIPI_4CH4LANE_445M
+    UVGA30,  //1280x960p30, must use with MIPI_4CH4LANE_445M 
+    HD30HDR, //special 720p30 with ISX019, must use with MIPI_4CH4LANE_396M   
+    HD50,    //720p50
+    HD60,    //720p60  
+    A_UVGA30,  //HDA 1280x960p30, must use with MIPI_4CH4LANE_378M 
+    F_UVGA30,  //FH 1280x960p30, must use with MIPI_4CH4LANE_432M
+    UVGA30_945  //TVI 1280x960p30, must use with MIPI_4CH4LANE_378M  
+    FHD275,   //1080p27.5    
+    FMT5M20,
+    FMT5M12,
+    FMT8M15,
+    FMT8M12,
+    FMT8M7,
+    HD30864, //total 1600x900 86.4M
+};
+enum{
+    MIPI_4CH4LANE_297M, //up to 4x720p25/30
+    MIPI_4CH4LANE_594M, //up to 4x1080p25/30
+    MIPI_4CH2LANE_594M, //up to 4x720pp25/30  
+    MIPI_4CH4LANE_445M, //only for 4x960p25/30 
+    MIPI_2CH4LANE_297M, //up to 2x1080p25/30  
+    MIPI_2CH4LANE_594M, //up to 2xQHDp25/30 or 2x1080p50/60   
+    MIPI_4CH4LANE_396M, //only for 4xHD30HDR    
+    MIPI_4CH4LANE_378M, //only for 4xA_UVGA30    
+    MIPI_4CH4LANE_432M, //only for 4xF_UVGA30          
+    MIPI_1CH2LANE_594M,    
+    MIPI_3CH4LANE_594M,   
+    MIPI_4CH4LANE_345M, //only for HD30864          
+};
+void TP2855_common_init(void)
+{
+				
+		TP2855_decoder_init(CH_ALL, FHD60, STD_TVI);
+		TP2855_mipi_out(MIPI_2CH4LANE_594M);
+/*		//混接的例程		
+		TP2855_decoder_init(CH_1, HD25, STD_TVI);
+		TP2855_decoder_init(CH_2, HD30, STD_TVI);	
+		TP2855_decoder_init(CH_3, PAL, STD_TVI);			
+		TP2855_decoder_init(CH_4, NTSC, STD_TVI);	
+					
+		TP2855_mipi_out(MIPI_2CH4LANE_297M);		
+*/		
+		
+		
+}
+/*
+void TP2855_UTC_test(unsigned char ch,unsigned char fmt,unsigned char std)
+{
+	tp28xx_write_reg(0x40, ch);
+	tp28xx_write_reg(0x6f, 0x83);	
+	tp28xx_write_reg(0x70, 0x40);
+	tp28xx_write_reg(0x71, 0x00);	
+	tp28xx_write_reg(0x72, 0x00);	
+	tp28xx_write_reg(0x63, 0x26);	
+	tp28xx_write_reg(0xc0, 0x00);
+	tp28xx_write_reg(0xc2, 0x06);
+	tp28xx_write_reg(0xc8, 0x07);
+	tp28xx_write_reg(0x5a, 0x80);			
+	tp28xx_write_reg(0xbe, 0x80);				
+}
+*/
+/////////////////////////////////
+//ch: video channel
+//fmt: PAL/NTSC/HD25/HD30...
+//std: STD_TVI/STD_HDA
+////////////////////////////////
+void TP2855_decoder_init(unsigned char ch,unsigned char fmt,unsigned char std)
+{
+	unsigned char tmp;
+	const unsigned char SYS_MODE[5]={0x01,0x02,0x04,0x08,0x0f};
+	tp28xx_write_reg(0x40, ch);
+	tp28xx_write_reg(0x45, 0x01);	
+	tp28xx_write_reg(0x06, 0x12); //default value		
+	tp28xx_write_reg(0x27, 0x2d); //default value			
+	
+	if(PAL == fmt)
+	{
+		tmp = tp28xx_read_reg(0xf5);
+		tmp |= SYS_MODE[ch];
+		tp28xx_write_reg(0xf5, tmp);
+
+		tp28xx_write_reg(0x06, 0x32);		
+		tp28xx_write_reg(0x02, 0x47);
+		tp28xx_write_reg(0x07, 0x80); 
+		tp28xx_write_reg(0x0b, 0x80);  				
+		tp28xx_write_reg(0x0c, 0x13); 
+		tp28xx_write_reg(0x0d, 0x51);  
+
+		tp28xx_write_reg(0x15, 0x03);
+		tp28xx_write_reg(0x16, 0xf0); 
+		tp28xx_write_reg(0x17, 0xa0); 
+		tp28xx_write_reg(0x18, 0x17);
+		tp28xx_write_reg(0x19, 0x20);
+		tp28xx_write_reg(0x1a, 0x15);				
+		tp28xx_write_reg(0x1c, 0x06);
+		tp28xx_write_reg(0x1d, 0xc0);
+	
+		tp28xx_write_reg(0x20, 0x48);  
+		tp28xx_write_reg(0x21, 0x84); 
+		tp28xx_write_reg(0x22, 0x37);
+		tp28xx_write_reg(0x23, 0x3f);
+
+		tp28xx_write_reg(0x2b, 0x70);  
+		tp28xx_write_reg(0x2c, 0x2a); 
+		tp28xx_write_reg(0x2d, 0x4b);
+		tp28xx_write_reg(0x2e, 0x56);
+
+		tp28xx_write_reg(0x30, 0x7a);  
+		tp28xx_write_reg(0x31, 0x4a); 
+		tp28xx_write_reg(0x32, 0x4d);
+		tp28xx_write_reg(0x33, 0xfb);	
+		
+		tp28xx_write_reg(0x35, 0x65); 
+		tp28xx_write_reg(0x38, 0x00);				
+		tp28xx_write_reg(0x39, 0x04); 
+				
+	}
+	else if(NTSC == fmt)
+	{
+		tmp = tp28xx_read_reg(0xf5);
+		tmp |= SYS_MODE[ch];
+		tp28xx_write_reg(0xf5, tmp);
+
+		tp28xx_write_reg(0x02, 0x47);
+		tp28xx_write_reg(0x07, 0x80); 
+		tp28xx_write_reg(0x0b, 0x80);  				
+		tp28xx_write_reg(0x0c, 0x13); 
+		tp28xx_write_reg(0x0d, 0x50);  
+
+		tp28xx_write_reg(0x15, 0x03);
+		tp28xx_write_reg(0x16, 0xd6); 
+		tp28xx_write_reg(0x17, 0xa0); 
+		tp28xx_write_reg(0x18, 0x12);
+		tp28xx_write_reg(0x19, 0xf0);
+		tp28xx_write_reg(0x1a, 0x05);				
+		tp28xx_write_reg(0x1c, 0x06);
+		tp28xx_write_reg(0x1d, 0xb4);
+	
+		tp28xx_write_reg(0x20, 0x40);  
+		tp28xx_write_reg(0x21, 0x84); 
+		tp28xx_write_reg(0x22, 0x36);
+		tp28xx_write_reg(0x23, 0x3c);
+
+		tp28xx_write_reg(0x2b, 0x70);  
+		tp28xx_write_reg(0x2c, 0x2a); 
+		tp28xx_write_reg(0x2d, 0x4b);
+		tp28xx_write_reg(0x2e, 0x57);
+
+		tp28xx_write_reg(0x30, 0x62);  
+		tp28xx_write_reg(0x31, 0xbb); 
+		tp28xx_write_reg(0x32, 0x96);
+		tp28xx_write_reg(0x33, 0xcb);
+		
+		tp28xx_write_reg(0x35, 0x65); 
+		tp28xx_write_reg(0x38, 0x00);			
+		tp28xx_write_reg(0x39, 0x04); 	
+	}
+	else if(HD25 == fmt) 
+	{
+		tmp = tp28xx_read_reg(0xf5);
+		tmp |= SYS_MODE[ch];
+		tp28xx_write_reg(0xf5, tmp);
+				
+		tp28xx_write_reg(0x02, 0x42);
+		tp28xx_write_reg(0x07, 0xc0); 
+		tp28xx_write_reg(0x0b, 0xc0);  		
+		tp28xx_write_reg(0x0c, 0x13); 
+		tp28xx_write_reg(0x0d, 0x50);  
+
+		tp28xx_write_reg(0x15, 0x13);
+		tp28xx_write_reg(0x16, 0x15); 
+		tp28xx_write_reg(0x17, 0x00); 
+		tp28xx_write_reg(0x18, 0x19);
+		tp28xx_write_reg(0x19, 0xd0);
+		tp28xx_write_reg(0x1a, 0x25);			
+		tp28xx_write_reg(0x1c, 0x07);  //1280*720, 25fps
+		tp28xx_write_reg(0x1d, 0xbc);  //1280*720, 25fps
+
+		tp28xx_write_reg(0x20, 0x30);  
+		tp28xx_write_reg(0x21, 0x84); 
+		tp28xx_write_reg(0x22, 0x36);
+		tp28xx_write_reg(0x23, 0x3c);
+
+		tp28xx_write_reg(0x2b, 0x60);  
+		tp28xx_write_reg(0x2c, 0x0a); 
+		tp28xx_write_reg(0x2d, 0x30);
+		tp28xx_write_reg(0x2e, 0x70);
+
+		tp28xx_write_reg(0x30, 0x48);  
+		tp28xx_write_reg(0x31, 0xbb); 
+		tp28xx_write_reg(0x32, 0x2e);
+		tp28xx_write_reg(0x33, 0x90);
+		
+		tp28xx_write_reg(0x35, 0x25); 
+		tp28xx_write_reg(0x38, 0x00);	
+		tp28xx_write_reg(0x39, 0x18); 
+
+		if(STD_HDA == std)
+		{
+    	tp28xx_write_reg(0x02, 0x46);
+
+    	tp28xx_write_reg(0x0d, 0x71);
+    	
+    	tp28xx_write_reg(0x18, 0x1b);
+    	
+    	tp28xx_write_reg(0x20, 0x40);
+    	tp28xx_write_reg(0x21, 0x46);
+
+    	tp28xx_write_reg(0x25, 0xfe);
+    	tp28xx_write_reg(0x26, 0x01);
+
+    	tp28xx_write_reg(0x2c, 0x3a);
+    	tp28xx_write_reg(0x2d, 0x5a);
+    	tp28xx_write_reg(0x2e, 0x40);
+
+    	tp28xx_write_reg(0x30, 0x9e);
+    	tp28xx_write_reg(0x31, 0x20);
+    	tp28xx_write_reg(0x32, 0x10);
+    	tp28xx_write_reg(0x33, 0x90);
+		}	
+	}
+	else if(HD30 == fmt)
+	{
+		tmp = tp28xx_read_reg(0xf5);
+		tmp |= SYS_MODE[ch];
+		tp28xx_write_reg(0xf5, tmp);
+				
+		tp28xx_write_reg(0x02, 0x42);
+		tp28xx_write_reg(0x07, 0xc0); 
+		tp28xx_write_reg(0x0b, 0xc0);  		
+		tp28xx_write_reg(0x0c, 0x13); 
+		tp28xx_write_reg(0x0d, 0x50);  
+
+		tp28xx_write_reg(0x15, 0x13);
+		tp28xx_write_reg(0x16, 0x15); 
+		tp28xx_write_reg(0x17, 0x00); 
+		tp28xx_write_reg(0x18, 0x19);
+		tp28xx_write_reg(0x19, 0xd0);
+		tp28xx_write_reg(0x1a, 0x25);			
+		tp28xx_write_reg(0x1c, 0x06);  //1280*720, 30fps
+		tp28xx_write_reg(0x1d, 0x72);  //1280*720, 30fps
+
+		tp28xx_write_reg(0x20, 0x30);  
+		tp28xx_write_reg(0x21, 0x84); 
+		tp28xx_write_reg(0x22, 0x36);
+		tp28xx_write_reg(0x23, 0x3c);
+
+		tp28xx_write_reg(0x2b, 0x60);  
+		tp28xx_write_reg(0x2c, 0x2a); 
+		tp28xx_write_reg(0x2d, 0x30);
+		tp28xx_write_reg(0x2e, 0x70);
+
+		tp28xx_write_reg(0x30, 0x48);  
+		tp28xx_write_reg(0x31, 0xbb); 
+		tp28xx_write_reg(0x32, 0x2e);
+		tp28xx_write_reg(0x33, 0x90);
+		
+		tp28xx_write_reg(0x35, 0x25); 
+		tp28xx_write_reg(0x38, 0x00);	
+		tp28xx_write_reg(0x39, 0x18); 
+
+		if(STD_HDA == std)
+		{
+    	tp28xx_write_reg(0x02, 0x46);
+
+    	tp28xx_write_reg(0x0d, 0x70);
+    	
+    	tp28xx_write_reg(0x18, 0x1b);
+    	
+    	tp28xx_write_reg(0x20, 0x40);
+    	tp28xx_write_reg(0x21, 0x46);
+
+    	tp28xx_write_reg(0x25, 0xfe);
+    	tp28xx_write_reg(0x26, 0x01);
+
+    	tp28xx_write_reg(0x2c, 0x3a);
+    	tp28xx_write_reg(0x2d, 0x5a);
+    	tp28xx_write_reg(0x2e, 0x40);
+
+    	tp28xx_write_reg(0x30, 0x9d);
+    	tp28xx_write_reg(0x31, 0xca);
+    	tp28xx_write_reg(0x32, 0x01);
+    	tp28xx_write_reg(0x33, 0xd0);
+		}	
+	}
+	else if(FHD30 == fmt)
+	{
+		tmp = tp28xx_read_reg(0xf5);
+		tmp &= ~SYS_MODE[ch];
+		tp28xx_write_reg(0xf5, tmp);
+		
+		tp28xx_write_reg(0x02, 0x40);
+		tp28xx_write_reg(0x07, 0xc0); 
+		tp28xx_write_reg(0x0b, 0xc0);  		
+		tp28xx_write_reg(0x0c, 0x03); 
+		tp28xx_write_reg(0x0d, 0x50);  
+
+		tp28xx_write_reg(0x15, 0x03);
+		tp28xx_write_reg(0x16, 0xd2); 
+		tp28xx_write_reg(0x17, 0x80); 
+		tp28xx_write_reg(0x18, 0x29);
+		tp28xx_write_reg(0x19, 0x38);
+		tp28xx_write_reg(0x1a, 0x47);				
+		tp28xx_write_reg(0x1c, 0x08);  //1920*1080, 30fps
+		tp28xx_write_reg(0x1d, 0x98);  //
+	
+		tp28xx_write_reg(0x20, 0x30);  
+		tp28xx_write_reg(0x21, 0x84); 
+		tp28xx_write_reg(0x22, 0x36);
+		tp28xx_write_reg(0x23, 0x3c);
+
+		tp28xx_write_reg(0x2b, 0x60);  
+		tp28xx_write_reg(0x2c, 0x2a); 
+		tp28xx_write_reg(0x2d, 0x30);
+		tp28xx_write_reg(0x2e, 0x70);
+
+		tp28xx_write_reg(0x30, 0x48);  
+		tp28xx_write_reg(0x31, 0xbb); 
+		tp28xx_write_reg(0x32, 0x2e);
+		tp28xx_write_reg(0x33, 0x90);
+			
+		tp28xx_write_reg(0x35, 0x05);
+		tp28xx_write_reg(0x38, 0x00); 
+		tp28xx_write_reg(0x39, 0x1C); 	
+	
+		if(STD_HDA == std)
+		{
+    			tp28xx_write_reg(0x02, 0x44);
+
+    			tp28xx_write_reg(0x0d, 0x72);
+    
+    			tp28xx_write_reg(0x15, 0x01);
+    			tp28xx_write_reg(0x16, 0xf0);
+    			tp28xx_write_reg(0x18, 0x2a);
+    			    
+    			tp28xx_write_reg(0x20, 0x38);
+    			tp28xx_write_reg(0x21, 0x46);
+
+    			tp28xx_write_reg(0x25, 0xfe);
+    			tp28xx_write_reg(0x26, 0x0d);
+
+    			tp28xx_write_reg(0x2c, 0x3a);
+    			tp28xx_write_reg(0x2d, 0x54);
+    			tp28xx_write_reg(0x2e, 0x40);
+
+    			tp28xx_write_reg(0x30, 0xa5);
+    			tp28xx_write_reg(0x31, 0x95);
+    			tp28xx_write_reg(0x32, 0xe0);
+    			tp28xx_write_reg(0x33, 0x60);
+		}
+	}
+	else if(FHD25 == fmt)
+	{
+		tmp = tp28xx_read_reg(0xf5);
+		tmp &= ~SYS_MODE[ch];
+		tp28xx_write_reg(0xf5, tmp);
+		
+		tp28xx_write_reg(0x02, 0x40);
+		tp28xx_write_reg(0x07, 0xc0); 
+		tp28xx_write_reg(0x0b, 0xc0);  		
+		tp28xx_write_reg(0x0c, 0x03); 
+		tp28xx_write_reg(0x0d, 0x50);  
+  		
+		tp28xx_write_reg(0x15, 0x03);
+		tp28xx_write_reg(0x16, 0xd2); 
+		tp28xx_write_reg(0x17, 0x80); 
+		tp28xx_write_reg(0x18, 0x29);
+		tp28xx_write_reg(0x19, 0x38);
+		tp28xx_write_reg(0x1a, 0x47);				
+  		
+		tp28xx_write_reg(0x1c, 0x0a);  //1920*1080, 25fps
+		tp28xx_write_reg(0x1d, 0x50);  //
+			
+		tp28xx_write_reg(0x20, 0x30);  
+		tp28xx_write_reg(0x21, 0x84); 
+		tp28xx_write_reg(0x22, 0x36);
+		tp28xx_write_reg(0x23, 0x3c);
+  		
+		tp28xx_write_reg(0x2b, 0x60);  
+		tp28xx_write_reg(0x2c, 0x2a); 
+		tp28xx_write_reg(0x2d, 0x30);
+		tp28xx_write_reg(0x2e, 0x70);
+  		
+		tp28xx_write_reg(0x30, 0x48);  
+		tp28xx_write_reg(0x31, 0xbb); 
+		tp28xx_write_reg(0x32, 0x2e);
+		tp28xx_write_reg(0x33, 0x90);
+					
+		tp28xx_write_reg(0x35, 0x05);
+		tp28xx_write_reg(0x38, 0x00); 
+		tp28xx_write_reg(0x39, 0x1C); 	
+
+		if(STD_HDA == std)                    
+		{                                     
+   			tp28xx_write_reg(0x02, 0x44);
+   			
+   			tp28xx_write_reg(0x0d, 0x73);
+   			
+   			tp28xx_write_reg(0x15, 0x01);
+   			tp28xx_write_reg(0x16, 0xf0);
+    		tp28xx_write_reg(0x18, 0x2a);
+    		   			
+   			tp28xx_write_reg(0x20, 0x3c);
+   			tp28xx_write_reg(0x21, 0x46);
+   			
+   			tp28xx_write_reg(0x25, 0xfe);
+   			tp28xx_write_reg(0x26, 0x0d);
+   			
+   			tp28xx_write_reg(0x2c, 0x3a);
+   			tp28xx_write_reg(0x2d, 0x54);
+   			tp28xx_write_reg(0x2e, 0x40);
+   			
+   			tp28xx_write_reg(0x30, 0xa5);
+   			tp28xx_write_reg(0x31, 0x86);
+   			tp28xx_write_reg(0x32, 0xfb);
+   			tp28xx_write_reg(0x33, 0x60);
+		}   			
+	}
+	else if(FHD275 == fmt)
+	{
+		tmp = tp28xx_read_reg(0xf5);
+		tmp &= ~SYS_MODE[ch];
+		tp28xx_write_reg(0xf5, tmp);
+		
+		tp28xx_write_reg(0x02, 0x40);
+		tp28xx_write_reg(0x07, 0xc0); 
+		tp28xx_write_reg(0x0b, 0xc0);  		
+		tp28xx_write_reg(0x0c, 0x03); 
+		tp28xx_write_reg(0x0d, 0x50);  
+
+		tp28xx_write_reg(0x15, 0x13);
+		tp28xx_write_reg(0x16, 0x88); 
+		tp28xx_write_reg(0x17, 0x80); 
+		tp28xx_write_reg(0x18, 0x29);
+		tp28xx_write_reg(0x19, 0x38);
+		tp28xx_write_reg(0x1a, 0x47);				
+		tp28xx_write_reg(0x1c, 0x09);  //1920*1080, 30fps
+		tp28xx_write_reg(0x1d, 0x60);  //
+	
+		tp28xx_write_reg(0x20, 0x30);  
+		tp28xx_write_reg(0x21, 0x84); 
+		tp28xx_write_reg(0x22, 0x36);
+		tp28xx_write_reg(0x23, 0x3c);
+
+		tp28xx_write_reg(0x2b, 0x60);  
+		tp28xx_write_reg(0x2c, 0x2a); 
+		tp28xx_write_reg(0x2d, 0x30);
+		tp28xx_write_reg(0x2e, 0x70);
+
+		tp28xx_write_reg(0x30, 0x48);  
+		tp28xx_write_reg(0x31, 0xbb); 
+		tp28xx_write_reg(0x32, 0x2e);
+		tp28xx_write_reg(0x33, 0x90);
+			
+		tp28xx_write_reg(0x35, 0x05);
+		tp28xx_write_reg(0x38, 0x00); 
+		tp28xx_write_reg(0x39, 0x1C); 	
+
+	}	
+	else if(FHD60 == fmt)
+	{
+		tmp = tp28xx_read_reg(0xf5);
+		tmp &= ~SYS_MODE[ch];
+		tp28xx_write_reg(0xf5, tmp);
+		
+		tp28xx_write_reg(0x02, 0x40);
+		tp28xx_write_reg(0x07, 0xc0); 
+		tp28xx_write_reg(0x0b, 0xc0);  		
+		tp28xx_write_reg(0x0c, 0x03); 
+		tp28xx_write_reg(0x0d, 0x50);  
+
+		tp28xx_write_reg(0x15, 0x03);
+		tp28xx_write_reg(0x16, 0xf0); 
+		tp28xx_write_reg(0x17, 0x80); 
+		tp28xx_write_reg(0x18, 0x12);
+		tp28xx_write_reg(0x19, 0x38);
+		tp28xx_write_reg(0x1a, 0x47);				
+		tp28xx_write_reg(0x1c, 0x08);  //
+		tp28xx_write_reg(0x1d, 0x96);  //
+	
+		tp28xx_write_reg(0x20, 0x38);  
+		tp28xx_write_reg(0x21, 0x84); 
+		tp28xx_write_reg(0x22, 0x36);
+		tp28xx_write_reg(0x23, 0x3c);
+
+		tp28xx_write_reg(0x27, 0xad);
+		    
+		tp28xx_write_reg(0x2b, 0x60);  
+		tp28xx_write_reg(0x2c, 0x2a); 
+		tp28xx_write_reg(0x2d, 0x40);
+		tp28xx_write_reg(0x2e, 0x70);
+
+		tp28xx_write_reg(0x30, 0x74);  
+		tp28xx_write_reg(0x31, 0x9b); 
+		tp28xx_write_reg(0x32, 0xa5);
+		tp28xx_write_reg(0x33, 0xe0);
+			
+		tp28xx_write_reg(0x35, 0x05);
+		tp28xx_write_reg(0x38, 0x40); 
+		tp28xx_write_reg(0x39, 0x68); 	
+
+	}
+	else if(FHD50 == fmt)
+	{
+		tmp = tp28xx_read_reg(0xf5);
+		tmp &= ~SYS_MODE[ch];
+		tp28xx_write_reg(0xf5, tmp);
+		
+		tp28xx_write_reg(0x02, 0x40);
+		tp28xx_write_reg(0x07, 0xc0); 
+		tp28xx_write_reg(0x0b, 0xc0);  		
+		tp28xx_write_reg(0x0c, 0x03); 
+		tp28xx_write_reg(0x0d, 0x50);  
+  		
+		tp28xx_write_reg(0x15, 0x03);
+		tp28xx_write_reg(0x16, 0xe2); 
+		tp28xx_write_reg(0x17, 0x80); 
+		tp28xx_write_reg(0x18, 0x27);
+		tp28xx_write_reg(0x19, 0x38);
+		tp28xx_write_reg(0x1a, 0x47);				
+  		
+		tp28xx_write_reg(0x1c, 0x0a);  //
+		tp28xx_write_reg(0x1d, 0x4e);  //
+			
+		tp28xx_write_reg(0x20, 0x38);  
+		tp28xx_write_reg(0x21, 0x84); 
+		tp28xx_write_reg(0x22, 0x36);
+		tp28xx_write_reg(0x23, 0x3c);
+
+		tp28xx_write_reg(0x27, 0xad);
+		  		
+		tp28xx_write_reg(0x2b, 0x60);  
+		tp28xx_write_reg(0x2c, 0x2a); 
+		tp28xx_write_reg(0x2d, 0x40);
+		tp28xx_write_reg(0x2e, 0x70);
+  		
+		tp28xx_write_reg(0x30, 0x74);  
+		tp28xx_write_reg(0x31, 0x9b); 
+		tp28xx_write_reg(0x32, 0xa5);
+		tp28xx_write_reg(0x33, 0xe0);
+					
+		tp28xx_write_reg(0x35, 0x05);
+		tp28xx_write_reg(0x38, 0x40); 
+		tp28xx_write_reg(0x39, 0x68); 	
+
+	}
+	else if(QHD30 == fmt)
+	{
+		tmp = tp28xx_read_reg(0xf5);
+		tmp &= ~SYS_MODE[ch];
+		tp28xx_write_reg(0xf5, tmp);
+		
+		tp28xx_write_reg(0x02, 0x50);
+		tp28xx_write_reg(0x07, 0xc0); 
+		tp28xx_write_reg(0x0b, 0xc0);  		
+		tp28xx_write_reg(0x0c, 0x03); 
+		tp28xx_write_reg(0x0d, 0x50);  
+
+		tp28xx_write_reg(0x15, 0x23);
+		tp28xx_write_reg(0x16, 0x1b); 
+		tp28xx_write_reg(0x17, 0x00); 
+		tp28xx_write_reg(0x18, 0x38);
+		tp28xx_write_reg(0x19, 0xa0);
+		tp28xx_write_reg(0x1a, 0x5a);				
+		tp28xx_write_reg(0x1c, 0x0c);  //2560*1440, 30fps
+		tp28xx_write_reg(0x1d, 0xe2);  //
+	
+		tp28xx_write_reg(0x20, 0x50);  
+		tp28xx_write_reg(0x21, 0x84); 
+		tp28xx_write_reg(0x22, 0x36);
+		tp28xx_write_reg(0x23, 0x3c);
+
+		tp28xx_write_reg(0x27, 0xad);
+		
+		tp28xx_write_reg(0x2b, 0x60);  
+		tp28xx_write_reg(0x2c, 0x2a); 
+		tp28xx_write_reg(0x2d, 0x58);
+		tp28xx_write_reg(0x2e, 0x70);
+
+		tp28xx_write_reg(0x30, 0x74);  
+		tp28xx_write_reg(0x31, 0x58); 
+		tp28xx_write_reg(0x32, 0x9f);
+		tp28xx_write_reg(0x33, 0x60);
+			
+		tp28xx_write_reg(0x35, 0x15);
+		tp28xx_write_reg(0x36, 0xdc);		
+		tp28xx_write_reg(0x38, 0x40); 
+		tp28xx_write_reg(0x39, 0x48); 	
+	
+	}
+	else if(QHD25 == fmt)
+	{
+		tmp = tp28xx_read_reg(0xf5);
+		tmp &= ~SYS_MODE[ch];
+		tp28xx_write_reg(0xf5, tmp);
+		
+		tp28xx_write_reg(0x02, 0x50);
+		tp28xx_write_reg(0x07, 0xc0); 
+		tp28xx_write_reg(0x0b, 0xc0);  		
+		tp28xx_write_reg(0x0c, 0x03); 
+		tp28xx_write_reg(0x0d, 0x50);  
+  		
+		tp28xx_write_reg(0x15, 0x23);
+		tp28xx_write_reg(0x16, 0x1b); 
+		tp28xx_write_reg(0x17, 0x00); 
+		tp28xx_write_reg(0x18, 0x38);
+		tp28xx_write_reg(0x19, 0xa0);
+		tp28xx_write_reg(0x1a, 0x5a);				
+		tp28xx_write_reg(0x1c, 0x0f);  //2560*1440, 25fps
+		tp28xx_write_reg(0x1d, 0x76);  //
+			
+		tp28xx_write_reg(0x20, 0x50);  
+		tp28xx_write_reg(0x21, 0x84); 
+		tp28xx_write_reg(0x22, 0x36);
+		tp28xx_write_reg(0x23, 0x3c);
+
+		tp28xx_write_reg(0x27, 0xad);
+		
+		tp28xx_write_reg(0x2b, 0x60);  
+		tp28xx_write_reg(0x2c, 0x2a); 
+		tp28xx_write_reg(0x2d, 0x58);
+		tp28xx_write_reg(0x2e, 0x70);
+
+		tp28xx_write_reg(0x30, 0x74);  
+		tp28xx_write_reg(0x31, 0x58); 
+		tp28xx_write_reg(0x32, 0x9f);
+		tp28xx_write_reg(0x33, 0x60);
+			
+		tp28xx_write_reg(0x35, 0x15);
+		tp28xx_write_reg(0x36, 0xdc);		
+		tp28xx_write_reg(0x38, 0x40); 
+		tp28xx_write_reg(0x39, 0x48); 	
+
+	}	
+	else if(UVGA25 == fmt) //960P25
+	{
+
+		tp28xx_write_reg(0xf5, 0xf0);
+				
+		tp28xx_write_reg(0x02, 0x42);
+		tp28xx_write_reg(0x07, 0xc0); 
+		tp28xx_write_reg(0x0b, 0xc0);  		
+		tp28xx_write_reg(0x0c, 0x13); 
+		tp28xx_write_reg(0x0d, 0x50);  
+
+		tp28xx_write_reg(0x15, 0x13);
+		tp28xx_write_reg(0x16, 0x16); 
+		tp28xx_write_reg(0x17, 0x00); 
+		tp28xx_write_reg(0x18, 0xa0);
+		tp28xx_write_reg(0x19, 0xc0);
+		tp28xx_write_reg(0x1a, 0x35);			
+		tp28xx_write_reg(0x1c, 0x07);  //
+		tp28xx_write_reg(0x1d, 0xbc);  //
+
+		tp28xx_write_reg(0x20, 0x30);  
+		tp28xx_write_reg(0x21, 0x84); 
+		tp28xx_write_reg(0x22, 0x36);
+		tp28xx_write_reg(0x23, 0x3c);
+
+		tp28xx_write_reg(0x26, 0x01);
+		
+		tp28xx_write_reg(0x2b, 0x60);  
+		tp28xx_write_reg(0x2c, 0x2a); 
+		tp28xx_write_reg(0x2d, 0x30);
+		tp28xx_write_reg(0x2e, 0x70);
+
+		tp28xx_write_reg(0x30, 0x48);  
+		tp28xx_write_reg(0x31, 0xba); 
+		tp28xx_write_reg(0x32, 0x2e);
+		tp28xx_write_reg(0x33, 0x90);
+		
+		tp28xx_write_reg(0x35, 0x14); 
+		tp28xx_write_reg(0x36, 0x65); 		
+		tp28xx_write_reg(0x38, 0x00);	
+		tp28xx_write_reg(0x39, 0x18); 	
+	}		
+	else if(UVGA30 == fmt) //960P30
+	{
+		tp28xx_write_reg(0xf5, 0xf0);
+				
+		tp28xx_write_reg(0x02, 0x42);
+		tp28xx_write_reg(0x07, 0xc0); 
+		tp28xx_write_reg(0x0b, 0xc0);  		
+		tp28xx_write_reg(0x0c, 0x13); 
+		tp28xx_write_reg(0x0d, 0x50);  
+
+		tp28xx_write_reg(0x15, 0x13);
+		tp28xx_write_reg(0x16, 0x16); 
+		tp28xx_write_reg(0x17, 0x00); 
+		tp28xx_write_reg(0x18, 0xa0);
+		tp28xx_write_reg(0x19, 0xc0);
+		tp28xx_write_reg(0x1a, 0x35);			
+		tp28xx_write_reg(0x1c, 0x06);  //
+		tp28xx_write_reg(0x1d, 0x72);  //
+
+		tp28xx_write_reg(0x20, 0x30);  
+		tp28xx_write_reg(0x21, 0x84); 
+		tp28xx_write_reg(0x22, 0x36);
+		tp28xx_write_reg(0x23, 0x3c);
+
+		tp28xx_write_reg(0x26, 0x01);
+		
+		tp28xx_write_reg(0x2b, 0x60);  
+		tp28xx_write_reg(0x2c, 0x2a); 
+		tp28xx_write_reg(0x2d, 0x30);
+		tp28xx_write_reg(0x2e, 0x70);
+
+		tp28xx_write_reg(0x30, 0x43);  
+		tp28xx_write_reg(0x31, 0x3b); 
+		tp28xx_write_reg(0x32, 0x79);
+		tp28xx_write_reg(0x33, 0x90);
+		
+		tp28xx_write_reg(0x35, 0x14); 
+		tp28xx_write_reg(0x36, 0x65); 		
+		tp28xx_write_reg(0x38, 0x00);	
+		tp28xx_write_reg(0x39, 0x18); 		
+	}		
+	else if(HD30HDR == fmt)
+	{
+
+		tp28xx_write_reg(0xf5, 0xf0);
+				
+		tp28xx_write_reg(0x02, 0x42);
+		tp28xx_write_reg(0x07, 0xc0); 
+		tp28xx_write_reg(0x0b, 0xc0);  		
+		tp28xx_write_reg(0x0c, 0x13); 
+		tp28xx_write_reg(0x0d, 0x50);  
+
+		tp28xx_write_reg(0x15, 0x13);
+		tp28xx_write_reg(0x16, 0x15); 
+		tp28xx_write_reg(0x17, 0x00); 
+		tp28xx_write_reg(0x18, 0x90);
+		tp28xx_write_reg(0x19, 0xd0);
+		tp28xx_write_reg(0x1a, 0x25);			
+		tp28xx_write_reg(0x1c, 0x06);  
+		tp28xx_write_reg(0x1d, 0x72); 
+
+		tp28xx_write_reg(0x20, 0x30);  
+		tp28xx_write_reg(0x21, 0x84); 
+		tp28xx_write_reg(0x22, 0x36);
+		tp28xx_write_reg(0x23, 0x3c);
+
+		tp28xx_write_reg(0x2b, 0x60);  
+		tp28xx_write_reg(0x2c, 0x2a); 
+		tp28xx_write_reg(0x2d, 0x30);
+		tp28xx_write_reg(0x2e, 0x70);
+
+		tp28xx_write_reg(0x30, 0x48);  
+		tp28xx_write_reg(0x31, 0xba); 
+		tp28xx_write_reg(0x32, 0x2e);
+		tp28xx_write_reg(0x33, 0x90);
+		
+		tp28xx_write_reg(0x35, 0x13); 
+		tp28xx_write_reg(0x36, 0xe8); 		
+		tp28xx_write_reg(0x38, 0x00);	
+		tp28xx_write_reg(0x39, 0x18); 
+
+	}
+	else if(HD50 == fmt) 
+	{
+		tmp = tp28xx_read_reg(0xf5);
+		tmp &= ~SYS_MODE[ch];
+		tp28xx_write_reg(0xf5, tmp);
+				
+		tp28xx_write_reg(0x02, 0x42);
+		tp28xx_write_reg(0x07, 0xc0); 
+		tp28xx_write_reg(0x0b, 0xc0);  		
+		tp28xx_write_reg(0x0c, 0x13); 
+		tp28xx_write_reg(0x0d, 0x50);  
+
+		tp28xx_write_reg(0x15, 0x13);
+		tp28xx_write_reg(0x16, 0x15); 
+		tp28xx_write_reg(0x17, 0x00); 
+		tp28xx_write_reg(0x18, 0x19);
+		tp28xx_write_reg(0x19, 0xd0);
+		tp28xx_write_reg(0x1a, 0x25);			
+		tp28xx_write_reg(0x1c, 0x07);  //1280*720, 
+		tp28xx_write_reg(0x1d, 0xbc);  //1280*720, 50fps
+
+		tp28xx_write_reg(0x20, 0x30);  
+		tp28xx_write_reg(0x21, 0x84); 
+		tp28xx_write_reg(0x22, 0x36);
+		tp28xx_write_reg(0x23, 0x3c);
+
+		tp28xx_write_reg(0x2b, 0x60);  
+		tp28xx_write_reg(0x2c, 0x2a); 
+		tp28xx_write_reg(0x2d, 0x30);
+		tp28xx_write_reg(0x2e, 0x70);
+
+		tp28xx_write_reg(0x30, 0x48);  
+		tp28xx_write_reg(0x31, 0xbb); 
+		tp28xx_write_reg(0x32, 0x2e);
+		tp28xx_write_reg(0x33, 0x90);
+		
+		tp28xx_write_reg(0x35, 0x05); 
+		tp28xx_write_reg(0x38, 0x00);	
+		tp28xx_write_reg(0x39, 0x1c); 
+		
+		if(STD_HDA == std)      //subcarrier=24M              
+		{                                     
+   			tp28xx_write_reg(0x02, 0x46);			
+   			tp28xx_write_reg(0x05, 0x01);	
+   			tp28xx_write_reg(0x0d, 0x76);	
+   			tp28xx_write_reg(0x0e, 0x0a);	
+   			tp28xx_write_reg(0x14, 0x00);	
+   			tp28xx_write_reg(0x15, 0x13);
+   			tp28xx_write_reg(0x16, 0x1a);
+   			tp28xx_write_reg(0x18, 0x1b);
+    		   			
+   			tp28xx_write_reg(0x20, 0x40);
+   			
+   			tp28xx_write_reg(0x26, 0x01);
+   			
+   			tp28xx_write_reg(0x2c, 0x3a);
+   			tp28xx_write_reg(0x2d, 0x54);
+   			tp28xx_write_reg(0x2e, 0x50);
+   			
+   			tp28xx_write_reg(0x30, 0xa5);
+   			tp28xx_write_reg(0x31, 0x9f);
+   			tp28xx_write_reg(0x32, 0xce);
+   			tp28xx_write_reg(0x33, 0x60);
+		}
+  		
+
+	}
+	else if(HD60 == fmt)
+	{
+		tmp = tp28xx_read_reg(0xf5);
+		tmp &= ~SYS_MODE[ch];
+		tp28xx_write_reg(0xf5, tmp);
+				
+		tp28xx_write_reg(0x02, 0x42);
+		tp28xx_write_reg(0x07, 0xc0); 
+		tp28xx_write_reg(0x0b, 0xc0);  		
+		tp28xx_write_reg(0x0c, 0x13); 
+		tp28xx_write_reg(0x0d, 0x50);  
+
+		tp28xx_write_reg(0x15, 0x13);
+		tp28xx_write_reg(0x16, 0x15); 
+		tp28xx_write_reg(0x17, 0x00); 
+		tp28xx_write_reg(0x18, 0x19);
+		tp28xx_write_reg(0x19, 0xd0);
+		tp28xx_write_reg(0x1a, 0x25);			
+		tp28xx_write_reg(0x1c, 0x06);  //1280*720, 
+		tp28xx_write_reg(0x1d, 0x72);  //1280*720, 60fps
+
+		tp28xx_write_reg(0x20, 0x30);  
+		tp28xx_write_reg(0x21, 0x84); 
+		tp28xx_write_reg(0x22, 0x36);
+		tp28xx_write_reg(0x23, 0x3c);
+
+		tp28xx_write_reg(0x2b, 0x60);  
+		tp28xx_write_reg(0x2c, 0x2a); 
+		tp28xx_write_reg(0x2d, 0x30);
+		tp28xx_write_reg(0x2e, 0x70);
+
+		tp28xx_write_reg(0x30, 0x48);  
+		tp28xx_write_reg(0x31, 0xbb); 
+		tp28xx_write_reg(0x32, 0x2e);
+		tp28xx_write_reg(0x33, 0x90);
+		
+		tp28xx_write_reg(0x35, 0x05); 
+		tp28xx_write_reg(0x38, 0x00);	
+		tp28xx_write_reg(0x39, 0x1c); 
+		
+		if(STD_HDA == std)		////subcarrier=11M 
+		{
+    	tp28xx_write_reg(0x02, 0x46);
+    	tp28xx_write_reg(0x05, 0xf9);
+    	tp28xx_write_reg(0x0d, 0x76);
+    	tp28xx_write_reg(0x0e, 0x03); 
+    	tp28xx_write_reg(0x14, 0x00); 
+    	tp28xx_write_reg(0x15, 0x13); 
+    	tp28xx_write_reg(0x16, 0x41);     	    	    	   	
+    	tp28xx_write_reg(0x18, 0x1b);
+    	
+    	tp28xx_write_reg(0x20, 0x50);
+    	tp28xx_write_reg(0x21, 0x84);
+
+    	tp28xx_write_reg(0x25, 0xff);
+    	tp28xx_write_reg(0x26, 0x0d);
+
+    	tp28xx_write_reg(0x2c, 0x3a);
+    	tp28xx_write_reg(0x2d, 0x68);
+    	tp28xx_write_reg(0x2e, 0x60);
+
+    	tp28xx_write_reg(0x30, 0x4e);
+    	tp28xx_write_reg(0x31, 0xf8);
+    	tp28xx_write_reg(0x32, 0xdc);
+    	tp28xx_write_reg(0x33, 0xf0);
+		}			
+
+	}
+	else if(A_UVGA30 == fmt) //HDA 960P30
+	{
+		tp28xx_write_reg(0xf5, 0xf0);
+				
+		tp28xx_write_reg(0x02, 0x40);
+		tp28xx_write_reg(0x05, 0x01); 
+		tp28xx_write_reg(0x07, 0xc0); 
+		tp28xx_write_reg(0x0b, 0xc0);  		
+		tp28xx_write_reg(0x0c, 0x03); 
+		tp28xx_write_reg(0x0d, 0x76);
+		tp28xx_write_reg(0x0e, 0x12);   
+
+		tp28xx_write_reg(0x15, 0x03);
+		tp28xx_write_reg(0x16, 0x5f); 
+		tp28xx_write_reg(0x17, 0x00); 
+		tp28xx_write_reg(0x18, 0x9c);
+		tp28xx_write_reg(0x19, 0xc0);
+		tp28xx_write_reg(0x1a, 0x35);			
+		tp28xx_write_reg(0x1c, 0x85);  //
+		tp28xx_write_reg(0x1d, 0x78);  //
+
+		tp28xx_write_reg(0x20, 0x14);  
+		tp28xx_write_reg(0x21, 0x84); 
+		tp28xx_write_reg(0x22, 0x36);
+		tp28xx_write_reg(0x23, 0x3c);
+
+		tp28xx_write_reg(0x26, 0x0d);
+		
+		tp28xx_write_reg(0x2b, 0x60);  
+		tp28xx_write_reg(0x2c, 0x2a); 
+		tp28xx_write_reg(0x2d, 0x1e);
+		tp28xx_write_reg(0x2e, 0x50);
+
+		tp28xx_write_reg(0x30, 0x29);  
+		tp28xx_write_reg(0x31, 0x01); 
+		tp28xx_write_reg(0x32, 0x76);
+		tp28xx_write_reg(0x33, 0x80);
+		
+		tp28xx_write_reg(0x35, 0x14); 
+		tp28xx_write_reg(0x36, 0x65); 		
+		tp28xx_write_reg(0x38, 0x00);	
+		tp28xx_write_reg(0x39, 0x88); 		
+	}
+	else if(F_UVGA30 == fmt) //FH 960P30
+	{
+		tp28xx_write_reg(0xf5, 0xf0);
+				
+		tp28xx_write_reg(0x02, 0x4c);
+		tp28xx_write_reg(0x05, 0xfd); 
+		tp28xx_write_reg(0x07, 0xc0); 
+		tp28xx_write_reg(0x0b, 0xc0);  		
+		tp28xx_write_reg(0x0c, 0x03); 
+		tp28xx_write_reg(0x0d, 0x76);
+		tp28xx_write_reg(0x0e, 0x16);   
+
+		tp28xx_write_reg(0x15, 0x13);
+		tp28xx_write_reg(0x16, 0x8f); 
+		tp28xx_write_reg(0x17, 0x00); 
+		tp28xx_write_reg(0x18, 0x23);
+		tp28xx_write_reg(0x19, 0xc0);
+		tp28xx_write_reg(0x1a, 0x35);			
+		tp28xx_write_reg(0x1c, 0x07);  //
+		tp28xx_write_reg(0x1d, 0x08);  //
+
+		tp28xx_write_reg(0x20, 0x60);  
+		tp28xx_write_reg(0x21, 0x84); 
+		tp28xx_write_reg(0x22, 0x36);
+		tp28xx_write_reg(0x23, 0x3c);
+
+		tp28xx_write_reg(0x26, 0x05);
+		
+		tp28xx_write_reg(0x2b, 0x60);  
+		tp28xx_write_reg(0x2c, 0x2a); 
+		tp28xx_write_reg(0x2d, 0x70);
+		tp28xx_write_reg(0x2e, 0x50);
+
+		tp28xx_write_reg(0x30, 0x7f);  
+		tp28xx_write_reg(0x31, 0x49); 
+		tp28xx_write_reg(0x32, 0xf4);
+		tp28xx_write_reg(0x33, 0x90);
+		
+		tp28xx_write_reg(0x35, 0x13); 
+		tp28xx_write_reg(0x36, 0xe8); 		
+		tp28xx_write_reg(0x38, 0x00);	
+		tp28xx_write_reg(0x39, 0x88); 		
+	}	
+	else if(UVGA30_945 == fmt)	//1400x1125x30,94.5M
+	{
+		tp28xx_write_reg(0xf5, 0xf0);
+		
+		tp28xx_write_reg(0x02, 0x40);
+		tp28xx_write_reg(0x07, 0xc0); 
+		tp28xx_write_reg(0x0b, 0xc0);  		
+		tp28xx_write_reg(0x0c, 0x03); 
+		tp28xx_write_reg(0x0d, 0x50); 
+		 
+		tp28xx_write_reg(0x14, 0x00); 
+		tp28xx_write_reg(0x15, 0x03);
+		tp28xx_write_reg(0x16, 0x60); 
+		tp28xx_write_reg(0x17, 0x00); 
+		tp28xx_write_reg(0x18, 0xa0);
+		tp28xx_write_reg(0x19, 0xc0);
+		tp28xx_write_reg(0x1a, 0x35);				
+		tp28xx_write_reg(0x1c, 0x05);  //1920*1080, 30fps
+		tp28xx_write_reg(0x1d, 0x78);  //
+	
+		tp28xx_write_reg(0x20, 0x18);  
+		tp28xx_write_reg(0x21, 0x84); 
+		tp28xx_write_reg(0x22, 0x36);
+		tp28xx_write_reg(0x23, 0x3c);
+
+		tp28xx_write_reg(0x26, 0x06);
+		tp28xx_write_reg(0x27, 0x2d);
+		
+		tp28xx_write_reg(0x2b, 0x60);  
+		tp28xx_write_reg(0x2c, 0x1a); 
+		tp28xx_write_reg(0x2d, 0x1a);
+		tp28xx_write_reg(0x2e, 0x70);
+
+		tp28xx_write_reg(0x30, 0x48);  
+		tp28xx_write_reg(0x31, 0xba); 
+		tp28xx_write_reg(0x32, 0x2e);
+		tp28xx_write_reg(0x33, 0x90);
+			
+		tp28xx_write_reg(0x35, 0x14);
+		tp28xx_write_reg(0x36, 0x65);		
+		tp28xx_write_reg(0x38, 0x00); 
+		tp28xx_write_reg(0x39, 0x88); 	
+
+	}			
+	else if(FMT5M20 == fmt)
+	{
+		tmp = tp28xx_read_reg(0xf5);
+		tmp &= ~SYS_MODE[ch];
+		tp28xx_write_reg(0xf5, tmp);
+		
+		tp28xx_write_reg(0x02, 0x50);
+		tp28xx_write_reg(0x07, 0xc0); 
+		tp28xx_write_reg(0x0b, 0xc0);  		
+		tp28xx_write_reg(0x0c, 0x03); 
+		tp28xx_write_reg(0x0d, 0x50);  
+
+		tp28xx_write_reg(0x15, 0x23);
+		tp28xx_write_reg(0x16, 0x36); 
+		tp28xx_write_reg(0x17, 0x20); 
+		tp28xx_write_reg(0x18, 0x1a);
+		tp28xx_write_reg(0x19, 0x98);
+		tp28xx_write_reg(0x1a, 0x7a);				
+		tp28xx_write_reg(0x1c, 0x0e);  //
+		tp28xx_write_reg(0x1d, 0xa4);  //
+	
+		tp28xx_write_reg(0x20, 0x50);  
+		tp28xx_write_reg(0x21, 0x84); 
+		tp28xx_write_reg(0x22, 0x36);
+		tp28xx_write_reg(0x23, 0x3c);
+
+		tp28xx_write_reg(0x27, 0xad);
+		
+		tp28xx_write_reg(0x2b, 0x60);  
+		tp28xx_write_reg(0x2c, 0x2a); 
+		tp28xx_write_reg(0x2d, 0x54);
+		tp28xx_write_reg(0x2e, 0x70);
+
+		tp28xx_write_reg(0x30, 0x74);  
+		tp28xx_write_reg(0x31, 0xa7); 
+		tp28xx_write_reg(0x32, 0x18);
+		tp28xx_write_reg(0x33, 0x50);
+			
+		tp28xx_write_reg(0x35, 0x17);
+		tp28xx_write_reg(0x36, 0xbc);		
+		tp28xx_write_reg(0x38, 0x40); 
+		tp28xx_write_reg(0x39, 0x48); 	
+
+	
+		if(STD_HDA == std)
+		{
+    			tp28xx_write_reg(0x0d, 0x70);
+    			tp28xx_write_reg(0x0e, 0x0b);
+    			    
+    			tp28xx_write_reg(0x1c, 0x8e);
+    			    
+    			tp28xx_write_reg(0x20, 0x80);
+    			tp28xx_write_reg(0x21, 0x86);
+
+
+    			tp28xx_write_reg(0x2d, 0xa0);
+    			tp28xx_write_reg(0x2e, 0x40);
+    			
+    			tp28xx_write_reg(0x30, 0x48);
+    			tp28xx_write_reg(0x31, 0x77);
+    			tp28xx_write_reg(0x32, 0x0e);
+    			tp28xx_write_reg(0x33, 0xa0);
+
+    			tp28xx_write_reg(0x39, 0x68);    			
+		}
+	}
+		
+	else if(FMT5M12 == fmt)
+	{
+		tmp = tp28xx_read_reg(0xf5);
+		tmp &= ~SYS_MODE[ch];
+		tp28xx_write_reg(0xf5, tmp);
+		
+		tp28xx_write_reg(0x02, 0x40);
+		tp28xx_write_reg(0x07, 0xc0); 
+		tp28xx_write_reg(0x0b, 0xc0);  		
+		tp28xx_write_reg(0x0c, 0x03); 
+		tp28xx_write_reg(0x0d, 0x50);  
+
+		tp28xx_write_reg(0x15, 0x13);
+		tp28xx_write_reg(0x16, 0x1f); 
+		tp28xx_write_reg(0x17, 0x20); 
+		tp28xx_write_reg(0x18, 0x34);
+		tp28xx_write_reg(0x19, 0x98);
+		tp28xx_write_reg(0x1a, 0x7a);				
+		tp28xx_write_reg(0x1c, 0x0b);  //
+		tp28xx_write_reg(0x1d, 0x9a);  //
+	
+		tp28xx_write_reg(0x20, 0x30);  
+		tp28xx_write_reg(0x21, 0x84); 
+		tp28xx_write_reg(0x22, 0x36);
+		tp28xx_write_reg(0x23, 0x3c);
+
+		tp28xx_write_reg(0x2b, 0x60);  
+		tp28xx_write_reg(0x2c, 0x2a); 
+		tp28xx_write_reg(0x2d, 0x30);
+		tp28xx_write_reg(0x2e, 0x70);
+
+		tp28xx_write_reg(0x30, 0x48);  
+		tp28xx_write_reg(0x31, 0xbb); 
+		tp28xx_write_reg(0x32, 0x2e);
+		tp28xx_write_reg(0x33, 0x90);
+			
+		tp28xx_write_reg(0x35, 0x17);
+		tp28xx_write_reg(0x36, 0xd0);		
+		tp28xx_write_reg(0x38, 0x00); 
+		tp28xx_write_reg(0x39, 0x1C); 	
+	
+		if(STD_HDA == std)
+		{
+    			tp28xx_write_reg(0x02, 0x44);
+    			tp28xx_write_reg(0x05, 0x29);
+    			tp28xx_write_reg(0x0d, 0x76);
+    			tp28xx_write_reg(0x0e, 0x0f);
+    			    
+    			tp28xx_write_reg(0x15, 0x73);
+    			tp28xx_write_reg(0x16, 0x5a);
+    			tp28xx_write_reg(0x17, 0x20);    			
+    			tp28xx_write_reg(0x18, 0x1a);
+    			tp28xx_write_reg(0x19, 0x98);
+    			tp28xx_write_reg(0x1a, 0x7a);
+    			tp28xx_write_reg(0x1c, 0x0b);
+    			tp28xx_write_reg(0x1d, 0xb8);
+    			    			
+    			tp28xx_write_reg(0x20, 0x38);
+    			tp28xx_write_reg(0x21, 0x46);
+
+    			tp28xx_write_reg(0x25, 0xfe);
+    			tp28xx_write_reg(0x26, 0x01);
+
+    			tp28xx_write_reg(0x2c, 0x2a);
+    			tp28xx_write_reg(0x2d, 0x62);
+    			tp28xx_write_reg(0x2e, 0x40);
+
+    			tp28xx_write_reg(0x30, 0xa5);
+    			tp28xx_write_reg(0x31, 0xa1);
+    			tp28xx_write_reg(0x32, 0xca);
+    			tp28xx_write_reg(0x33, 0xc0);
+
+    			tp28xx_write_reg(0x35, 0x17);
+    			tp28xx_write_reg(0x36, 0xbc);	
+		}
+	}
+	else if(FMT8M15 == fmt)
+	{
+		tmp = tp28xx_read_reg(0xf5);
+		tmp &= ~SYS_MODE[ch];
+		tp28xx_write_reg(0xf5, tmp);
+		
+		tp28xx_write_reg(0x02, 0x50);
+		tp28xx_write_reg(0x07, 0xc0); 
+		tp28xx_write_reg(0x0b, 0xc0);  		
+		tp28xx_write_reg(0x0c, 0x03); 
+		tp28xx_write_reg(0x0d, 0x50);  
+
+		tp28xx_write_reg(0x15, 0x13);
+		tp28xx_write_reg(0x16, 0xbd); 
+		tp28xx_write_reg(0x17, 0x00); 
+		tp28xx_write_reg(0x18, 0x50);
+		tp28xx_write_reg(0x19, 0x70);
+		tp28xx_write_reg(0x1a, 0x8f);				
+		tp28xx_write_reg(0x1c, 0x11);  //3840*2160, 15fps
+		tp28xx_write_reg(0x1d, 0x2e);  //
+	
+		tp28xx_write_reg(0x20, 0x60);  
+		tp28xx_write_reg(0x21, 0x84); 
+		tp28xx_write_reg(0x22, 0x36);
+		tp28xx_write_reg(0x23, 0x3c);
+
+		tp28xx_write_reg(0x27, 0xad);
+		
+		tp28xx_write_reg(0x2b, 0x60);  
+		tp28xx_write_reg(0x2c, 0x2a); 
+		tp28xx_write_reg(0x2d, 0x54);
+		tp28xx_write_reg(0x2e, 0x70);
+
+		tp28xx_write_reg(0x30, 0x74);  
+		tp28xx_write_reg(0x31, 0x59); 
+		tp28xx_write_reg(0x32, 0xbd);
+		tp28xx_write_reg(0x33, 0x60);
+			
+		tp28xx_write_reg(0x35, 0x18);
+		tp28xx_write_reg(0x36, 0xca);		
+		tp28xx_write_reg(0x38, 0x40); 
+		tp28xx_write_reg(0x39, 0x68); 	
+	
+		if(STD_HDA == std)
+		{
+    			tp28xx_write_reg(0x14, 0x40);
+    
+    			tp28xx_write_reg(0x15, 0x13);
+    			tp28xx_write_reg(0x16, 0x74);
+    			    
+    			tp28xx_write_reg(0x20, 0x80);
+    			tp28xx_write_reg(0x21, 0x86);
+    			
+    			tp28xx_write_reg(0x2d, 0x58);
+    			tp28xx_write_reg(0x2e, 0x40);
+
+    			tp28xx_write_reg(0x30, 0x48);
+    			tp28xx_write_reg(0x31, 0x68);
+    			tp28xx_write_reg(0x32, 0x43);
+    			tp28xx_write_reg(0x33, 0x00);
+		}
+	}
+		
+	else if(FMT8M12 == fmt)
+	{
+		tmp = tp28xx_read_reg(0xf5);
+		tmp &= ~SYS_MODE[ch];
+		tp28xx_write_reg(0xf5, tmp);
+		
+		tp28xx_write_reg(0x02, 0x50);
+		tp28xx_write_reg(0x07, 0xc0); 
+		tp28xx_write_reg(0x0b, 0xc0);  		
+		tp28xx_write_reg(0x0c, 0x03); 
+		tp28xx_write_reg(0x0d, 0x50);  
+
+		tp28xx_write_reg(0x15, 0x13);
+		tp28xx_write_reg(0x16, 0xbd); 
+		tp28xx_write_reg(0x17, 0x00); 
+		tp28xx_write_reg(0x18, 0x50);
+		tp28xx_write_reg(0x19, 0x70);
+		tp28xx_write_reg(0x1a, 0x8f);				
+		tp28xx_write_reg(0x1c, 0x14);  //3840*2160, 12fps
+		tp28xx_write_reg(0x1d, 0x9e);  //
+	
+		tp28xx_write_reg(0x20, 0x60);  
+		tp28xx_write_reg(0x21, 0x84); 
+		tp28xx_write_reg(0x22, 0x36);
+		tp28xx_write_reg(0x23, 0x3c);
+
+		tp28xx_write_reg(0x27, 0xad);
+		
+		tp28xx_write_reg(0x2b, 0x60);  
+		tp28xx_write_reg(0x2c, 0x02a); 
+		tp28xx_write_reg(0x2d, 0x54);
+		tp28xx_write_reg(0x2e, 0x70);
+
+		tp28xx_write_reg(0x30, 0x74);  
+		tp28xx_write_reg(0x31, 0x59); 
+		tp28xx_write_reg(0x32, 0xbd);
+		tp28xx_write_reg(0x33, 0x60);
+			
+		tp28xx_write_reg(0x35, 0x18);
+		tp28xx_write_reg(0x36, 0xca);		
+		tp28xx_write_reg(0x38, 0x40); 
+		tp28xx_write_reg(0x39, 0x68); 	
+	
+	}
+	else if(FMT8M7 == fmt)
+	{
+		tmp = tp28xx_read_reg(0xf5);
+		tmp &= ~SYS_MODE[ch];
+		tp28xx_write_reg(0xf5, tmp);
+		
+		tp28xx_write_reg(0x02, 0x40);
+		tp28xx_write_reg(0x07, 0xc0); 
+		tp28xx_write_reg(0x0b, 0xc0);  		
+		tp28xx_write_reg(0x0c, 0x03); 
+		tp28xx_write_reg(0x0d, 0x50);  
+		tp28xx_write_reg(0x14, 0x40);  
+		
+		tp28xx_write_reg(0x15, 0x03);
+		tp28xx_write_reg(0x16, 0xc0); 
+		tp28xx_write_reg(0x17, 0x80); 
+		tp28xx_write_reg(0x18, 0x50);
+		tp28xx_write_reg(0x19, 0x70);
+		tp28xx_write_reg(0x1a, 0x8f);				
+		tp28xx_write_reg(0x1c, 0x0f);  //3840*2160, 7fps
+		tp28xx_write_reg(0x1d, 0xa0);  //
+	
+		tp28xx_write_reg(0x20, 0x30);  
+		tp28xx_write_reg(0x21, 0x84); 
+		tp28xx_write_reg(0x22, 0x36);
+		tp28xx_write_reg(0x23, 0x3c);
+
+		tp28xx_write_reg(0x2b, 0x60);  
+		tp28xx_write_reg(0x2c, 0x2a); 
+		tp28xx_write_reg(0x2d, 0x38);
+		tp28xx_write_reg(0x2e, 0x70);
+
+		tp28xx_write_reg(0x30, 0x24);  
+		tp28xx_write_reg(0x31, 0x34); 
+		tp28xx_write_reg(0x32, 0x21);
+		tp28xx_write_reg(0x33, 0x80);
+			
+		tp28xx_write_reg(0x35, 0x19);
+		tp28xx_write_reg(0x36, 0xab);		
+		tp28xx_write_reg(0x38, 0x00); 
+		tp28xx_write_reg(0x39, 0x1C); 	
+	
+	}	
+	else if(HD30864 == fmt)
+	{
+
+		tp28xx_write_reg(0xf5, 0xf0);
+				
+		tp28xx_write_reg(0x02, 0x42);
+		tp28xx_write_reg(0x07, 0xc0); 
+		tp28xx_write_reg(0x0b, 0xc0);  		
+		tp28xx_write_reg(0x0c, 0x13); 
+		tp28xx_write_reg(0x0d, 0x50);  
+
+		tp28xx_write_reg(0x15, 0x03);
+		tp28xx_write_reg(0x16, 0xec); 
+		tp28xx_write_reg(0x17, 0x00); 
+		tp28xx_write_reg(0x18, 0xae);
+		tp28xx_write_reg(0x19, 0xd0);
+		tp28xx_write_reg(0x1a, 0x25);			
+		tp28xx_write_reg(0x1c, 0x06);  
+		tp28xx_write_reg(0x1d, 0x40); 
+
+		tp28xx_write_reg(0x20, 0x30);  
+		tp28xx_write_reg(0x21, 0x84); 
+		tp28xx_write_reg(0x22, 0x36);
+		tp28xx_write_reg(0x23, 0x3c);
+		tp28xx_write_reg(0x26, 0x05);
+		tp28xx_write_reg(0x27, 0x2d);				
+
+		tp28xx_write_reg(0x2b, 0x60);  
+		tp28xx_write_reg(0x2c, 0x2a); 
+		tp28xx_write_reg(0x2d, 0x30);
+		tp28xx_write_reg(0x2e, 0x70);
+
+		tp28xx_write_reg(0x30, 0x48);  
+		tp28xx_write_reg(0x31, 0xba); 
+		tp28xx_write_reg(0x32, 0x2e);
+		tp28xx_write_reg(0x33, 0x90);
+		
+		tp28xx_write_reg(0x35, 0x13); 
+		tp28xx_write_reg(0x36, 0x84); 		
+		tp28xx_write_reg(0x38, 0x00);	
+		tp28xx_write_reg(0x39, 0x18);	
+
+	}	
+		
+}
+
+void TP2855_mipi_out(unsigned char output)
+{
+	//mipi setting
+		tp28xx_write_reg(0x40, MIPI_PAGE); //MIPI page 
+    tp28xx_write_reg(0x01, 0xf0);
+    tp28xx_write_reg(0x02, 0x01);
+    tp28xx_write_reg(0x08, 0x0f);
+
+	if( MIPI_4CH4LANE_594M == output || MIPI_2CH4LANE_594M == output)
+	{
+
+            tp28xx_write_reg(0x20, 0x44);
+            if( MIPI_2CH4LANE_594M == output)  tp28xx_write_reg(0x20, 0x24);
+            tp28xx_write_reg(0x34, 0xe4); //
+            tp28xx_write_reg(0x15, 0x0C);
+            tp28xx_write_reg(0x25, 0x08);
+            tp28xx_write_reg(0x26, 0x06);
+            tp28xx_write_reg(0x27, 0x11);
+            tp28xx_write_reg(0x29, 0x0a);
+            tp28xx_write_reg(0x33, 0x07);
+            tp28xx_write_reg(0x33, 0x00);
+            tp28xx_write_reg(0x14, 0x33);
+            tp28xx_write_reg(0x14, 0xb3);
+            tp28xx_write_reg(0x14, 0x33);
+
+	
+	}
+	if( MIPI_3CH4LANE_594M == output)
+	{
+
+            tp28xx_write_reg(0x20, 0x34);
+            tp28xx_write_reg(0x18, 0x8d); //    VC0+VC1+VC2        
+            tp28xx_write_reg(0x34, 0x8d); //		VIN1+VIN2+VIN3
+            tp28xx_write_reg(0x15, 0x0C);
+            tp28xx_write_reg(0x25, 0x08);
+            tp28xx_write_reg(0x26, 0x06);
+            tp28xx_write_reg(0x27, 0x11);
+            tp28xx_write_reg(0x29, 0x0a);
+            tp28xx_write_reg(0x33, 0x07);
+            tp28xx_write_reg(0x33, 0x00);
+            tp28xx_write_reg(0x14, 0x33);
+            tp28xx_write_reg(0x14, 0xb3);
+            tp28xx_write_reg(0x14, 0x33);
+
+	
+	}	
+	else if( MIPI_4CH4LANE_297M == output || MIPI_2CH4LANE_297M == output)
+	{
+
+            tp28xx_write_reg(0x20, 0x44);
+            tp28xx_write_reg(0x20, 0x44);
+            if( MIPI_2CH4LANE_297M == output)  tp28xx_write_reg(0x20, 0x24);            
+            tp28xx_write_reg(0x34, 0xe4); //
+            tp28xx_write_reg(0x14, 0x44);
+            tp28xx_write_reg(0x15, 0x0d);
+            tp28xx_write_reg(0x25, 0x04);
+            tp28xx_write_reg(0x26, 0x03);
+            tp28xx_write_reg(0x27, 0x09);
+            tp28xx_write_reg(0x29, 0x02);
+            tp28xx_write_reg(0x33, 0x07);
+            tp28xx_write_reg(0x33, 0x00);
+            tp28xx_write_reg(0x14, 0xc4);
+            tp28xx_write_reg(0x14, 0x44);
+	
+	}
+	else if( MIPI_3CH4LANE_297M == output)
+	{
+
+            tp28xx_write_reg(0x20, 0x34);
+            tp28xx_write_reg(0x18, 0x8d); //            
+            tp28xx_write_reg(0x34, 0x8d); //
+            tp28xx_write_reg(0x14, 0x44);
+            tp28xx_write_reg(0x15, 0x0d);
+            tp28xx_write_reg(0x25, 0x04);
+            tp28xx_write_reg(0x26, 0x03);
+            tp28xx_write_reg(0x27, 0x09);
+            tp28xx_write_reg(0x29, 0x02);
+            tp28xx_write_reg(0x33, 0x07);
+            tp28xx_write_reg(0x33, 0x00);
+            tp28xx_write_reg(0x14, 0xc4);
+            tp28xx_write_reg(0x14, 0x44);
+	
+	}	
+	else if( MIPI_1CH4LANE_297M == output)
+	{
+
+            tp28xx_write_reg(0x20, 0x14);
+            tp28xx_write_reg(0x34, 0x01); //vin2
+            tp28xx_write_reg(0x14, 0x44);
+            tp28xx_write_reg(0x15, 0x0d);
+            tp28xx_write_reg(0x25, 0x04);
+            tp28xx_write_reg(0x26, 0x03);
+            tp28xx_write_reg(0x27, 0x09);
+            tp28xx_write_reg(0x29, 0x02);
+            tp28xx_write_reg(0x33, 0x07);
+            tp28xx_write_reg(0x33, 0x00);
+            tp28xx_write_reg(0x14, 0xc4);
+            tp28xx_write_reg(0x14, 0x44);
+	
+	}
+	else if( MIPI_4CH2LANE_594M == output)
+	{
+
+            tp28xx_write_reg(0x20, 0x42);
+            tp28xx_write_reg(0x34, 0xe4); //output vin1&vin2
+            tp28xx_write_reg(0x15, 0x0c);
+            tp28xx_write_reg(0x25, 0x08);
+            tp28xx_write_reg(0x26, 0x06);
+            tp28xx_write_reg(0x27, 0x11);
+            tp28xx_write_reg(0x29, 0x0a);
+            tp28xx_write_reg(0x33, 0x07);
+            tp28xx_write_reg(0x33, 0x00);
+            tp28xx_write_reg(0x14, 0x43);
+            tp28xx_write_reg(0x14, 0xc3);
+            tp28xx_write_reg(0x14, 0x43);
+	
+	}
+	else if( MIPI_4CH4LANE_445M == output) //only for 4x960p25/30
+	{
+
+            tp28xx_write_reg(0x20, 0x44);
+            tp28xx_write_reg(0x34, 0xe4); //
+            tp28xx_write_reg(0x12, 0x5f);
+            tp28xx_write_reg(0x13, 0x07);            
+            tp28xx_write_reg(0x15, 0x0C);
+            tp28xx_write_reg(0x25, 0x06);
+            tp28xx_write_reg(0x26, 0x05);
+            tp28xx_write_reg(0x27, 0x0d);
+            tp28xx_write_reg(0x29, 0x0a);
+            tp28xx_write_reg(0x33, 0x07);
+            tp28xx_write_reg(0x33, 0x00);
+            tp28xx_write_reg(0x14, 0x33);
+            tp28xx_write_reg(0x14, 0xb3);
+            tp28xx_write_reg(0x14, 0x33);
+
+	
+	}
+	else if( MIPI_4CH4LANE_396M == output) //only for Sony ISX019
+	{
+
+            tp28xx_write_reg(0x20, 0x44);
+            tp28xx_write_reg(0x34, 0xe4); //
+            tp28xx_write_reg(0x12, 0x6a);
+            tp28xx_write_reg(0x13, 0x27);            
+            tp28xx_write_reg(0x15, 0x0C);
+            tp28xx_write_reg(0x25, 0x06);
+            tp28xx_write_reg(0x26, 0x04);
+            tp28xx_write_reg(0x27, 0x0c);
+            tp28xx_write_reg(0x29, 0x0a);
+            tp28xx_write_reg(0x33, 0x07);
+            tp28xx_write_reg(0x33, 0x00);
+            tp28xx_write_reg(0x14, 0x33);
+            tp28xx_write_reg(0x14, 0xb3);
+            tp28xx_write_reg(0x14, 0x33);
+
+	
+	}	
+	else if( MIPI_4CH4LANE_378M == output) //only for 4xA_UVGA30
+	{
+
+            tp28xx_write_reg(0x20, 0x44);
+            tp28xx_write_reg(0x34, 0xe4); //
+            tp28xx_write_reg(0x12, 0x5a);
+            tp28xx_write_reg(0x13, 0x07);            
+            tp28xx_write_reg(0x15, 0x0C);
+            tp28xx_write_reg(0x25, 0x06);
+            tp28xx_write_reg(0x26, 0x04);
+            tp28xx_write_reg(0x27, 0x0c);
+            tp28xx_write_reg(0x29, 0x0a);
+            tp28xx_write_reg(0x33, 0x07);
+            tp28xx_write_reg(0x33, 0x00);
+            tp28xx_write_reg(0x14, 0x33);
+            tp28xx_write_reg(0x14, 0xb3);
+            tp28xx_write_reg(0x14, 0x33);
+
+	
+	}	
+	else if( MIPI_4CH4LANE_432M == output) //only for 4xF_UVGA30
+	{
+
+            tp28xx_write_reg(0x20, 0x44);
+            tp28xx_write_reg(0x34, 0xe4); //
+            tp28xx_write_reg(0x12, 0x5e);
+            tp28xx_write_reg(0x13, 0x07);            
+            tp28xx_write_reg(0x15, 0x0C);
+            tp28xx_write_reg(0x25, 0x06);
+            tp28xx_write_reg(0x26, 0x05);
+            tp28xx_write_reg(0x27, 0x0d);
+            tp28xx_write_reg(0x29, 0x0a);
+            tp28xx_write_reg(0x33, 0x07);
+            tp28xx_write_reg(0x33, 0x00);
+            tp28xx_write_reg(0x14, 0x33);
+            tp28xx_write_reg(0x14, 0xb3);
+            tp28xx_write_reg(0x14, 0x33);
+
+	
+	}	
+	else if( MIPI_2CH2LANE_594M == output)
+	{
+
+            tp28xx_write_reg(0x20, 0x22);
+            tp28xx_write_reg(0x34, 0x10); //output vin1&vin2
+            tp28xx_write_reg(0x15, 0x0c);
+            tp28xx_write_reg(0x25, 0x08);
+            tp28xx_write_reg(0x26, 0x06);
+            tp28xx_write_reg(0x27, 0x11);
+            tp28xx_write_reg(0x29, 0x0a);
+            tp28xx_write_reg(0x33, 0x07);
+            tp28xx_write_reg(0x33, 0x00);
+            tp28xx_write_reg(0x14, 0x43);
+            tp28xx_write_reg(0x14, 0xc3);
+            tp28xx_write_reg(0x14, 0x43);
+	
+	}	
+	else if( MIPI_1CH2LANE_594M == output)
+	{
+
+            tp28xx_write_reg(0x20, 0x12);
+            tp28xx_write_reg(0x34, 0x10); //output vin1&vin2
+            tp28xx_write_reg(0x15, 0x0c);
+            tp28xx_write_reg(0x25, 0x08);
+            tp28xx_write_reg(0x26, 0x06);
+            tp28xx_write_reg(0x27, 0x11);
+            tp28xx_write_reg(0x29, 0x0a);
+            tp28xx_write_reg(0x33, 0x07);
+            tp28xx_write_reg(0x33, 0x00);
+            tp28xx_write_reg(0x14, 0x43);
+            tp28xx_write_reg(0x14, 0xc3);
+            tp28xx_write_reg(0x14, 0x43);
+	
+	}		
+	if( MIPI_4CH4LANE_345M == output)
+	{
+
+            tp28xx_write_reg(0x20, 0x44);
+            tp28xx_write_reg(0x34, 0xe4); 
+            
+            tp28xx_write_reg(0x12, 0x7e);
+            tp28xx_write_reg(0x13, 0x67);                
+            
+            tp28xx_write_reg(0x15, 0x0C);
+            tp28xx_write_reg(0x25, 0x06);
+            tp28xx_write_reg(0x26, 0x04);
+            tp28xx_write_reg(0x27, 0x11);
+            tp28xx_write_reg(0x29, 0x0e);
+            tp28xx_write_reg(0x33, 0x07);
+            tp28xx_write_reg(0x33, 0x00);
+            tp28xx_write_reg(0x14, 0x33);
+            tp28xx_write_reg(0x14, 0xb3);
+            tp28xx_write_reg(0x14, 0x33);
+
+	
+	}	
+	/* Enable MIPI CSI2 output */
+	tp28xx_write_reg(0x23, 0x02);
+	tp28xx_write_reg(0x23, 0x00);
+		tp28xx_write_reg(0x40, 0x04); //Decoder page 
+		
+}

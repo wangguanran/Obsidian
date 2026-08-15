@@ -1,0 +1,17 @@
+// 定义I2C控制器节点
+&i2c1 {
+    // 兼容性字符串，确保与内核驱动匹配
+    compatible = "mir3da,da265-i2c";
+    // 设置I2C频率，单位是Hz
+    clock-frequency = <400000>;
+    // 定义I2C设备节点
+    gravity_sensor: sensor@27 {
+        // 兼容性字符串，确保与内核驱动匹配
+        compatible = "mir3da,da265";
+        // 设备地址
+        reg = <0x27>;
+        // 其他可能需要的属性，例如中断等
+        // interrupt-parent = <&gpioX>;
+        // interrutps = <X IRQ_TYPE>;
+    };
+};

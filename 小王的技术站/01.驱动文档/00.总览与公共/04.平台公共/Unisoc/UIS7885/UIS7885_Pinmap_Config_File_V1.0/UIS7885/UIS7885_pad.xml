@@ -1,0 +1,625 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<padtype>
+	<pad name="SPSEBC2_24X_VL">
+		<PadDesigner>SPRD</PadDesigner>
+		<PullResistor Index="0" Set="WPUS|WPU">PU:1.8K</PullResistor>
+		<PullResistor Index="1" Set="WPUS|NUL">PU:4.7K</PullResistor>
+		<PullResistor Index="2" Set="NULL|WPU">PU:20K</PullResistor>
+		<PullResistor Index="3" Set="NULL|WPD">PD:50K</PullResistor>
+		<PullResistor Index="4" Set="NULL|NUL">NULL</PullResistor>
+		<DriverStrength Index="0" Set="0">4.5mA</DriverStrength>
+		<DriverStrength Index="1" Set="1">9mA</DriverStrength>
+		<DriverStrength Index="2" Set="2">13.6mA</DriverStrength>
+		<DriverStrength Index="3" Set="3">18mA</DriverStrength>
+		<DriverStrength Index="4" Set="4">22.5mA</DriverStrength>
+		<DriverStrength Index="5" Set="5">27.2mA</DriverStrength>
+		<DriverStrength Index="6" Set="6">32.1mA</DriverStrength>
+		<DriverStrength Index="7" Set="7">39mA</DriverStrength>
+		
+		<SleepMode Index="0">AP</SleepMode>
+		<SleepMode Index="1">ISE</SleepMode>
+		<SleepMode Index="2">PHYCP</SleepMode>
+		<SleepMode Index="3">AUDCP</SleepMode>
+		<SleepMode Index="4">PSCP</SleepMode>
+		<SleepMode Index="5">CM4</SleepMode>
+		<SleepMode Index="6">ALL_CP</SleepMode>
+		<SleepMode Index="7">ALL_NO_CM4</SleepMode>
+		
+		<SleepPull Index="0" Set="WPU">PullUp</SleepPull>
+		<SleepPull Index="1" Set="WPD">PullDown</SleepPull>
+		<SleepPull Index="2" Set="NUL">None</SleepPull>
+
+		<SleepDirection Index="0" Set="IE">Input</SleepDirection>
+		<SleepDirection Index="1" Set="OE">Output</SleepDirection>
+		<SleepDirection Index="2" Set="Z">Z</SleepDirection>
+		<Other Index="0" Set="BIT_PIN_SE">SE</Other>
+	</pad>			
+	<pad name="SPSEBC2_24X_HL">
+		<PadDesigner>SPRD</PadDesigner>
+		<PullResistor Index="0" Set="WPUS|WPU">PU:1.8K</PullResistor>
+		<PullResistor Index="1" Set="WPUS|NUL">PU:4.7K</PullResistor>
+		<PullResistor Index="2" Set="NULL|WPU">PU:20K</PullResistor>
+		<PullResistor Index="3" Set="NULL|WPD">PD:50K</PullResistor>
+		<PullResistor Index="4" Set="NULL|NUL">NULL</PullResistor>
+		<DriverStrength Index="0" Set="0">4.5mA</DriverStrength>
+		<DriverStrength Index="1" Set="1">9mA</DriverStrength>
+		<DriverStrength Index="2" Set="2">13.6mA</DriverStrength>
+		<DriverStrength Index="3" Set="3">18mA</DriverStrength>
+		<DriverStrength Index="4" Set="4">22.5mA</DriverStrength>
+		<DriverStrength Index="5" Set="5">27.2mA</DriverStrength>
+		<DriverStrength Index="6" Set="6">32.1mA</DriverStrength>
+		<DriverStrength Index="7" Set="7">39mA</DriverStrength>
+		
+		<SleepMode Index="0">AP</SleepMode>
+		<SleepMode Index="1">ISE</SleepMode>
+		<SleepMode Index="2">PHYCP</SleepMode>
+		<SleepMode Index="3">AUDCP</SleepMode>
+		<SleepMode Index="4">PSCP</SleepMode>
+		<SleepMode Index="5">CM4</SleepMode>
+		<SleepMode Index="6">ALL_CP</SleepMode>
+		<SleepMode Index="7">ALL_NO_CM4</SleepMode>
+		
+		<SleepPull Index="0" Set="WPU">PullUp</SleepPull>
+		<SleepPull Index="1" Set="WPD">PullDown</SleepPull>
+		<SleepPull Index="2" Set="NUL">None</SleepPull>
+
+		<SleepDirection Index="0" Set="IE">Input</SleepDirection>
+		<SleepDirection Index="1" Set="OE">Output</SleepDirection>
+		<SleepDirection Index="2" Set="Z">Z</SleepDirection>
+		<Other Index="0" Set="BIT_PIN_SE">SE</Other>
+	</pad>			
+
+	<pad name="SPSCBC2_8X_VL">
+		<PadDesigner>SPRD</PadDesigner>
+		<PullResistor Index="0" Set="WPUS|WPU">PU:1.8K</PullResistor>
+		<PullResistor Index="1" Set="WPUS|NUL">PU:4.7K</PullResistor>
+		<PullResistor Index="2" Set="NULL|WPU">PU:20K</PullResistor>
+		<PullResistor Index="3" Set="NULL|WPD">PD:50K</PullResistor>
+		<PullResistor Index="4" Set="NULL|NUL">NULL</PullResistor>
+		<DriverStrength Index="0" Set="0">2mA</DriverStrength>
+		<DriverStrength Index="1" Set="1">4mA</DriverStrength>
+		<DriverStrength Index="2" Set="2">6mA</DriverStrength>
+		<DriverStrength Index="3" Set="3">8mA</DriverStrength>
+		
+		<SleepMode Index="0">AP</SleepMode>
+		<SleepMode Index="1">ISE</SleepMode>
+		<SleepMode Index="2">PHYCP</SleepMode>
+		<SleepMode Index="3">AUDCP</SleepMode>
+		<SleepMode Index="4">PSCP</SleepMode>
+		<SleepMode Index="5">CM4</SleepMode>
+		<SleepMode Index="6">ALL_CP</SleepMode>
+		<SleepMode Index="7">ALL_NO_CM4</SleepMode>
+		
+		<SleepPull Index="0" Set="WPU">PullUp</SleepPull>
+		<SleepPull Index="1" Set="WPD">PullDown</SleepPull>
+		<SleepPull Index="2" Set="NUL">None</SleepPull>
+
+		<SleepDirection Index="0" Set="IE">Input</SleepDirection>
+		<SleepDirection Index="1" Set="OE">Output</SleepDirection>
+		<SleepDirection Index="2" Set="Z">Z</SleepDirection>
+		<Other Index="0" Set="BIT_PIN_SE">SE</Other>
+	</pad>			
+	<pad name="SPSCBC2_8X_HL">
+		<PadDesigner>SPRD</PadDesigner>
+		<PullResistor Index="0" Set="WPUS|WPU">PU:1.8K</PullResistor>
+		<PullResistor Index="1" Set="WPUS|NUL">PU:4.7K</PullResistor>
+		<PullResistor Index="2" Set="NULL|WPU">PU:20K</PullResistor>
+		<PullResistor Index="3" Set="NULL|WPD">PD:50K</PullResistor>
+		<PullResistor Index="4" Set="NULL|NUL">NULL</PullResistor>
+		<DriverStrength Index="0" Set="0">2mA</DriverStrength>
+		<DriverStrength Index="1" Set="1">4mA</DriverStrength>
+		<DriverStrength Index="2" Set="2">6mA</DriverStrength>
+		<DriverStrength Index="3" Set="3">8mA</DriverStrength>
+		
+		<SleepMode Index="0">AP</SleepMode>
+		<SleepMode Index="1">ISE</SleepMode>
+		<SleepMode Index="2">PHYCP</SleepMode>
+		<SleepMode Index="3">AUDCP</SleepMode>
+		<SleepMode Index="4">PSCP</SleepMode>
+		<SleepMode Index="5">CM4</SleepMode>
+		<SleepMode Index="6">ALL_CP</SleepMode>
+		<SleepMode Index="7">ALL_NO_CM4</SleepMode>
+		
+		<SleepPull Index="0" Set="WPU">PullUp</SleepPull>
+		<SleepPull Index="1" Set="WPD">PullDown</SleepPull>
+		<SleepPull Index="2" Set="NUL">None</SleepPull>
+
+		<SleepDirection Index="0" Set="IE">Input</SleepDirection>
+		<SleepDirection Index="1" Set="OE">Output</SleepDirection>
+		<SleepDirection Index="2" Set="Z">Z</SleepDirection>
+		<Other Index="0" Set="BIT_PIN_SE">SE</Other>
+	</pad>			
+	<pad name="SPSCBC2_8X_W_VL">
+		<PadDesigner>SPRD</PadDesigner>
+		<PullResistor Index="0" Set="WPUS|WPU">PU:1.8K</PullResistor>
+		<PullResistor Index="1" Set="WPUS|NUL">PU:4.7K</PullResistor>
+		<PullResistor Index="2" Set="NULL|WPU">PU:20K</PullResistor>
+		<PullResistor Index="3" Set="NULL|WPD">PD:50K</PullResistor>
+		<PullResistor Index="4" Set="NULL|NUL">NULL</PullResistor>
+		<DriverStrength Index="0" Set="0">2mA</DriverStrength>
+		<DriverStrength Index="1" Set="1">4mA</DriverStrength>
+		<DriverStrength Index="2" Set="2">6mA</DriverStrength>
+		<DriverStrength Index="3" Set="3">8mA</DriverStrength>
+		
+		<SleepMode Index="0">AP</SleepMode>
+		<SleepMode Index="1">ISE</SleepMode>
+		<SleepMode Index="2">PHYCP</SleepMode>
+		<SleepMode Index="3">AUDCP</SleepMode>
+		<SleepMode Index="4">PSCP</SleepMode>
+		<SleepMode Index="5">CM4</SleepMode>
+		<SleepMode Index="6">ALL_CP</SleepMode>
+		<SleepMode Index="7">ALL_NO_CM4</SleepMode>
+		
+		<SleepPull Index="0" Set="WPU">PullUp</SleepPull>
+		<SleepPull Index="1" Set="WPD">PullDown</SleepPull>
+		<SleepPull Index="2" Set="NUL">None</SleepPull>
+
+		<SleepDirection Index="0" Set="IE">Input</SleepDirection>
+		<SleepDirection Index="1" Set="OE">Output</SleepDirection>
+		<SleepDirection Index="2" Set="Z">Z</SleepDirection>
+		<Other Index="0" Set="BIT_PIN_SE">SE</Other>
+	</pad>			
+	<pad name="SPSCBC2_8X_W_HL">
+		<PadDesigner>SPRD</PadDesigner>
+		<PullResistor Index="0" Set="WPUS|WPU">PU:1.8K</PullResistor>
+		<PullResistor Index="1" Set="WPUS|NUL">PU:4.7K</PullResistor>
+		<PullResistor Index="2" Set="NULL|WPU">PU:20K</PullResistor>
+		<PullResistor Index="3" Set="NULL|WPD">PD:50K</PullResistor>
+		<PullResistor Index="4" Set="NULL|NUL">NULL</PullResistor>
+		<DriverStrength Index="0" Set="0">2mA</DriverStrength>
+		<DriverStrength Index="1" Set="1">4mA</DriverStrength>
+		<DriverStrength Index="2" Set="2">6mA</DriverStrength>
+		<DriverStrength Index="3" Set="3">8mA</DriverStrength>
+		
+		<SleepMode Index="0">AP</SleepMode>
+		<SleepMode Index="1">ISE</SleepMode>
+		<SleepMode Index="2">PHYCP</SleepMode>
+		<SleepMode Index="3">AUDCP</SleepMode>
+		<SleepMode Index="4">PSCP</SleepMode>
+		<SleepMode Index="5">CM4</SleepMode>
+		<SleepMode Index="6">ALL_CP</SleepMode>
+		<SleepMode Index="7">ALL_NO_CM4</SleepMode>
+		
+		<SleepPull Index="0" Set="WPU">PullUp</SleepPull>
+		<SleepPull Index="1" Set="WPD">PullDown</SleepPull>
+		<SleepPull Index="2" Set="NUL">None</SleepPull>
+
+		<SleepDirection Index="0" Set="IE">Input</SleepDirection>
+		<SleepDirection Index="1" Set="OE">Output</SleepDirection>
+		<SleepDirection Index="2" Set="Z">Z</SleepDirection>
+		<Other Index="0" Set="BIT_PIN_SE">SE</Other>
+	</pad>			
+<pad name="SPSCBC2_8X_SR_HL">
+		<PadDesigner>SPRD</PadDesigner>
+		<PullResistor Index="0" Set="WPUS|WPU">PU:1.8K</PullResistor>
+		<PullResistor Index="1" Set="WPUS|NUL">PU:4.7K</PullResistor>
+		<PullResistor Index="2" Set="NULL|WPU">PU:20K</PullResistor>
+		<PullResistor Index="3" Set="NULL|WPD">PD:50K</PullResistor>
+		<PullResistor Index="4" Set="NULL|NUL">NULL</PullResistor>
+		<DriverStrength Index="0" Set="0">2mA</DriverStrength>
+		<DriverStrength Index="1" Set="1">4mA</DriverStrength>
+		<DriverStrength Index="2" Set="2">6mA</DriverStrength>
+		<DriverStrength Index="3" Set="3">8mA</DriverStrength>
+		
+		<SleepMode Index="0">AP</SleepMode>
+		<SleepMode Index="1">ISE</SleepMode>
+		<SleepMode Index="2">PHYCP</SleepMode>
+		<SleepMode Index="3">AUDCP</SleepMode>
+		<SleepMode Index="4">PSCP</SleepMode>
+		<SleepMode Index="5">CM4</SleepMode>
+		<SleepMode Index="6">ALL_CP</SleepMode>
+		<SleepMode Index="7">ALL_NO_CM4</SleepMode>
+		
+		<SleepPull Index="0" Set="WPU">PullUp</SleepPull>
+		<SleepPull Index="1" Set="WPD">PullDown</SleepPull>
+		<SleepPull Index="2" Set="NUL">None</SleepPull>
+
+		<SleepDirection Index="0" Set="IE">Input</SleepDirection>
+		<SleepDirection Index="1" Set="OE">Output</SleepDirection>
+		<SleepDirection Index="2" Set="Z">Z</SleepDirection>
+		<Other Index="0" Set="BIT_PIN_SE">SE</Other>
+	</pad>
+	
+	<pad name="SPSCBC2_8X_IIC_VL">
+		<PadDesigner>SPRD</PadDesigner>
+		<PullResistor Index="0" Set="WPUS|WPU">PU:1.8K</PullResistor>
+		<PullResistor Index="1" Set="NULL|WPU">PU:20K</PullResistor>
+		<PullResistor Index="2" Set="NULL|WPD">PD:50K</PullResistor>
+		<PullResistor Index="3" Set="NULL|NUL">NULL</PullResistor>
+		<DriverStrength Index="0" Set="0">2mA</DriverStrength>
+		<DriverStrength Index="1" Set="1">4mA</DriverStrength>
+		<DriverStrength Index="2" Set="2">6mA</DriverStrength>
+		<DriverStrength Index="3" Set="3">8mA</DriverStrength>
+		
+		<SleepMode Index="0">AP</SleepMode>
+		<SleepMode Index="1">PUBCP</SleepMode>
+		<SleepMode Index="2">WTLCP</SleepMode>
+		<SleepMode Index="3">AUDCP</SleepMode>
+		<SleepMode Index="4">CM4</SleepMode>
+		<SleepMode Index="5">ALL_CP</SleepMode>
+		<SleepMode Index="6">ALL_NO_CM4</SleepMode>
+		
+		<SleepPull Index="0" Set="WPU">PullUp</SleepPull>
+		<SleepPull Index="1" Set="WPD">PullDown</SleepPull>
+		<SleepPull Index="2" Set="NUL">None</SleepPull>
+
+		<SleepDirection Index="0" Set="IE">Input</SleepDirection>
+		<SleepDirection Index="1" Set="OE">Output</SleepDirection>
+		<SleepDirection Index="2" Set="Z">Z</SleepDirection>
+		<Other Index="0" Set="BIT_PIN_SE">SE</Other>
+	</pad>			
+	<pad name="SPSCBC2_8X_IIC_HL">
+		<PadDesigner>SPRD</PadDesigner>
+		<PullResistor Index="0" Set="WPUS|WPU">PU:1.8K</PullResistor>
+		<PullResistor Index="1" Set="NULL|WPU">PU:20K</PullResistor>
+		<PullResistor Index="2" Set="NULL|WPD">PD:50K</PullResistor>
+		<PullResistor Index="3" Set="NULL|NUL">NULL</PullResistor>
+		<DriverStrength Index="0" Set="0">2mA</DriverStrength>
+		<DriverStrength Index="1" Set="1">4mA</DriverStrength>
+		<DriverStrength Index="2" Set="2">6mA</DriverStrength>
+		<DriverStrength Index="3" Set="3">8mA</DriverStrength>
+		
+		<SleepMode Index="0">AP</SleepMode>
+		<SleepMode Index="1">PUBCP</SleepMode>
+		<SleepMode Index="2">WTLCP</SleepMode>
+		<SleepMode Index="3">AUDCP</SleepMode>
+		<SleepMode Index="4">CM4</SleepMode>
+		<SleepMode Index="5">ALL_CP</SleepMode>
+		<SleepMode Index="6">ALL_NO_CM4</SleepMode>
+		
+		<SleepPull Index="0" Set="WPU">PullUp</SleepPull>
+		<SleepPull Index="1" Set="WPD">PullDown</SleepPull>
+		<SleepPull Index="2" Set="NUL">None</SleepPull>
+
+		<SleepDirection Index="0" Set="IE">Input</SleepDirection>
+		<SleepDirection Index="1" Set="OE">Output</SleepDirection>
+		<SleepDirection Index="2" Set="Z">Z</SleepDirection>
+		<Other Index="0" Set="BIT_PIN_SE">SE</Other>
+	</pad>			
+	<pad name="SPSCBC2_8X_W_IIC_VL">
+		<PadDesigner>SPRD</PadDesigner>
+		<PullResistor Index="0" Set="WPUS|WPU">PU:1.8K</PullResistor>
+		<PullResistor Index="1" Set="NULL|WPU">PU:20K</PullResistor>
+		<PullResistor Index="2" Set="NULL|WPD">PD:50K</PullResistor>
+		<PullResistor Index="3" Set="NULL|NUL">NULL</PullResistor>
+		<DriverStrength Index="0" Set="0">2mA</DriverStrength>
+		<DriverStrength Index="1" Set="1">4mA</DriverStrength>
+		<DriverStrength Index="2" Set="2">6mA</DriverStrength>
+		<DriverStrength Index="3" Set="3">8mA</DriverStrength>
+		
+		<SleepMode Index="0">AP</SleepMode>
+		<SleepMode Index="1">PUBCP</SleepMode>
+		<SleepMode Index="2">WTLCP</SleepMode>
+		<SleepMode Index="3">AUDCP</SleepMode>
+		<SleepMode Index="4">CM4</SleepMode>
+		<SleepMode Index="5">ALL_CP</SleepMode>
+		<SleepMode Index="6">ALL_NO_CM4</SleepMode>
+		
+		<SleepPull Index="0" Set="WPU">PullUp</SleepPull>
+		<SleepPull Index="1" Set="WPD">PullDown</SleepPull>
+		<SleepPull Index="2" Set="NUL">None</SleepPull>
+
+		<SleepDirection Index="0" Set="IE">Input</SleepDirection>
+		<SleepDirection Index="1" Set="OE">Output</SleepDirection>
+		<SleepDirection Index="2" Set="Z">Z</SleepDirection>
+		<Other Index="0" Set="BIT_PIN_SE">SE</Other>
+	</pad>			
+	<pad name="SPSCBC2_8X_W_IIC_HL">
+		<PadDesigner>SPRD</PadDesigner>
+		<PullResistor Index="0" Set="WPUS|WPU">PU:1.8K</PullResistor>
+		<PullResistor Index="1" Set="NULL|WPU">PU:20K</PullResistor>
+		<PullResistor Index="2" Set="NULL|WPD">PD:50K</PullResistor>
+		<PullResistor Index="3" Set="NULL|NUL">NULL</PullResistor>
+		<DriverStrength Index="0" Set="0">2mA</DriverStrength>
+		<DriverStrength Index="1" Set="1">4mA</DriverStrength>
+		<DriverStrength Index="2" Set="2">6mA</DriverStrength>
+		<DriverStrength Index="3" Set="3">8mA</DriverStrength>
+		
+		<SleepMode Index="0">AP</SleepMode>
+		<SleepMode Index="1">PUBCP</SleepMode>
+		<SleepMode Index="2">WTLCP</SleepMode>
+		<SleepMode Index="3">AUDCP</SleepMode>
+		<SleepMode Index="4">CM4</SleepMode>
+		<SleepMode Index="5">ALL_CP</SleepMode>
+		<SleepMode Index="6">ALL_NO_CM4</SleepMode>
+		
+		<SleepPull Index="0" Set="WPU">PullUp</SleepPull>
+		<SleepPull Index="1" Set="WPD">PullDown</SleepPull>
+		<SleepPull Index="2" Set="NUL">None</SleepPull>
+
+		<SleepDirection Index="0" Set="IE">Input</SleepDirection>
+		<SleepDirection Index="1" Set="OE">Output</SleepDirection>
+		<SleepDirection Index="2" Set="Z">Z</SleepDirection>
+		<Other Index="0" Set="BIT_PIN_SE">SE</Other>
+	</pad>			
+
+	<pad name="SPPDWUWSWSIM_V">
+		<PadDesigner>SPRD</PadDesigner>
+		<PullResistor Index="0" Set="WPUS|WPU">PU:1.8K</PullResistor>
+		<PullResistor Index="1" Set="WPUS|NUL">PU:4.7K</PullResistor>
+		<PullResistor Index="2" Set="NULL|WPU">PU:20K</PullResistor>
+		<PullResistor Index="3" Set="NULL|WPD">PD:50K</PullResistor>
+		<PullResistor Index="4" Set="NULL|NUL">NULL</PullResistor>
+		<DriverStrength Index="0" Set="0">2mA</DriverStrength>
+		<DriverStrength Index="1" Set="1">6mA</DriverStrength>
+		<DriverStrength Index="2" Set="2">8mA</DriverStrength>
+		<DriverStrength Index="3" Set="3">10mA</DriverStrength>
+		<DriverStrength Index="4" Set="4">12mA</DriverStrength>
+		<DriverStrength Index="5" Set="5">15mA</DriverStrength>
+		<DriverStrength Index="6" Set="6">17mA</DriverStrength>
+		<DriverStrength Index="7" Set="7">20mA</DriverStrength>
+		<DriverStrength Index="8" Set="8">25mA</DriverStrength>
+		<DriverStrength Index="9" Set="9">28mA</DriverStrength>
+		<DriverStrength Index="10" Set="10">30mA</DriverStrength>
+		<DriverStrength Index="11" Set="11">32mA</DriverStrength>
+		<DriverStrength Index="12" Set="12">34mA</DriverStrength>
+		<DriverStrength Index="13" Set="13">37mA</DriverStrength>
+		<DriverStrength Index="14" Set="14">39mA</DriverStrength>
+		<DriverStrength Index="15" Set="15">42mA</DriverStrength>
+		
+		<SleepMode Index="0">AP</SleepMode>
+		<SleepMode Index="1">PUBCP</SleepMode>
+		<SleepMode Index="2">WTLCP</SleepMode>
+		<SleepMode Index="3">AUDCP</SleepMode>
+		<SleepMode Index="4">CM4</SleepMode>
+		<SleepMode Index="5">ALL_CP</SleepMode>
+		<SleepMode Index="6">ALL_NO_CM4</SleepMode>
+		
+		<SleepPull Index="0" Set="WPU">PullUp</SleepPull>
+		<SleepPull Index="1" Set="WPD">PullDown</SleepPull>
+		<SleepPull Index="2" Set="NUL">None</SleepPull>
+
+		<SleepDirection Index="0" Set="IE">Input</SleepDirection>
+		<SleepDirection Index="1" Set="OE">Output</SleepDirection>
+		<SleepDirection Index="2" Set="Z">Z</SleepDirection>
+		<Other Index="0" Set="BIT_PIN_SE">SE</Other>
+	</pad>			
+	<pad name="SPPDWUWSWSIM_H">
+		<PadDesigner>SPRD</PadDesigner>
+		<PullResistor Index="0" Set="WPUS|WPU">PU:1.8K</PullResistor>
+		<PullResistor Index="1" Set="WPUS|NUL">PU:4.7K</PullResistor>
+		<PullResistor Index="2" Set="NULL|WPU">PU:20K</PullResistor>
+		<PullResistor Index="3" Set="NULL|WPD">PD:50K</PullResistor>
+		<PullResistor Index="4" Set="NULL|NUL">NULL</PullResistor>
+		<DriverStrength Index="0" Set="0">2mA</DriverStrength>
+		<DriverStrength Index="1" Set="1">6mA</DriverStrength>
+		<DriverStrength Index="2" Set="2">8mA</DriverStrength>
+		<DriverStrength Index="3" Set="3">10mA</DriverStrength>
+		<DriverStrength Index="4" Set="4">12mA</DriverStrength>
+		<DriverStrength Index="5" Set="5">15mA</DriverStrength>
+		<DriverStrength Index="6" Set="6">17mA</DriverStrength>
+		<DriverStrength Index="7" Set="7">20mA</DriverStrength>
+		<DriverStrength Index="8" Set="8">25mA</DriverStrength>
+		<DriverStrength Index="9" Set="9">28mA</DriverStrength>
+		<DriverStrength Index="10" Set="10">30mA</DriverStrength>
+		<DriverStrength Index="11" Set="11">32mA</DriverStrength>
+		<DriverStrength Index="12" Set="12">34mA</DriverStrength>
+		<DriverStrength Index="13" Set="13">37mA</DriverStrength>
+		<DriverStrength Index="14" Set="14">39mA</DriverStrength>
+		<DriverStrength Index="15" Set="15">42mA</DriverStrength>
+		
+		<SleepMode Index="0">AP</SleepMode>
+		<SleepMode Index="1">PUBCP</SleepMode>
+		<SleepMode Index="2">WTLCP</SleepMode>
+		<SleepMode Index="3">AUDCP</SleepMode>
+		<SleepMode Index="4">CM4</SleepMode>
+		<SleepMode Index="5">ALL_CP</SleepMode>
+		<SleepMode Index="6">ALL_NO_CM4</SleepMode>
+		
+		<SleepPull Index="0" Set="WPU">PullUp</SleepPull>
+		<SleepPull Index="1" Set="WPD">PullDown</SleepPull>
+		<SleepPull Index="2" Set="NUL">None</SleepPull>
+
+		<SleepDirection Index="0" Set="IE">Input</SleepDirection>
+		<SleepDirection Index="1" Set="OE">Output</SleepDirection>
+		<SleepDirection Index="2" Set="Z">Z</SleepDirection>
+		<Other Index="0" Set="BIT_PIN_SE">SE</Other>
+	</pad>			
+	<pad name="SPPDWUWSWCDG_V">
+		<PadDesigner>SPRD</PadDesigner>
+		<PullResistor Index="0" Set="WPUS|WPU">PU:1.8K</PullResistor>
+		<PullResistor Index="1" Set="WPUS|NUL">PU:4.7K</PullResistor>
+		<PullResistor Index="2" Set="NULL|WPU">PU:20K</PullResistor>
+		<PullResistor Index="3" Set="NULL|WPD">PD:50K</PullResistor>
+		<PullResistor Index="4" Set="NULL|NUL">NULL</PullResistor>
+		<DriverStrength Index="0" Set="0">2mA</DriverStrength>
+		<DriverStrength Index="1" Set="1">6mA</DriverStrength>
+		<DriverStrength Index="2" Set="2">8mA</DriverStrength>
+		<DriverStrength Index="3" Set="3">10mA</DriverStrength>
+		<DriverStrength Index="4" Set="4">12mA</DriverStrength>
+		<DriverStrength Index="5" Set="5">15mA</DriverStrength>
+		<DriverStrength Index="6" Set="6">17mA</DriverStrength>
+		<DriverStrength Index="7" Set="7">20mA</DriverStrength>
+		<DriverStrength Index="8" Set="8">25mA</DriverStrength>
+		<DriverStrength Index="9" Set="9">28mA</DriverStrength>
+		<DriverStrength Index="10" Set="10">30mA</DriverStrength>
+		<DriverStrength Index="11" Set="11">32mA</DriverStrength>
+		<DriverStrength Index="12" Set="12">34mA</DriverStrength>
+		<DriverStrength Index="13" Set="13">37mA</DriverStrength>
+		<DriverStrength Index="14" Set="14">39mA</DriverStrength>
+		<DriverStrength Index="15" Set="15">42mA</DriverStrength>
+		
+		<SleepMode Index="0">AP</SleepMode>
+		<SleepMode Index="1">PUBCP</SleepMode>
+		<SleepMode Index="2">WTLCP</SleepMode>
+		<SleepMode Index="3">AUDCP</SleepMode>
+		<SleepMode Index="4">CM4</SleepMode>
+		<SleepMode Index="5">ALL_CP</SleepMode>
+		<SleepMode Index="6">ALL_NO_CM4</SleepMode>
+		
+		<SleepPull Index="0" Set="WPU">PullUp</SleepPull>
+		<SleepPull Index="1" Set="WPD">PullDown</SleepPull>
+		<SleepPull Index="2" Set="NUL">None</SleepPull>
+
+		<SleepDirection Index="0" Set="IE">Input</SleepDirection>
+		<SleepDirection Index="1" Set="OE">Output</SleepDirection>
+		<SleepDirection Index="2" Set="Z">Z</SleepDirection>
+		<Other Index="0" Set="BIT_PIN_SE">SE</Other>
+	</pad>			
+	<pad name="SPPDWUWSWCDG_H">
+		<PadDesigner>SPRD</PadDesigner>
+		<PullResistor Index="0" Set="WPUS|WPU">PU:1.8K</PullResistor>
+		<PullResistor Index="1" Set="WPUS|NUL">PU:4.7K</PullResistor>
+		<PullResistor Index="2" Set="NULL|WPU">PU:20K</PullResistor>
+		<PullResistor Index="3" Set="NULL|WPD">PD:50K</PullResistor>
+		<PullResistor Index="4" Set="NULL|NUL">NULL</PullResistor>
+		<DriverStrength Index="0" Set="0">2mA</DriverStrength>
+		<DriverStrength Index="1" Set="1">6mA</DriverStrength>
+		<DriverStrength Index="2" Set="2">8mA</DriverStrength>
+		<DriverStrength Index="3" Set="3">10mA</DriverStrength>
+		<DriverStrength Index="4" Set="4">12mA</DriverStrength>
+		<DriverStrength Index="5" Set="5">15mA</DriverStrength>
+		<DriverStrength Index="6" Set="6">17mA</DriverStrength>
+		<DriverStrength Index="7" Set="7">20mA</DriverStrength>
+		<DriverStrength Index="8" Set="8">25mA</DriverStrength>
+		<DriverStrength Index="9" Set="9">28mA</DriverStrength>
+		<DriverStrength Index="10" Set="10">30mA</DriverStrength>
+		<DriverStrength Index="11" Set="11">32mA</DriverStrength>
+		<DriverStrength Index="12" Set="12">34mA</DriverStrength>
+		<DriverStrength Index="13" Set="13">37mA</DriverStrength>
+		<DriverStrength Index="14" Set="14">39mA</DriverStrength>
+		<DriverStrength Index="15" Set="15">42mA</DriverStrength>
+		
+		<SleepMode Index="0">AP</SleepMode>
+		<SleepMode Index="1">PUBCP</SleepMode>
+		<SleepMode Index="2">WTLCP</SleepMode>
+		<SleepMode Index="3">AUDCP</SleepMode>
+		<SleepMode Index="4">CM4</SleepMode>
+		<SleepMode Index="5">ALL_CP</SleepMode>
+		<SleepMode Index="6">ALL_NO_CM4</SleepMode>
+		
+		<SleepPull Index="0" Set="WPU">PullUp</SleepPull>
+		<SleepPull Index="1" Set="WPD">PullDown</SleepPull>
+		<SleepPull Index="2" Set="NUL">None</SleepPull>
+
+		<SleepDirection Index="0" Set="IE">Input</SleepDirection>
+		<SleepDirection Index="1" Set="OE">Output</SleepDirection>
+		<SleepDirection Index="2" Set="Z">Z</SleepDirection>
+		<Other Index="0" Set="BIT_PIN_SE">SE</Other>
+	</pad>			
+
+	<pad name="SPPDWUWSWCDGSDE_V">
+		<PadDesigner>SPRD</PadDesigner>
+		<PullResistor Index="0" Set="WPUS|WPU">PU:1.8K</PullResistor>
+		<PullResistor Index="1" Set="WPUS|NUL">PU:4.7K</PullResistor>
+		<PullResistor Index="2" Set="NULL|WPU">PU:20K</PullResistor>
+		<PullResistor Index="3" Set="NULL|WPD">PD:50K</PullResistor>
+		<PullResistor Index="4" Set="NULL|NUL">NULL</PullResistor>
+		<DriverStrength Index="0" Set="0">2mA</DriverStrength>
+		<DriverStrength Index="1" Set="1">6mA</DriverStrength>
+		<DriverStrength Index="2" Set="2">8mA</DriverStrength>
+		<DriverStrength Index="3" Set="3">10mA</DriverStrength>
+		<DriverStrength Index="4" Set="4">12mA</DriverStrength>
+		<DriverStrength Index="5" Set="5">15mA</DriverStrength>
+		<DriverStrength Index="6" Set="6">17mA</DriverStrength>
+		<DriverStrength Index="7" Set="7">20mA</DriverStrength>
+		<DriverStrength Index="8" Set="8">25mA</DriverStrength>
+		<DriverStrength Index="9" Set="9">28mA</DriverStrength>
+		<DriverStrength Index="10" Set="10">30mA</DriverStrength>
+		<DriverStrength Index="11" Set="11">32mA</DriverStrength>
+		<DriverStrength Index="12" Set="12">34mA</DriverStrength>
+		<DriverStrength Index="13" Set="13">37mA</DriverStrength>
+		<DriverStrength Index="14" Set="14">39mA</DriverStrength>
+		<DriverStrength Index="15" Set="15">42mA</DriverStrength>
+		
+		<SleepMode Index="0">AP</SleepMode>
+		<SleepMode Index="1">PUBCP</SleepMode>
+		<SleepMode Index="2">WTLCP</SleepMode>
+		<SleepMode Index="3">AUDCP</SleepMode>
+		<SleepMode Index="4">CM4</SleepMode>
+		<SleepMode Index="5">ALL_CP</SleepMode>
+		<SleepMode Index="6">ALL_NO_CM4</SleepMode>
+		
+		<SleepPull Index="0" Set="WPU">PullUp</SleepPull>
+		<SleepPull Index="1" Set="WPD">PullDown</SleepPull>
+		<SleepPull Index="2" Set="NUL">None</SleepPull>
+
+		<SleepDirection Index="0" Set="IE">Input</SleepDirection>
+		<SleepDirection Index="1" Set="OE">Output</SleepDirection>
+		<SleepDirection Index="2" Set="Z">Z</SleepDirection>
+		<Other Index="0" Set="BIT_PIN_SE">SE</Other>
+	</pad>			
+	<pad name="SPPDWUWSWCDGSDE_H">
+		<PadDesigner>SPRD</PadDesigner>
+		<PullResistor Index="0" Set="WPUS|WPU">PU:1.8K</PullResistor>
+		<PullResistor Index="1" Set="WPUS|NUL">PU:4.7K</PullResistor>
+		<PullResistor Index="2" Set="NULL|WPU">PU:20K</PullResistor>
+		<PullResistor Index="3" Set="NULL|WPD">PD:50K</PullResistor>
+		<PullResistor Index="4" Set="NULL|NUL">NULL</PullResistor>
+		<DriverStrength Index="0" Set="0">2mA</DriverStrength>
+		<DriverStrength Index="1" Set="1">6mA</DriverStrength>
+		<DriverStrength Index="2" Set="2">8mA</DriverStrength>
+		<DriverStrength Index="3" Set="3">10mA</DriverStrength>
+		<DriverStrength Index="4" Set="4">12mA</DriverStrength>
+		<DriverStrength Index="5" Set="5">15mA</DriverStrength>
+		<DriverStrength Index="6" Set="6">17mA</DriverStrength>
+		<DriverStrength Index="7" Set="7">20mA</DriverStrength>
+		<DriverStrength Index="8" Set="8">25mA</DriverStrength>
+		<DriverStrength Index="9" Set="9">28mA</DriverStrength>
+		<DriverStrength Index="10" Set="10">30mA</DriverStrength>
+		<DriverStrength Index="11" Set="11">32mA</DriverStrength>
+		<DriverStrength Index="12" Set="12">34mA</DriverStrength>
+		<DriverStrength Index="13" Set="13">37mA</DriverStrength>
+		<DriverStrength Index="14" Set="14">39mA</DriverStrength>
+		<DriverStrength Index="15" Set="15">42mA</DriverStrength>
+		
+		<SleepMode Index="0">AP</SleepMode>
+		<SleepMode Index="1">PUBCP</SleepMode>
+		<SleepMode Index="2">WTLCP</SleepMode>
+		<SleepMode Index="3">AUDCP</SleepMode>
+		<SleepMode Index="4">CM4</SleepMode>
+		<SleepMode Index="5">ALL_CP</SleepMode>
+		<SleepMode Index="6">ALL_NO_CM4</SleepMode>
+		
+		<SleepPull Index="0" Set="WPU">PullUp</SleepPull>
+		<SleepPull Index="1" Set="WPD">PullDown</SleepPull>
+		<SleepPull Index="2" Set="NUL">None</SleepPull>
+
+		<SleepDirection Index="0" Set="IE">Input</SleepDirection>
+		<SleepDirection Index="1" Set="OE">Output</SleepDirection>
+		<SleepDirection Index="2" Set="Z">Z</SleepDirection>
+		<Other Index="0" Set="BIT_PIN_SE">SE</Other>
+	</pad>			
+	<pad name="PDWUWSWCDGSDE_V">
+		<PadDesigner>SPRD</PadDesigner>
+		<PullResistor Index="0" Set="WPUS|WPU">PU:1.8K</PullResistor>
+		<PullResistor Index="1" Set="WPUS|NUL">PU:4.7K</PullResistor>
+		<PullResistor Index="2" Set="NULL|WPU">PU:20K</PullResistor>
+		<PullResistor Index="3" Set="NULL|WPD">PD:50K</PullResistor>
+		<PullResistor Index="4" Set="NULL|NUL">NULL</PullResistor>
+		<DriverStrength Index="0" Set="0">2mA</DriverStrength>
+		<DriverStrength Index="1" Set="1">6mA</DriverStrength>
+		<DriverStrength Index="2" Set="2">8mA</DriverStrength>
+		<DriverStrength Index="3" Set="3">10mA</DriverStrength>
+		<DriverStrength Index="4" Set="4">12mA</DriverStrength>
+		<DriverStrength Index="5" Set="5">15mA</DriverStrength>
+		<DriverStrength Index="6" Set="6">17mA</DriverStrength>
+		<DriverStrength Index="7" Set="7">20mA</DriverStrength>
+		<DriverStrength Index="8" Set="8">25mA</DriverStrength>
+		<DriverStrength Index="9" Set="9">28mA</DriverStrength>
+		<DriverStrength Index="10" Set="10">30mA</DriverStrength>
+		<DriverStrength Index="11" Set="11">32mA</DriverStrength>
+		<DriverStrength Index="12" Set="12">34mA</DriverStrength>
+		<DriverStrength Index="13" Set="13">37mA</DriverStrength>
+		<DriverStrength Index="14" Set="14">39mA</DriverStrength>
+		<DriverStrength Index="15" Set="15">42mA</DriverStrength>
+		
+		<SleepMode Index="0">AP</SleepMode>
+		<SleepMode Index="1">ISE</SleepMode>
+		<SleepMode Index="2">PHYCP</SleepMode>
+		<SleepMode Index="3">AUDCP</SleepMode>
+		<SleepMode Index="4">PSCP</SleepMode>
+		<SleepMode Index="5">CM4</SleepMode>
+		<SleepMode Index="6">ALL_CP</SleepMode>
+		<SleepMode Index="7">ALL_NO_CM4</SleepMode>
+		
+		<SleepPull Index="0" Set="WPU">PullUp</SleepPull>
+		<SleepPull Index="1" Set="WPD">PullDown</SleepPull>
+		<SleepPull Index="2" Set="NUL">None</SleepPull>
+
+		<SleepDirection Index="0" Set="IE">Input</SleepDirection>
+		<SleepDirection Index="1" Set="OE">Output</SleepDirection>
+		<SleepDirection Index="2" Set="Z">Z</SleepDirection>
+		<Other Index="0" Set="BIT_PIN_SE">SE</Other>
+	</pad>
+</padtype>

@@ -1,0 +1,114 @@
+//
+//
+//  Copyright 2023 NXP
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+//
+cc_library_shared {
+    name: "nfc_tda",
+
+    cflags: [
+        "-Wall",
+        "-Werror",
+        "-Wextra",
+        "-Wno-implicit-fallthrough",
+        "-DNXP_EXTNS=TRUE",
+    ],
+
+
+    srcs: [
+        "src/api/tda_api.c",
+        "src/ct/tda.c",
+        "src/nci/nci_snd.c",
+        "src/nci/nci_rcv.c",
+        "src/fsm/fsm.c",
+        "src/pal/pal.c",
+    ],
+
+    local_include_dirs: [
+        "inc"
+    ],
+
+    include_dirs: [
+        "system/nfc/conf",
+        "system/nfc/src",
+        "system/nfc/src/adaptation",
+        "system/nfc/src/adaptation/tda",
+        "system/nfc/src/fuzzers",
+        "system/nfc/src/fuzzers/ce",
+        "system/nfc/src/fuzzers/inc",
+        "system/nfc/src/fuzzers/inc/android/hardware/nfc/1.1",
+        "system/nfc/src/fuzzers/integration",
+        "system/nfc/src/fuzzers/integration/fakes",
+        "system/nfc/src/fuzzers/llcp",
+        "system/nfc/src/fuzzers/nci",
+        "system/nfc/src/fuzzers/ndef",
+        "system/nfc/src/fuzzers/rw",
+        "system/nfc/src/gki/common",
+        "system/nfc/src/gki/ulinux",
+        "system/nfc/src/include",
+        "system/nfc/src/include/tda",
+        "system/nfc/src/nfa/ce",
+        "system/nfc/src/nfa/dm",
+        "system/nfc/src/nfa/ee",
+        "system/nfc/src/nfa/hci",
+        "system/nfc/src/nfa/include",
+        "system/nfc/src/nfa/p2p",
+        "system/nfc/src/nfa/rw",
+        "system/nfc/src/nfa/sys",
+        "system/nfc/src/nfa/tda",
+        "system/nfc/src/nfc/include",
+        "system/nfc/src/nfc/llcp",
+        "system/nfc/src/nfc/nci",
+        "system/nfc/src/nfc/ndef",
+        "system/nfc/src/nfc/nfc",
+        "system/nfc/src/nfc/tags",
+        "system/nfc/src/rust/hal",
+        "system/nfc/src/rust/hal/ffi",
+        "system/nfc/src/rust/nci",
+        "system/nfc/src/rust/packets",
+        "system/nfc/src/rust/rootcanal",
+        "system/nfc/src/rust/test",
+        "system/nfc/utils",
+        "system/nfc/utils/include",
+        "system/nfc/utils/test",
+        "system/nfc/utils/test/ringbuffer_fuzzer",
+        "system/nfc/utils/test/ringbuffer_fuzzer/corpus",
+    ],
+
+    shared_libs: [
+        "libnfc-nci",
+        "libcutils",
+        "liblog",
+        "libdl",
+        "libz",
+        "libchrome",
+        "libbase",
+
+        // Treble configuration
+        "libhidlbase",
+        "libutils",
+        "android.hardware.nfc@1.0",
+        "android.hardware.nfc@1.1",
+        "android.hardware.nfc@1.2",
+        "vendor.nxp.nxpnfc@2.0",
+        // Add for AIDL
+        "android.hardware.nfc-V1-ndk",
+        "libbinder_ndk",
+    ],
+    static_libs: [
+        "libnfcutils",
+        "libstatslog",
+    ],
+}

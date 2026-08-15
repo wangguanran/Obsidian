@@ -1,0 +1,51 @@
+This is a readme file to create a EMVCO Host Data Exchange Stack HTML document using Doxygen tool.
+
+Prerequisites:
+  1. Install the Doxygen Tool.
+     [https://www.doxygen.nl/files/doxygen-1.9.2-setup.exe]
+  2. Install the GraphViz package.
+     [http://www.graphviz.org/]
+
+Open the DoxyWizard tool installed in your system.
+   Apart from default settings, do below configurations: Please refer the sample configuration
+
+   A) Wizard --> Projects
+    - Project Name           = EMVCo Host Data Exchange Stack
+    - Project Synopsis       = Contactless and Contact EMVCo Card payment support for Android devices
+    - Project version or ID  = 1.0.1
+    - Project Logo           = Give a path of NXP logo(image file)
+    - Source code directory  = Select the EMVCo Data Exchange Stack Source code directory
+    - Destination Directory  = Select a output directory where output document shall be generated
+   B) Wizard --> Output
+    - From the output format to generate, Uncheck the LaTeX box.
+   C) Wizard --> Diagrams
+    - Select this option --> 'Use dot tool from the GraphViz package'
+      and enable the dot graphs options as per requirement.
+   D) Expert --> Project
+    - EXTENTION_MAPPING --> add  aidl=java
+    - enable the checkbox of DISTRIBUTE_GROUP_DOC.
+   E) Expert --> build :
+    - Enable checkbox for below configs
+      EXTRACT_ALL, EXTRACT_PRIVATE, EXTRACT_PRIV_VIRTUAL, EXTRACT_LOCAL_METHODS, INTERNAL_DOCS, , SHOW_GROUPED_MEMBER_INC
+    - Disable checkbox below configs:
+      SHOW_HEADRFILE, SHOW_INCLUDE_FILES, SHOW_USED_FILE, SHOW_FILES, SHOW_NAMESPACES
+   F) Expert --> input:
+    - File patterns -> *.aidl shall be added
+    - EXCLUDE_PATTERNS: add below patterns
+      *\aidl_api\*, *\utils\*, *\tml\*, *\log\*, *\common\*
+   G) Expert --> source browser:
+    - SOURCE_BROWSER(Check only if doc has to be used internally)
+   H) Expert --> HTML:
+    - Check below configs:
+      GENERATE_TREE_VIEW, DISABLE_INDEX
+   I) Specify the working directory from which the doxygen will run
+    - Specify the bin directory of doxygen
+Finally, click on the 'Run doxygen' tab from 'Run' window.
+
+Limitation:
+Currently image files are not getting copied automatically to output directory so document may not shown the images by default.
+To resolve this issue manually, please copy all the images from "emvco_hal_impl\doxygen\images" 
+to doxygen output directory (under html directory)
+
+
+Note: To create a PDF document, enable LaTeX Output from Wizard window and use it as imput with other avaialable tools.

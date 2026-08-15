@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PinMapStyle>
+	<Device Project="QogirN6 Pro" Chip="UIS7885">
+		<PinMapStr PadDesigner="SPRD" Index="0">
+			<RegName>$RegName</RegName>
+			<Function>BITS_PIN_AF($FuncSel)</Function>
+		</PinMapStr>
+		<PinMapStr PadDesigner="SPRD" Index="1">
+			<RegNameSub>$RegNameSub</RegNameSub>
+			<DriverStrength>BITS_PIN_DS($DSSel)</DriverStrength>
+			<PullResistor>BIT_PIN_$PullSel</PullResistor>
+			<SleepMode>BIT_PIN_SLP_$SleepModeSel</SleepMode>
+			<SleepPull>BIT_PIN_SLP_$SleepPullSel</SleepPull>
+			<SleepDirection>BIT_PIN_SLP_$SleepDirSel</SleepDirection>
+			<Other>$Other</Other>
+		</PinMapStr>
+	</Device>			
+</PinMapStyle>

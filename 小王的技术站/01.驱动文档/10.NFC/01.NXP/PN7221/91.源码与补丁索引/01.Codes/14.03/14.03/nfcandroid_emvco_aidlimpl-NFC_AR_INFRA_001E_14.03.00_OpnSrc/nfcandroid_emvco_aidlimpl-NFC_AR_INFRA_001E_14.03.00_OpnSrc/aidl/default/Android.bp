@@ -1,0 +1,31 @@
+cc_binary {
+    name: "vendor.nxp.emvco-service",
+    relative_install_path: "hw",
+    init_rc: ["vendor.nxp.emvco-service.rc"],
+    vintf_fragments: ["vendor.nxp.emvco-service.xml"],
+    vendor: true,
+
+    include_dirs: [
+        "hardware/nxp/emvco/emvco_hal_impl/api",
+    ],
+
+    local_include_dirs: ["."],
+    shared_libs: [
+        "liblog",
+        "libbinder_ndk",
+        "emvco_poller",
+    ],
+    static_libs: [
+        "libbase",
+        "libutils",
+        "vendor.nxp.emvco-V1-ndk",
+    ],
+    srcs: [
+        "EmvcoService.cpp",
+        "Emvco.cpp",
+        "LinkedCallback.cpp",
+        "EmvcoTDA.cpp",
+        "EmvcoContactlessCard.cpp",
+        "EmvcoProfileDiscovery.cpp",
+    ],
+}

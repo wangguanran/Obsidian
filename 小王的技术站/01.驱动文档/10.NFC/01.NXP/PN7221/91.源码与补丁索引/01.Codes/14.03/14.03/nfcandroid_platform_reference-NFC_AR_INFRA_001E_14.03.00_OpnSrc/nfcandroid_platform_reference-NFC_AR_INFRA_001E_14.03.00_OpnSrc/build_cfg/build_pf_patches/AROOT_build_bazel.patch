@@ -1,0 +1,27 @@
+From 50471b5cce116249d3538e24e8c7627b49d59287 Mon Sep 17 00:00:00 2001
+From: nxf97491 <ramyesh.thanthri@nxp.com>
+Date: Fri, 4 Aug 2023 15:15:05 +0530
+Subject: [PATCH] [artf1078904] Implementing batch command for bazel build
+
+1) --batch option resolves local server connection wait time issue in coverity and other builds
+
+Change-Id: Ieb25a254289fa8a56e4b4ddcb7e3d828a9342567
+---
+ common.bazelrc | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/common.bazelrc b/common.bazelrc
+index c708c0e..1462eeb 100644
+--- a/common.bazelrc
++++ b/common.bazelrc
+@@ -3,6 +3,7 @@
+ # thrashing the output directory when switching between top level target
+ # --platforms values.
+ build --experimental_platform_in_output_dir
++startup --batch
+ 
+ # Use toolchain resolution to find the cc toolchain.
+ build --incompatible_enable_cc_toolchain_resolution
+-- 
+2.41.0
+

@@ -1,0 +1,1075 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<BusInterface>
+  <Bus name="IIC0">
+    <Pin name="SCL0">
+      <PinName>SCL0</PinName>
+      <Function>SCL0</Function>
+      <DriverStrength>4mA</DriverStrength>
+      <PullResistor>PU:1.8K</PullResistor>
+      <SleepMode>AP</SleepMode>
+      <SleepPull>PullUp</SleepPull>
+      <SleepDirection>Z</SleepDirection>
+      <Other></Other>
+      <Note>I2C0_SCL</Note>
+    </Pin>
+    <Pin name="SDA0">
+      <PinName>SDA0</PinName>
+      <Function>SDA0</Function>
+      <DriverStrength>4mA</DriverStrength>
+      <PullResistor>PU:1.8K</PullResistor>
+      <SleepMode>AP</SleepMode>
+      <SleepPull>PullUp</SleepPull>
+      <SleepDirection>Z</SleepDirection>
+      <Other></Other>
+      <Note>I2C0_SDA</Note>
+    </Pin>
+  </Bus>
+  <Bus name="IIC1">
+    <Pin name="SCL1">
+      <PinName>SCL1</PinName>
+      <Function>SCL1</Function>
+      <DriverStrength>4mA</DriverStrength>
+      <PullResistor>PU:1.8K</PullResistor>
+      <SleepMode>AP</SleepMode>
+      <SleepPull>PullUp</SleepPull>
+      <SleepDirection>Z</SleepDirection>
+      <Other></Other>
+      <Note>I2C1_SCL</Note>
+    </Pin>
+    <Pin name="SDA1">
+      <PinName>SDA1</PinName>
+      <Function>SDA1</Function>
+      <DriverStrength>4mA</DriverStrength>
+      <PullResistor>PU:1.8K</PullResistor>
+      <SleepMode>AP</SleepMode>
+      <SleepPull>PullUp</SleepPull>
+      <SleepDirection>Z</SleepDirection>
+      <Other></Other>
+      <Note>I2C1_SDA</Note>
+    </Pin>
+  </Bus>
+  <Bus name="IIC2">
+    <Pin name="SCL2">
+      <PinName>SCL2</PinName>
+      <Function>SCL2</Function>
+      <DriverStrength>4mA</DriverStrength>
+      <PullResistor>PU:1.8K</PullResistor>
+      <SleepMode>CM4</SleepMode>
+      <SleepPull>PullUp</SleepPull>
+      <SleepDirection>Z</SleepDirection>
+      <Other></Other>
+      <Note>I2C2_SCL</Note>
+    </Pin>
+    <Pin name="SDA2">
+      <PinName>SDA2</PinName>
+      <Function>SDA2</Function>
+      <DriverStrength>4mA</DriverStrength>
+      <PullResistor>PU:1.8K</PullResistor>
+      <SleepMode>CM4</SleepMode>
+      <SleepPull>PullUp</SleepPull>
+      <SleepDirection>Z</SleepDirection>
+      <Other></Other>
+      <Note>I2C2_SDA</Note>
+    </Pin>
+  </Bus>
+  <Bus name="IIC3">
+    <Pin name="SCL3">
+      <PinName>SCL3</PinName>
+      <Function>SCL3</Function>
+      <DriverStrength>4mA</DriverStrength>
+      <PullResistor>PD:50K</PullResistor>
+      <SleepMode>AP</SleepMode>
+      <SleepPull>PullDown</SleepPull>
+      <SleepDirection>Z</SleepDirection>
+      <Other></Other>
+      <Note>NC</Note>
+    </Pin>
+    <Pin name="SDA3">
+      <PinName>SDA3</PinName>
+      <Function>SDA3</Function>
+      <DriverStrength>4mA</DriverStrength>
+      <PullResistor>PD:50K</PullResistor>
+      <SleepMode>AP</SleepMode>
+      <SleepPull>PullDown</SleepPull>
+      <SleepDirection>Z</SleepDirection>
+      <Other></Other>
+      <Note>NC</Note>
+    </Pin>
+  </Bus>
+  <Bus name="IIC4">
+    <Pin name="SCL4">
+      <PinName>SCL4</PinName>
+      <Function>SCL4</Function>
+      <DriverStrength>4mA</DriverStrength>
+      <PullResistor>PU:1.8K</PullResistor>
+      <SleepMode>AP</SleepMode>
+      <SleepPull>PullUp</SleepPull>
+      <SleepDirection>Z</SleepDirection>
+      <Other></Other>
+      <Note>I2C4_SCL</Note>
+    </Pin>
+    <Pin name="SDA4">
+      <PinName>SDA4</PinName>
+      <Function>SDA4</Function>
+      <DriverStrength>4mA</DriverStrength>
+      <PullResistor>PU:1.8K</PullResistor>
+      <SleepMode>AP</SleepMode>
+      <SleepPull>PullUp</SleepPull>
+      <SleepDirection>Z</SleepDirection>
+      <Other></Other>
+      <Note>I2C4_SDA</Note>
+    </Pin>
+  </Bus>
+  <Bus name="IIC5">
+    <Pin name="U5TXD">
+      <PinName>U5TXD</PinName>
+      <Function>SCL5</Function>
+      <DriverStrength>4mA</DriverStrength>
+      <PullResistor>PU:1.8K</PullResistor>
+      <SleepMode>CM4</SleepMode>
+      <SleepPull>PullUp</SleepPull>
+      <SleepDirection>Z</SleepDirection>
+      <Other></Other>
+      <Note>I2C5_SCL</Note>
+    </Pin>
+    <Pin name="U5RXD">
+      <PinName>U5RXD</PinName>
+      <Function>SDA5</Function>
+      <DriverStrength>4mA</DriverStrength>
+      <PullResistor>PU:1.8K</PullResistor>
+      <SleepMode>CM4</SleepMode>
+      <SleepPull>PullUp</SleepPull>
+      <SleepDirection>Z</SleepDirection>
+      <Other></Other>
+      <Note>I2C5_SDA</Note>
+    </Pin>
+  </Bus>
+  <Bus name="IIC6">
+    <Pin name="SCL6">
+      <PinName>SCL6</PinName>
+      <Function>SCL6</Function>
+      <DriverStrength>4mA</DriverStrength>
+      <PullResistor>PU:1.8K</PullResistor>
+      <SleepMode>AP</SleepMode>
+      <SleepPull>PullUp</SleepPull>
+      <SleepDirection>Z</SleepDirection>
+      <Other></Other>
+      <Note>I2C6_SCL</Note>
+    </Pin>
+    <Pin name="SDA6">
+      <PinName>SDA6</PinName>
+      <Function>SDA6</Function>
+      <DriverStrength>4mA</DriverStrength>
+      <PullResistor>PU:1.8K</PullResistor>
+      <SleepMode>AP</SleepMode>
+      <SleepPull>PullUp</SleepPull>
+      <SleepDirection>Z</SleepDirection>
+      <Other></Other>
+      <Note>I2C6_SDA</Note>
+    </Pin>
+  </Bus>
+  <Bus name="IIC7">
+    <Pin name="IIS3CLK">
+      <PinName>IIS3CLK</PinName>
+      <Function>SCL7</Function>
+      <DriverStrength>4mA</DriverStrength>
+      <PullResistor>NULL</PullResistor>
+      <SleepMode>AP</SleepMode>
+      <SleepPull>None</SleepPull>
+      <SleepDirection>Output</SleepDirection>
+      <Other></Other>
+      <Note>TOF_XSHUT</Note>
+    </Pin>
+    <Pin name="IIS3LRCK">
+      <PinName>IIS3LRCK</PinName>
+      <Function>SDA7</Function>
+      <DriverStrength>4mA</DriverStrength>
+      <PullResistor>PU:20K</PullResistor>
+      <SleepMode>AP</SleepMode>
+      <SleepPull>PullUp</SleepPull>
+      <SleepDirection>Input</SleepDirection>
+      <Other></Other>
+      <Note>BQ25970_INTacticelow</Note>
+    </Pin>
+  </Bus>
+  <Bus name="IIC8">
+    <Pin name="SCL8">
+      <PinName>SCL8</PinName>
+      <Function>SCL8</Function>
+      <DriverStrength>4mA</DriverStrength>
+      <PullResistor>PU:1.8K</PullResistor>
+      <SleepMode>AP</SleepMode>
+      <SleepPull>PullUp</SleepPull>
+      <SleepDirection>Z</SleepDirection>
+      <Other></Other>
+      <Note>I2C8_SCL</Note>
+    </Pin>
+    <Pin name="SDA8">
+      <PinName>SDA8</PinName>
+      <Function>SDA8</Function>
+      <DriverStrength>4mA</DriverStrength>
+      <PullResistor>PU:1.8K</PullResistor>
+      <SleepMode>AP</SleepMode>
+      <SleepPull>PullUp</SleepPull>
+      <SleepDirection>Z</SleepDirection>
+      <Other></Other>
+      <Note>I2C8_SDA</Note>
+    </Pin>
+  </Bus>
+  <Bus name="IIC9">
+    <Pin name="SCL9">
+      <PinName>SCL9</PinName>
+      <Function>SCL9</Function>
+      <DriverStrength>4mA</DriverStrength>
+      <PullResistor>PU:1.8K</PullResistor>
+      <SleepMode>AP</SleepMode>
+      <SleepPull>PullUp</SleepPull>
+      <SleepDirection>Z</SleepDirection>
+      <Other></Other>
+      <Note>I2C9_SCL</Note>
+    </Pin>
+    <Pin name="SDA9">
+      <PinName>SDA9</PinName>
+      <Function>SDA9</Function>
+      <DriverStrength>4mA</DriverStrength>
+      <PullResistor>PU:1.8K</PullResistor>
+      <SleepMode>AP</SleepMode>
+      <SleepPull>PullUp</SleepPull>
+      <SleepDirection>Z</SleepDirection>
+      <Other></Other>
+      <Note>I2C9_SDA</Note>
+    </Pin>
+  </Bus>
+  <Bus name="SPI0">
+    <Pin name="SPI0_CSN">
+      <PinName>SPI0_CSN</PinName>
+      <Function>SPI0_CSN</Function>
+      <DriverStrength>4mA</DriverStrength>
+      <PullResistor>NULL</PullResistor>
+      <SleepMode>AP</SleepMode>
+      <SleepPull>None</SleepPull>
+      <SleepDirection>Output</SleepDirection>
+      <Other></Other>
+      <Note>FTID_SPI_CS</Note>
+    </Pin>
+    <Pin name="SPI0_DO">
+      <PinName>SPI0_DO</PinName>
+      <Function>SPI0_DO</Function>
+      <DriverStrength>4mA</DriverStrength>
+      <PullResistor>NULL</PullResistor>
+      <SleepMode>AP</SleepMode>
+      <SleepPull>PullDown</SleepPull>
+      <SleepDirection>Z</SleepDirection>
+      <Other></Other>
+      <Note>FTID_SPI_DI</Note>
+    </Pin>
+    <Pin name="SPI0_DI">
+      <PinName>SPI0_DI</PinName>
+      <Function>SPI0_DI</Function>
+      <DriverStrength>4mA</DriverStrength>
+      <PullResistor>NULL</PullResistor>
+      <SleepMode>AP</SleepMode>
+      <SleepPull>PullDown</SleepPull>
+      <SleepDirection>Z</SleepDirection>
+      <Other></Other>
+      <Note>FTID_SPI_DO</Note>
+    </Pin>
+    <Pin name="SPI0_CLK">
+      <PinName>SPI0_CLK</PinName>
+      <Function>SPI0_CLK</Function>
+      <DriverStrength>4mA</DriverStrength>
+      <PullResistor>NULL</PullResistor>
+      <SleepMode>AP</SleepMode>
+      <SleepPull>PullDown</SleepPull>
+      <SleepDirection>Z</SleepDirection>
+      <Other></Other>
+      <Note>FTID_SPI_CLK</Note>
+    </Pin>
+  </Bus>
+  <Bus name="SPI1">
+    <Pin name="SD2_CLK">
+      <PinName>SD2_CLK</PinName>
+      <Function>SPI1_CLK</Function>
+      <DriverStrength>6mA</DriverStrength>
+      <PullResistor>NULL</PullResistor>
+      <SleepMode>AP</SleepMode>
+      <SleepPull>PullDown</SleepPull>
+      <SleepDirection>Z</SleepDirection>
+      <Other></Other>
+      <Note>LCM_SPI_CLK</Note>
+    </Pin>
+    <Pin name="SD2_CMD">
+      <PinName>SD2_CMD</PinName>
+      <Function>SPI1_DI</Function>
+      <DriverStrength>6mA</DriverStrength>
+      <PullResistor>NULL</PullResistor>
+      <SleepMode>AP</SleepMode>
+      <SleepPull>PullDown</SleepPull>
+      <SleepDirection>Z</SleepDirection>
+      <Other></Other>
+      <Note>LCM_SPI_MISO</Note>
+    </Pin>
+    <Pin name="SD2_D0">
+      <PinName>SD2_D0</PinName>
+      <Function>SPI1_DO</Function>
+      <DriverStrength>6mA</DriverStrength>
+      <PullResistor>NULL</PullResistor>
+      <SleepMode>AP</SleepMode>
+      <SleepPull>PullDown</SleepPull>
+      <SleepDirection>Z</SleepDirection>
+      <Other></Other>
+      <Note>LCM_SPI_MOSI</Note>
+    </Pin>
+    <Pin name="SD2_D3">
+      <PinName>SD2_D3</PinName>
+      <Function>SPI1_CSN</Function>
+      <DriverStrength>6mA</DriverStrength>
+      <PullResistor>NULL</PullResistor>
+      <SleepMode>AP</SleepMode>
+      <SleepPull>None</SleepPull>
+      <SleepDirection>Output</SleepDirection>
+      <Other></Other>
+      <Note>LCM_SPI_CS</Note>
+    </Pin>
+  </Bus>
+  <Bus name="SPI2">
+    <Pin name="SPI2_CSN">
+      <PinName>SPI2_CSN</PinName>
+      <Function>SPI2_CSN</Function>
+      <DriverStrength>4mA</DriverStrength>
+      <PullResistor>NULL</PullResistor>
+      <SleepMode>AP</SleepMode>
+      <SleepPull>None</SleepPull>
+      <SleepDirection>Output</SleepDirection>
+      <Other></Other>
+      <Note>ESE_SPI_CSN</Note>
+    </Pin>
+    <Pin name="SPI2_DO">
+      <PinName>SPI2_DO</PinName>
+      <Function>SPI2_DO</Function>
+      <DriverStrength>4mA</DriverStrength>
+      <PullResistor>NULL</PullResistor>
+      <SleepMode>AP</SleepMode>
+      <SleepPull>PullDown</SleepPull>
+      <SleepDirection>Z</SleepDirection>
+      <Other></Other>
+      <Note>ESE_SPI_DI</Note>
+    </Pin>
+    <Pin name="SPI2_DI">
+      <PinName>SPI2_DI</PinName>
+      <Function>SPI2_DI</Function>
+      <DriverStrength>4mA</DriverStrength>
+      <PullResistor>NULL</PullResistor>
+      <SleepMode>AP</SleepMode>
+      <SleepPull>PullDown</SleepPull>
+      <SleepDirection>Z</SleepDirection>
+      <Other></Other>
+      <Note>ESE_SPI_DO</Note>
+    </Pin>
+    <Pin name="SPI2_CLK">
+      <PinName>SPI2_CLK</PinName>
+      <Function>SPI2_CLK</Function>
+      <DriverStrength>4mA</DriverStrength>
+      <PullResistor>NULL</PullResistor>
+      <SleepMode>AP</SleepMode>
+      <SleepPull>PullDown</SleepPull>
+      <SleepDirection>Z</SleepDirection>
+      <Other></Other>
+      <Note>ESE_SPI_CLK</Note>
+    </Pin>
+  </Bus>
+  <Bus name="SPI3">
+    <Pin name="SPI3_CSN">
+      <PinName>SPI3_CSN</PinName>
+      <Function>SPI3_CSN</Function>
+      <DriverStrength>4mA</DriverStrength>
+      <PullResistor>PD:50K</PullResistor>
+      <SleepMode>AP</SleepMode>
+      <SleepPull>PullDown</SleepPull>
+      <SleepDirection>Z</SleepDirection>
+      <Other></Other>
+      <Note>NC</Note>
+    </Pin>
+    <Pin name="SPI3_CLK">
+      <PinName>SPI3_CLK</PinName>
+      <Function>SPI3_CLK</Function>
+      <DriverStrength>4mA</DriverStrength>
+      <PullResistor>NULL</PullResistor>
+      <SleepMode>AP</SleepMode>
+      <SleepPull>PullDown</SleepPull>
+      <SleepDirection>Z</SleepDirection>
+      <Other></Other>
+      <Note>FTID_SPI_CLK</Note>
+    </Pin>
+    <Pin name="SPI3_DI">
+      <PinName>SPI3_DI</PinName>
+      <Function>SPI3_DI</Function>
+      <DriverStrength>4mA</DriverStrength>
+      <PullResistor>NULL</PullResistor>
+      <SleepMode>AP</SleepMode>
+      <SleepPull>PullDown</SleepPull>
+      <SleepDirection>Z</SleepDirection>
+      <Other></Other>
+      <Note>FTID_SPI_DO</Note>
+    </Pin>
+    <Pin name="SPI3_DO">
+      <PinName>SPI3_DO</PinName>
+      <Function>SPI3_DO</Function>
+      <DriverStrength>4mA</DriverStrength>
+      <PullResistor>PU:20K</PullResistor>
+      <SleepMode>AP</SleepMode>
+      <SleepPull>PullUp</SleepPull>
+      <SleepDirection>Input</SleepDirection>
+      <Other></Other>
+      <Note>COLOR_SENSOR_INT</Note>
+    </Pin>
+  </Bus>
+  <Bus name="IIS0">
+    <Pin name="IIS0DI">
+      <PinName>IIS0DI</PinName>
+      <Function>IIS0DI</Function>
+      <DriverStrength>4mA</DriverStrength>
+      <PullResistor>NULL</PullResistor>
+      <SleepMode>AP</SleepMode>
+      <SleepPull>PullDown</SleepPull>
+      <SleepDirection>Input</SleepDirection>
+      <Other></Other>
+      <Note>BT_PCM_OUT</Note>
+    </Pin>
+    <Pin name="IIS0DO">
+      <PinName>IIS0DO</PinName>
+      <Function>IIS0DO</Function>
+      <DriverStrength>4mA</DriverStrength>
+      <PullResistor>NULL</PullResistor>
+      <SleepMode>AP</SleepMode>
+      <SleepPull>None</SleepPull>
+      <SleepDirection>Output</SleepDirection>
+      <Other></Other>
+      <Note>BT_PCM_IN</Note>
+    </Pin>
+    <Pin name="IIS0CLK">
+      <PinName>IIS0CLK</PinName>
+      <Function>IIS0CLK</Function>
+      <DriverStrength>4mA</DriverStrength>
+      <PullResistor>NULL</PullResistor>
+      <SleepMode>AP</SleepMode>
+      <SleepPull>PullDown</SleepPull>
+      <SleepDirection>Input</SleepDirection>
+      <Other></Other>
+      <Note>BT_PCM_CLK</Note>
+    </Pin>
+    <Pin name="IIS0LRCK">
+      <PinName>IIS0LRCK</PinName>
+      <Function>IIS0LRCK</Function>
+      <DriverStrength>4mA</DriverStrength>
+      <PullResistor>NULL</PullResistor>
+      <SleepMode>AP</SleepMode>
+      <SleepPull>PullDown</SleepPull>
+      <SleepDirection>Input</SleepDirection>
+      <Other></Other>
+      <Note>BT_PCM_SYNC</Note>
+    </Pin>
+  </Bus>
+  <Bus name="IIS1">
+    <Pin name="IIS1DI">
+      <PinName>IIS1DI</PinName>
+      <Function>IIS1DI</Function>
+      <DriverStrength>4mA</DriverStrength>
+      <PullResistor>PD:50K</PullResistor>
+      <SleepMode>AP</SleepMode>
+      <SleepPull>PullDown</SleepPull>
+      <SleepDirection>Input</SleepDirection>
+      <Other></Other>
+      <Note>FTID_INT</Note>
+    </Pin>
+    <Pin name="IIS1DO">
+      <PinName>IIS1DO</PinName>
+      <Function>IIS1DO</Function>
+      <DriverStrength>4mA</DriverStrength>
+      <PullResistor>NULL</PullResistor>
+      <SleepMode>AP</SleepMode>
+      <SleepPull>None</SleepPull>
+      <SleepDirection>Output</SleepDirection>
+      <Other></Other>
+      <Note>FTID_RSTN</Note>
+    </Pin>
+    <Pin name="IIS1CLK">
+      <PinName>IIS1CLK</PinName>
+      <Function>IIS1CLK</Function>
+      <DriverStrength>4mA</DriverStrength>
+      <PullResistor>PD:50K</PullResistor>
+      <SleepMode>AP</SleepMode>
+      <SleepPull>PullDown</SleepPull>
+      <SleepDirection>Output</SleepDirection>
+      <Other></Other>
+      <Note>NFC_WAKE_HOST</Note>
+    </Pin>
+    <Pin name="IIS1LRCK">
+      <PinName>IIS1LRCK</PinName>
+      <Function>IIS1LRCK</Function>
+      <DriverStrength>4mA</DriverStrength>
+      <PullResistor>PD:50K</PullResistor>
+      <SleepMode>AP</SleepMode>
+      <SleepPull>PullDown</SleepPull>
+      <SleepDirection>Input</SleepDirection>
+      <Other></Other>
+      <Note>NFC_HOST_WAKE</Note>
+    </Pin>
+  </Bus>
+  <Bus name="IIS3">
+    <Pin name="IIS3DI">
+      <PinName>IIS3DI</PinName>
+      <Function>IIS3DI</Function>
+      <DriverStrength>4mA</DriverStrength>
+      <PullResistor>NULL</PullResistor>
+      <SleepMode>AP</SleepMode>
+      <SleepPull>None</SleepPull>
+      <SleepDirection>Output</SleepDirection>
+      <Other></Other>
+      <Note>LCM_SOURCE_AVEEEN</Note>
+    </Pin>
+    <Pin name="IIS3DO">
+      <PinName>IIS3DO</PinName>
+      <Function>IIS3DO</Function>
+      <DriverStrength>4mA</DriverStrength>
+      <PullResistor>NULL</PullResistor>
+      <SleepMode>AP</SleepMode>
+      <SleepPull>None</SleepPull>
+      <SleepDirection>Output</SleepDirection>
+      <Other></Other>
+      <Note>LCM_SOURCE_AVDDEN</Note>
+    </Pin>
+    <Pin name="IIS3LRCK">
+      <PinName>IIS3LRCK</PinName>
+      <Function>IIS3LRCK</Function>
+      <DriverStrength>4mA</DriverStrength>
+      <PullResistor>PU:20K</PullResistor>
+      <SleepMode>AP</SleepMode>
+      <SleepPull>PullUp</SleepPull>
+      <SleepDirection>Input</SleepDirection>
+      <Other></Other>
+      <Note>BQ25970_INTacticelow</Note>
+    </Pin>
+    <Pin name="IIS3CLK">
+      <PinName>IIS3CLK</PinName>
+      <Function>IIS3CLK</Function>
+      <DriverStrength>4mA</DriverStrength>
+      <PullResistor>NULL</PullResistor>
+      <SleepMode>AP</SleepMode>
+      <SleepPull>None</SleepPull>
+      <SleepDirection>Output</SleepDirection>
+      <Other></Other>
+      <Note>TOF_XSHUT</Note>
+    </Pin>
+  </Bus>
+  <Bus name="UART0">
+    <Pin name="U0TXD">
+      <PinName>U0TXD</PinName>
+      <Function>U0TXD</Function>
+      <DriverStrength>4mA</DriverStrength>
+      <PullResistor>NULL</PullResistor>
+      <SleepMode>ALL_CP</SleepMode>
+      <SleepPull>None</SleepPull>
+      <SleepDirection>Output</SleepDirection>
+      <Other></Other>
+      <Note>BT_U0RXD</Note>
+    </Pin>
+    <Pin name="U0RXD">
+      <PinName>U0RXD</PinName>
+      <Function>U0RXD</Function>
+      <DriverStrength>4mA</DriverStrength>
+      <PullResistor>PU:20K</PullResistor>
+      <SleepMode>ALL_CP</SleepMode>
+      <SleepPull>PullUp</SleepPull>
+      <SleepDirection>Input</SleepDirection>
+      <Other></Other>
+      <Note>BT_U0TXD</Note>
+    </Pin>
+    <Pin name="U0CTS">
+      <PinName>U0CTS</PinName>
+      <Function>U0CTS</Function>
+      <DriverStrength>4mA</DriverStrength>
+      <PullResistor>PU:20K</PullResistor>
+      <SleepMode>AP</SleepMode>
+      <SleepPull>PullUp</SleepPull>
+      <SleepDirection>Input</SleepDirection>
+      <Other></Other>
+      <Note>BT_U0RTS</Note>
+    </Pin>
+    <Pin name="U0RTS">
+      <PinName>U0RTS</PinName>
+      <Function>U0RTS</Function>
+      <DriverStrength>4mA</DriverStrength>
+      <PullResistor>NULL</PullResistor>
+      <SleepMode>AP</SleepMode>
+      <SleepPull>PullUp</SleepPull>
+      <SleepDirection>Z</SleepDirection>
+      <Other></Other>
+      <Note>BT_U0CTS</Note>
+    </Pin>
+  </Bus>
+  <Bus name="UART1">
+    <Pin name="U1TXD">
+      <PinName>U1TXD</PinName>
+      <Function>U1TXD</Function>
+      <DriverStrength>4mA</DriverStrength>
+      <PullResistor>NULL</PullResistor>
+      <SleepMode>AP</SleepMode>
+      <SleepPull>None</SleepPull>
+      <SleepDirection>Output</SleepDirection>
+      <Other></Other>
+      <Note>BB_U1TXD</Note>
+    </Pin>
+    <Pin name="U1RXD">
+      <PinName>U1RXD</PinName>
+      <Function>U1RXD</Function>
+      <DriverStrength>4mA</DriverStrength>
+      <PullResistor>PU:20K</PullResistor>
+      <SleepMode>AP</SleepMode>
+      <SleepPull>PullUp</SleepPull>
+      <SleepDirection>Input</SleepDirection>
+      <Other></Other>
+      <Note>BB_U1RXD</Note>
+    </Pin>
+  </Bus>
+  <Bus name="UART2">
+    <Pin name="U2TXD">
+      <PinName>U2TXD</PinName>
+      <Function>U2TXD</Function>
+      <DriverStrength>4mA</DriverStrength>
+      <PullResistor>NULL</PullResistor>
+      <SleepMode>AP</SleepMode>
+      <SleepPull>None</SleepPull>
+      <SleepDirection>Output</SleepDirection>
+      <Other></Other>
+      <Note>BB_U2TXD</Note>
+    </Pin>
+    <Pin name="U2RXD">
+      <PinName>U2RXD</PinName>
+      <Function>U2RXD</Function>
+      <DriverStrength>4mA</DriverStrength>
+      <PullResistor>PU:20K</PullResistor>
+      <SleepMode>AP</SleepMode>
+      <SleepPull>PullUp</SleepPull>
+      <SleepDirection>Input</SleepDirection>
+      <Other></Other>
+      <Note>BB_U2RXD</Note>
+    </Pin>
+  </Bus>
+  <Bus name="UART3">
+    <Pin name="RFCTL_14">
+      <PinName>RFCTL_14</PinName>
+      <Function>U3TXD</Function>
+      <DriverStrength>4mA</DriverStrength>
+      <PullResistor>NULL</PullResistor>
+      <SleepMode>ALL_CP</SleepMode>
+      <SleepPull>None</SleepPull>
+      <SleepDirection>Output</SleepDirection>
+      <Other></Other>
+      <Note>WB_WCI_2_RXD</Note>
+    </Pin>
+    <Pin name="RFCTL_15">
+      <PinName>RFCTL_15</PinName>
+      <Function>U3RXD</Function>
+      <DriverStrength>4mA</DriverStrength>
+      <PullResistor>PU:20K</PullResistor>
+      <SleepMode>ALL_CP</SleepMode>
+      <SleepPull>PullUp</SleepPull>
+      <SleepDirection>Input</SleepDirection>
+      <Other></Other>
+      <Note>WB_WCI_2_RXD</Note>
+    </Pin>
+  </Bus>
+  <Bus name="UART4">
+    <Pin name="U4TXD">
+      <PinName>U4TXD</PinName>
+      <Function>U4TXD</Function>
+      <DriverStrength>4mA</DriverStrength>
+      <PullResistor>NULL</PullResistor>
+      <SleepMode>AP</SleepMode>
+      <SleepPull>None</SleepPull>
+      <SleepDirection>Output</SleepDirection>
+      <Other></Other>
+      <Note>GPS_U1RXD</Note>
+    </Pin>
+    <Pin name="U4RXD">
+      <PinName>U4RXD</PinName>
+      <Function>U4RXD</Function>
+      <DriverStrength>4mA</DriverStrength>
+      <PullResistor>PU:20K</PullResistor>
+      <SleepMode>AP</SleepMode>
+      <SleepPull>PullUp</SleepPull>
+      <SleepDirection>Input</SleepDirection>
+      <Other></Other>
+      <Note>GPS_U1TXD</Note>
+    </Pin>
+    <Pin name="U4CTS">
+      <PinName>U4CTS</PinName>
+      <Function>U4CTS</Function>
+      <DriverStrength>4mA</DriverStrength>
+      <PullResistor>PU:20K</PullResistor>
+      <SleepMode>AP</SleepMode>
+      <SleepPull>PullUp</SleepPull>
+      <SleepDirection>Input</SleepDirection>
+      <Other></Other>
+      <Note>GPS_U1RTS</Note>
+    </Pin>
+    <Pin name="U4RTS">
+      <PinName>U4RTS</PinName>
+      <Function>U4RTS</Function>
+      <DriverStrength>4mA</DriverStrength>
+      <PullResistor>NULL</PullResistor>
+      <SleepMode>AP</SleepMode>
+      <SleepPull>PullUp</SleepPull>
+      <SleepDirection>Z</SleepDirection>
+      <Other></Other>
+      <Note>GPS_U1CTS</Note>
+    </Pin>
+  </Bus>
+  <Bus name="UART5">
+    <Pin name="U5TXD">
+      <PinName>U5TXD</PinName>
+      <Function>U5TXD</Function>
+      <DriverStrength>4mA</DriverStrength>
+      <PullResistor>PU:1.8K</PullResistor>
+      <SleepMode>CM4</SleepMode>
+      <SleepPull>PullUp</SleepPull>
+      <SleepDirection>Z</SleepDirection>
+      <Other></Other>
+      <Note>I2C5_SCL</Note>
+    </Pin>
+    <Pin name="U5RXD">
+      <PinName>U5RXD</PinName>
+      <Function>U5RXD</Function>
+      <DriverStrength>4mA</DriverStrength>
+      <PullResistor>PU:1.8K</PullResistor>
+      <SleepMode>CM4</SleepMode>
+      <SleepPull>PullUp</SleepPull>
+      <SleepDirection>Z</SleepDirection>
+      <Other></Other>
+      <Note>I2C5_SDA</Note>
+    </Pin>
+  </Bus>
+  <Bus name="UART6">
+    <Pin name="U6TXD">
+      <PinName>U6TXD</PinName>
+      <Function>U6TXD</Function>
+      <DriverStrength>4mA</DriverStrength>
+      <PullResistor>NULL</PullResistor>
+      <SleepMode>AP</SleepMode>
+      <SleepPull>None</SleepPull>
+      <SleepDirection>Output</SleepDirection>
+      <Other></Other>
+      <Note>BB_U6TXD</Note>
+    </Pin>
+    <Pin name="U6RXD">
+      <PinName>U6RXD</PinName>
+      <Function>U6RXD</Function>
+      <DriverStrength>4mA</DriverStrength>
+      <PullResistor>PU:20K</PullResistor>
+      <SleepMode>AP</SleepMode>
+      <SleepPull>PullUp</SleepPull>
+      <SleepDirection>Input</SleepDirection>
+      <Other></Other>
+      <Note>BB_U6RXD</Note>
+    </Pin>
+  </Bus>
+  <Bus name="UART7">
+    <Pin name="U7TXD">
+      <PinName>U7TXD</PinName>
+      <Function>U7TXD</Function>
+      <DriverStrength>4mA</DriverStrength>
+      <PullResistor>NULL</PullResistor>
+      <SleepMode>AP</SleepMode>
+      <SleepPull>None</SleepPull>
+      <SleepDirection>Output</SleepDirection>
+      <Other></Other>
+      <Note>BB_U7TXD</Note>
+    </Pin>
+    <Pin name="U7RXD">
+      <PinName>U7RXD</PinName>
+      <Function>U7RXD</Function>
+      <DriverStrength>4mA</DriverStrength>
+      <PullResistor>PU:20K</PullResistor>
+      <SleepMode>AP</SleepMode>
+      <SleepPull>PullUp</SleepPull>
+      <SleepDirection>Input</SleepDirection>
+      <Other></Other>
+      <Note>BB_U7RXD</Note>
+    </Pin>
+  </Bus>
+  <Bus name="SDIO0">
+    <Pin name="SD0_CMD">
+      <PinName>SD0_CMD</PinName>
+      <Function>SD0_CMD</Function>
+      <DriverStrength>10mA</DriverStrength>
+      <PullResistor>PU:20K</PullResistor>
+      <SleepMode>AP</SleepMode>
+      <SleepPull>PullDown</SleepPull>
+      <SleepDirection>Z</SleepDirection>
+      <Other></Other>
+      <Note>TF_SD0_CMD</Note>
+    </Pin>
+    <Pin name="SD0_D_0">
+      <PinName>SD0_D_0</PinName>
+      <Function>SD0_D_0</Function>
+      <DriverStrength>10mA</DriverStrength>
+      <PullResistor>PU:20K</PullResistor>
+      <SleepMode>AP</SleepMode>
+      <SleepPull>PullDown</SleepPull>
+      <SleepDirection>Z</SleepDirection>
+      <Other></Other>
+      <Note>TF_SD0_D0</Note>
+    </Pin>
+    <Pin name="SD0_D_1">
+      <PinName>SD0_D_1</PinName>
+      <Function>SD0_D_1</Function>
+      <DriverStrength>10mA</DriverStrength>
+      <PullResistor>PU:20K</PullResistor>
+      <SleepMode>AP</SleepMode>
+      <SleepPull>PullDown</SleepPull>
+      <SleepDirection>Z</SleepDirection>
+      <Other></Other>
+      <Note>TF_SD0_D1</Note>
+    </Pin>
+    <Pin name="SD0_CLK">
+      <PinName>SD0_CLK</PinName>
+      <Function>SD0_CLK</Function>
+      <DriverStrength>17mA</DriverStrength>
+      <PullResistor>NULL</PullResistor>
+      <SleepMode>AP</SleepMode>
+      <SleepPull>PullDown</SleepPull>
+      <SleepDirection>Z</SleepDirection>
+      <Other></Other>
+      <Note>TF_SD0_CLK0</Note>
+    </Pin>
+    <Pin name="SD0_D_2">
+      <PinName>SD0_D_2</PinName>
+      <Function>SD0_D_2</Function>
+      <DriverStrength>10mA</DriverStrength>
+      <PullResistor>PU:20K</PullResistor>
+      <SleepMode>AP</SleepMode>
+      <SleepPull>PullDown</SleepPull>
+      <SleepDirection>Z</SleepDirection>
+      <Other></Other>
+      <Note>TF_SD0_D2</Note>
+    </Pin>
+    <Pin name="SD0_D_3">
+      <PinName>SD0_D_3</PinName>
+      <Function>SD0_D_3</Function>
+      <DriverStrength>10mA</DriverStrength>
+      <PullResistor>PU:20K</PullResistor>
+      <SleepMode>AP</SleepMode>
+      <SleepPull>PullDown</SleepPull>
+      <SleepDirection>Z</SleepDirection>
+      <Other></Other>
+      <Note>TF_SD0_D3</Note>
+    </Pin>
+  </Bus>
+  <Bus name="SDIO1">
+    <Pin name="SD1_CMD">
+      <PinName>SD1_CMD</PinName>
+      <Function>SD1_CMD</Function>
+      <DriverStrength>9mA</DriverStrength>
+      <PullResistor>PD:50K</PullResistor>
+      <SleepMode>AP</SleepMode>
+      <SleepPull>PullDown</SleepPull>
+      <SleepDirection>Input</SleepDirection>
+      <Other></Other>
+      <Note>CAMERA_FLASH_SYNC</Note>
+    </Pin>
+    <Pin name="SD1_D0">
+      <PinName>SD1_D0</PinName>
+      <Function>SD1_D0</Function>
+      <DriverStrength>9mA</DriverStrength>
+      <PullResistor>NULL</PullResistor>
+      <SleepMode>AP</SleepMode>
+      <SleepPull>None</SleepPull>
+      <SleepDirection>Output</SleepDirection>
+      <Other></Other>
+      <Note>CAMERA_FLASH_EN</Note>
+    </Pin>
+    <Pin name="SD1_D1">
+      <PinName>SD1_D1</PinName>
+      <Function>SD1_D1</Function>
+      <DriverStrength>9mA</DriverStrength>
+      <PullResistor>NULL</PullResistor>
+      <SleepMode>AP</SleepMode>
+      <SleepPull>None</SleepPull>
+      <SleepDirection>Output</SleepDirection>
+      <Other></Other>
+      <Note>camera_torch_en</Note>
+    </Pin>
+    <Pin name="SD1_CLK">
+      <PinName>SD1_CLK</PinName>
+      <Function>SD1_CLK</Function>
+      <DriverStrength>9mA</DriverStrength>
+      <PullResistor>NULL</PullResistor>
+      <SleepMode>AP</SleepMode>
+      <SleepPull>None</SleepPull>
+      <SleepDirection>Output</SleepDirection>
+      <Other></Other>
+      <Note>AP_WCN_PCIE_RST</Note>
+    </Pin>
+    <Pin name="SD1_D2">
+      <PinName>SD1_D2</PinName>
+      <Function>SD1_D2</Function>
+      <DriverStrength>9mA</DriverStrength>
+      <PullResistor>PU:20K</PullResistor>
+      <SleepMode>AP</SleepMode>
+      <SleepPull>PullUp</SleepPull>
+      <SleepDirection>Input</SleepDirection>
+      <Other></Other>
+      <Note>AP_WCN_PCIE_CLKREQ</Note>
+    </Pin>
+    <Pin name="SD1_D3">
+      <PinName>SD1_D3</PinName>
+      <Function>SD1_D3</Function>
+      <DriverStrength>9mA</DriverStrength>
+      <PullResistor>NULL</PullResistor>
+      <SleepMode>AP</SleepMode>
+      <SleepPull>PullUp</SleepPull>
+      <SleepDirection>Input</SleepDirection>
+      <Other></Other>
+      <Note>AP_WCN_PCIE_WAKE</Note>
+    </Pin>
+  </Bus>
+  <Bus name="SDIO2">
+    <Pin name="SD2_CLK">
+      <PinName>SD2_CLK</PinName>
+      <Function>SD2_CLK</Function>
+      <DriverStrength>6mA</DriverStrength>
+      <PullResistor>NULL</PullResistor>
+      <SleepMode>AP</SleepMode>
+      <SleepPull>PullDown</SleepPull>
+      <SleepDirection>Z</SleepDirection>
+      <Other></Other>
+      <Note>LCM_SPI_CLK</Note>
+    </Pin>
+    <Pin name="SD2_D1">
+      <PinName>SD2_D1</PinName>
+      <Function>SD2_D1</Function>
+      <DriverStrength>6mA</DriverStrength>
+      <PullResistor>NULL</PullResistor>
+      <SleepMode>AP</SleepMode>
+      <SleepPull>None</SleepPull>
+      <SleepDirection>Output</SleepDirection>
+      <Other></Other>
+      <Note>CAMERA_FLASH_CHIPEN</Note>
+    </Pin>
+    <Pin name="SD2_CMD">
+      <PinName>SD2_CMD</PinName>
+      <Function>SD2_CMD</Function>
+      <DriverStrength>6mA</DriverStrength>
+      <PullResistor>NULL</PullResistor>
+      <SleepMode>AP</SleepMode>
+      <SleepPull>PullDown</SleepPull>
+      <SleepDirection>Z</SleepDirection>
+      <Other></Other>
+      <Note>LCM_SPI_MISO</Note>
+    </Pin>
+    <Pin name="SD2_D0">
+      <PinName>SD2_D0</PinName>
+      <Function>SD2_D0</Function>
+      <DriverStrength>6mA</DriverStrength>
+      <PullResistor>NULL</PullResistor>
+      <SleepMode>AP</SleepMode>
+      <SleepPull>PullDown</SleepPull>
+      <SleepDirection>Z</SleepDirection>
+      <Other></Other>
+      <Note>LCM_SPI_MOSI</Note>
+    </Pin>
+    <Pin name="SD2_D2">
+      <PinName>SD2_D2</PinName>
+      <Function>SD2_D2</Function>
+      <DriverStrength>6mA</DriverStrength>
+      <PullResistor>NULL</PullResistor>
+      <SleepMode>AP</SleepMode>
+      <SleepPull>None</SleepPull>
+      <SleepDirection>Output</SleepDirection>
+      <Other></Other>
+      <Note>UCP1301_RSTN</Note>
+    </Pin>
+    <Pin name="SD2_D3">
+      <PinName>SD2_D3</PinName>
+      <Function>SD2_D3</Function>
+      <DriverStrength>6mA</DriverStrength>
+      <PullResistor>NULL</PullResistor>
+      <SleepMode>AP</SleepMode>
+      <SleepPull>None</SleepPull>
+      <SleepDirection>Output</SleepDirection>
+      <Other></Other>
+      <Note>LCM_SPI_CS</Note>
+    </Pin>
+  </Bus>
+  <Bus name="SIM0">
+    <Pin name="SIMCLK0">
+      <PinName>SIMCLK0</PinName>
+      <Function>SIMCLK0</Function>
+      <DriverStrength>6mA</DriverStrength>
+      <PullResistor>NULL</PullResistor>
+      <SleepMode>PSCP</SleepMode>
+      <SleepPull>None</SleepPull>
+      <SleepDirection>Output</SleepDirection>
+      <Other></Other>
+      <Note>SIM0_CLK</Note>
+    </Pin>
+    <Pin name="SIMDA0">
+      <PinName>SIMDA0</PinName>
+      <Function>SIMDA0</Function>
+      <DriverStrength>6mA</DriverStrength>
+      <PullResistor>PU:4.7K</PullResistor>
+      <SleepMode>PSCP</SleepMode>
+      <SleepPull>None</SleepPull>
+      <SleepDirection>Z</SleepDirection>
+      <Other></Other>
+      <Note>SIM0_DA</Note>
+    </Pin>
+    <Pin name="SIMRST0">
+      <PinName>SIMRST0</PinName>
+      <Function>SIMRST0</Function>
+      <DriverStrength>6mA</DriverStrength>
+      <PullResistor>NULL</PullResistor>
+      <SleepMode>PSCP</SleepMode>
+      <SleepPull>None</SleepPull>
+      <SleepDirection>Output</SleepDirection>
+      <Other></Other>
+      <Note>SIM0_RST</Note>
+    </Pin>
+  </Bus>
+  <Bus name="SIM1">
+    <Pin name="SIMCLK1">
+      <PinName>SIMCLK1</PinName>
+      <Function>SIMCLK1</Function>
+      <DriverStrength>6mA</DriverStrength>
+      <PullResistor>NULL</PullResistor>
+      <SleepMode>PSCP</SleepMode>
+      <SleepPull>None</SleepPull>
+      <SleepDirection>Output</SleepDirection>
+      <Other></Other>
+      <Note>SIM1_CLK</Note>
+    </Pin>
+    <Pin name="SIMDA1">
+      <PinName>SIMDA1</PinName>
+      <Function>SIMDA1</Function>
+      <DriverStrength>6mA</DriverStrength>
+      <PullResistor>PU:4.7K</PullResistor>
+      <SleepMode>PSCP</SleepMode>
+      <SleepPull>None</SleepPull>
+      <SleepDirection>Z</SleepDirection>
+      <Other></Other>
+      <Note>SIM1_DA</Note>
+    </Pin>
+    <Pin name="SIMRST1">
+      <PinName>SIMRST1</PinName>
+      <Function>SIMRST1</Function>
+      <DriverStrength>6mA</DriverStrength>
+      <PullResistor>NULL</PullResistor>
+      <SleepMode>PSCP</SleepMode>
+      <SleepPull>None</SleepPull>
+      <SleepDirection>Output</SleepDirection>
+      <Other></Other>
+      <Note>SIM1_RST</Note>
+    </Pin>
+  </Bus>
+</BusInterface>

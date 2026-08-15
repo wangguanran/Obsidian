@@ -1,0 +1,334 @@
+From 07c1e2c29045bb72fc5e87c090cace0be17800e2 Mon Sep 17 00:00:00 2001
+From: wangguanran <wangguanran@example.com>
+Date: Thu, 30 Jul 2026 07:58:15 +0000
+Subject: [PATCH] [MT5611][TaskID]118243[Description]support PN722x MODE pin
+ Forum/EMVCo switch[Solution]add DT gpio31 mode_sw nfc_mode sysfs and
+ NFCC_PROFILE_SWITCH ioctl[Owner]wangguanran
+
+Change-Id: Ib52c180c6f371b77a347327380f175c7257e9cf6
+---
+ .../msm-kernel/drivers/nfc/pn7220/common.c    | 109 ++++++++++++++----
+ .../msm-kernel/drivers/nfc/pn7220/common.h    |   5 +-
+ .../msm-kernel/drivers/nfc/pn7220/i2c_drv.c   |  23 ++--
+ .../nfc-devicetree/nxp/bengal-nfc-mt5611.dtsi |   6 +-
+ .../nxp/bengal-nfc-pinctrl-mt5611.dtsi        |  35 +++++-
+ 5 files changed, 140 insertions(+), 38 deletions(-)
+
+diff --git a/kernel_platform/msm-kernel/drivers/nfc/pn7220/common.c b/kernel_platform/msm-kernel/drivers/nfc/pn7220/common.c
+index 57b7c648e43..39d1a2bb3cb 100755
+--- a/kernel_platform/msm-kernel/drivers/nfc/pn7220/common.c
++++ b/kernel_platform/msm-kernel/drivers/nfc/pn7220/common.c
+@@ -20,6 +20,8 @@
+ #include <linux/gpio.h>
+ #include <linux/of_gpio.h>
+ #include <linux/delay.h>
++#include <linux/device.h>
++#include <linux/kstrtox.h>
+ 
+ #include "common.h"
+ 
+@@ -55,26 +57,15 @@ int nfc_parse_dt(struct device *dev, struct platform_configs *nfc_configs,
+ 		pr_err("%s: ven gpio invalid %d\n", __func__, nfc_gpio->ven);
+ 		return -EINVAL;
+ 	}
+-//	nfc_gpio->mode_sw_nfcc = of_get_named_gpio(np, DTS_MODE_SW_STR, 0);
+-//	if ((!gpio_is_valid(nfc_gpio->mode_sw_nfcc)))
+-//		pr_warn("%s: mode_sw_nfcc gpio invalid %d\n", __func__,
+-//			nfc_gpio->mode_sw_nfcc);
+-//
+-//	nfc_gpio->led_red = of_get_named_gpio(np, DTS_RED_LED_STR, 0);
+-//	if ((!gpio_is_valid(nfc_gpio->led_red)))
+-//		pr_warn("%s: led_red gpio invalid %d\n", __func__,
+-//			nfc_gpio->led_red);
+-//
+-//	nfc_gpio->led_green = of_get_named_gpio(np, DTS_GREEN_LED_STR, 0);
+-//	if ((!gpio_is_valid(nfc_gpio->led_green)))
+-//		pr_warn("%s: led_green gpio invalid %d\n", __func__,
+-//			nfc_gpio->led_green);
+-//	pr_info("%s: %d, %d, %d, %d, %d\n", __func__, nfc_gpio->irq,
+-//		nfc_gpio->ven,nfc_gpio->mode_sw_nfcc,
+-//		nfc_gpio->led_red, nfc_gpio->led_green);
+-
+-	pr_err("%s: irq(%d) val is (%d), ven(%d) val is (%d)\n", __func__, 
+-		nfc_gpio->irq, gpio_get_value(nfc_gpio->irq), nfc_gpio->ven, gpio_get_value(nfc_gpio->ven));
++	nfc_gpio->mode_sw_nfcc = of_get_named_gpio(np, DTS_MODE_SW_STR, 0);
++	if ((!gpio_is_valid(nfc_gpio->mode_sw_nfcc)))
++		pr_warn("%s: mode_sw_nfcc gpio invalid %d\n", __func__,
++			nfc_gpio->mode_sw_nfcc);
++
++	pr_err("%s: irq(%d) val is (%d), ven(%d) val is (%d), mode_sw(%d)\n",
++	       __func__, nfc_gpio->irq, gpio_get_value(nfc_gpio->irq),
++	       nfc_gpio->ven, gpio_get_value(nfc_gpio->ven),
++	       nfc_gpio->mode_sw_nfcc);
+ 
+ 	return 0;
+ }
+@@ -196,9 +187,18 @@ void gpio_free_all(struct nfc_dev *nfc_dev)
+ 	}
+ }
+ 
++/* Forward declaration for sysfs attribute used in register/unregister paths. */
++static ssize_t nfc_mode_show(struct device *dev,
++			       struct device_attribute *attr, char *buf);
++static ssize_t nfc_mode_store(struct device *dev,
++				struct device_attribute *attr,
++				const char *buf, size_t count);
++static DEVICE_ATTR(nfc_mode, 0660, nfc_mode_show, nfc_mode_store);
++
+ void nfc_misc_unregister(struct nfc_dev *nfc_dev, int count)
+ {
+ 	pr_debug("%s: entry\n", __func__);
++	device_remove_file(nfc_dev->nfc_device, &dev_attr_nfc_mode);
+ 	device_destroy(nfc_dev->nfc_class, nfc_dev->devno);
+ 	cdev_del(&nfc_dev->c_dev);
+ 	class_destroy(nfc_dev->nfc_class);
+@@ -244,6 +244,16 @@ int nfc_misc_register(struct nfc_dev *nfc_dev,
+ 		unregister_chrdev_region(nfc_dev->devno, count);
+ 		return ret;
+ 	}
++	ret = device_create_file(nfc_dev->nfc_device, &dev_attr_nfc_mode);
++	if (ret) {
++		pr_err("%s: failed to create nfc_mode attr ret %d\n",
++		       __func__, ret);
++		device_destroy(nfc_dev->nfc_class, nfc_dev->devno);
++		cdev_del(&nfc_dev->c_dev);
++		class_destroy(nfc_dev->nfc_class);
++		unregister_chrdev_region(nfc_dev->devno, count);
++		return ret;
++	}
+ 	return 0;
+ }
+ 
+@@ -267,12 +277,17 @@ static int led_switch_control_ioctl(struct nfc_dev *nfc_dev, unsigned long arg)
+ static int mode_switch_nfcc_ioctl(struct nfc_dev *nfc_dev, unsigned long arg)
+ {
+ 	int ret = 0;
+-	//struct platform_gpio *nfc_gpio = &nfc_dev->configs.gpio;
++	struct platform_gpio *nfc_gpio = &nfc_dev->configs.gpio;
++
++	if (!gpio_is_valid(nfc_gpio->mode_sw_nfcc)) {
++		pr_err("%s: mode_sw gpio invalid\n", __func__);
++		return -ENODEV;
++	}
+ 
+ 	if (arg == NCI_MODE) {
+-		//set_valid_gpio(nfc_gpio->mode_sw_nfcc, 0);
++		set_valid_gpio(nfc_gpio->mode_sw_nfcc, 0);
+ 	} else if (arg == EMVCO_MODE) {
+-		//set_valid_gpio(nfc_gpio->mode_sw_nfcc, 1);
++		set_valid_gpio(nfc_gpio->mode_sw_nfcc, 1);
+ 	} else {
+ 		pr_err("%s: bad arg %lu\n", __func__, arg);
+ 		ret = -ENOIOCTLCMD;
+@@ -280,6 +295,54 @@ static int mode_switch_nfcc_ioctl(struct nfc_dev *nfc_dev, unsigned long arg)
+ 	return ret;
+ }
+ 
++static ssize_t nfc_mode_show(struct device *dev,
++			       struct device_attribute *attr, char *buf)
++{
++	struct nfc_dev *nfc_dev = dev_get_drvdata(dev);
++	struct platform_gpio *nfc_gpio;
++	int value;
++
++	if (!nfc_dev)
++		return -ENODEV;
++
++	nfc_gpio = &nfc_dev->configs.gpio;
++	if (!gpio_is_valid(nfc_gpio->mode_sw_nfcc))
++		return -ENODEV;
++
++	value = get_valid_gpio(nfc_gpio->mode_sw_nfcc);
++	if (value < 0)
++		return value;
++
++	return scnprintf(buf, PAGE_SIZE, "%d\n", value);
++}
++
++static ssize_t nfc_mode_store(struct device *dev,
++				struct device_attribute *attr,
++				const char *buf, size_t count)
++{
++	struct nfc_dev *nfc_dev = dev_get_drvdata(dev);
++	struct platform_gpio *nfc_gpio;
++	int value;
++
++	if (!nfc_dev)
++		return -ENODEV;
++
++	nfc_gpio = &nfc_dev->configs.gpio;
++	if (!gpio_is_valid(nfc_gpio->mode_sw_nfcc))
++		return -ENODEV;
++
++	if (kstrtoint(buf, 0, &value))
++		return -EINVAL;
++	if (value != 0 && value != 1)
++		return -EINVAL;
++
++	set_valid_gpio(nfc_gpio->mode_sw_nfcc, value);
++	pr_info("%s: MODE gpio set to %d (%s)\n", __func__, value,
++		value ? "EMVCo" : "NFC Forum");
++
++	return count;
++}
++
+ /**
+  * nfc_ioctl_power_states() - power control
+  * @nfc_dev:    nfc device data structure
+diff --git a/kernel_platform/msm-kernel/drivers/nfc/pn7220/common.h b/kernel_platform/msm-kernel/drivers/nfc/pn7220/common.h
+index ba9baaeb83d..f9c27abf64b 100755
+--- a/kernel_platform/msm-kernel/drivers/nfc/pn7220/common.h
++++ b/kernel_platform/msm-kernel/drivers/nfc/pn7220/common.h
+@@ -30,6 +30,8 @@
+ 
+ /* NFC character device name, this will be in /dev/ */
+ #define NFC_CHAR_DEV_NAME		"nxpnfc"
++/* MODE pin control: sysfs attribute name, write 0/1 to set Forum / EMVCo */
++#define NFC_MODE_CHAR_DEV_NAME		"nfc_mode"
+ 
+ /* NCI packet details */
+ #define NCI_CMD				(0x20)
+@@ -136,7 +138,7 @@ enum gpio_values {
+ struct platform_gpio {
+ 	unsigned int irq;
+ 	unsigned int ven;
+-	//unsigned int mode_sw_nfcc;
++	unsigned int mode_sw_nfcc;
+ 	//unsigned int led_red;
+ 	//unsigned int led_green;
+ };
+@@ -197,6 +199,7 @@ void nfc_misc_unregister(struct nfc_dev *nfc_dev, int count);
+ int configure_gpio(unsigned int gpio, int flag);
+ int configure_leds(struct platform_gpio *nfc_gpio);
+ void gpio_set_ven(struct nfc_dev *nfc_dev, int value);
++void set_valid_gpio(int gpio, int value);
+ void gpio_free_all(struct nfc_dev *nfc_dev);
+ int validate_nfc_state_nci(struct nfc_dev *nfc_dev);
+ int get_valid_gpio(int gpio);
+diff --git a/kernel_platform/msm-kernel/drivers/nfc/pn7220/i2c_drv.c b/kernel_platform/msm-kernel/drivers/nfc/pn7220/i2c_drv.c
+index 66bd3d76c07..e45442e3c9b 100755
+--- a/kernel_platform/msm-kernel/drivers/nfc/pn7220/i2c_drv.c
++++ b/kernel_platform/msm-kernel/drivers/nfc/pn7220/i2c_drv.c
+@@ -312,6 +312,9 @@ int nfc_i2c_dev_probe(struct i2c_client *client, const struct i2c_device_id *id)
+ 	nfc_dev->nfc_write = i2c_write;
+ 	nfc_dev->nfc_enable_intr = i2c_enable_irq;
+ 	nfc_dev->nfc_disable_intr = i2c_disable_irq;
++	/* copy gpio details before configure so error path can free */
++	memcpy(&nfc_dev->configs, &nfc_configs,
++	       sizeof(struct platform_configs));
+ 	ret = configure_gpio(nfc_gpio->ven, GPIO_OUTPUT);
+ 	if (ret) {
+ 		pr_err("%s: unable to request nfc reset gpio [%d]\n", __func__,
+@@ -325,20 +328,20 @@ int nfc_i2c_dev_probe(struct i2c_client *client, const struct i2c_device_id *id)
+ 		goto err_free_gpio;
+ 	}
+ 	client->irq = ret;
+-	//ret = configure_gpio(nfc_gpio->mode_sw_nfcc, GPIO_OUTPUT);
+-	//if (ret) {
+-	//	pr_err
+-	//		("%s: unable to request mode switch interface gpio [%d]\n",
+-	//		 __func__, nfc_gpio->mode_sw_nfcc);
+-	//	goto err_free_gpio;
+-	//}
++	/* Default MODE high -> EMVCo; write /sys/class/nxp-nfc/nxpnfc/nfc_mode=0 for NFC Forum */
++	if (gpio_is_valid(nfc_gpio->mode_sw_nfcc)) {
++		/* Default: MODE low (NFC Forum). Only switch to EMVCo via nfc_mode sysfs write. */
++		ret = configure_gpio(nfc_gpio->mode_sw_nfcc, GPIO_OUTPUT);
++		if (ret) {
++			pr_err("%s: unable to request mode switch gpio [%d]\n",
++			       __func__, nfc_gpio->mode_sw_nfcc);
++			goto err_free_gpio;
++		}
++	}
+ 	#ifdef CONFIG_NXP_DEBUG_BOARD
+ 	/* configure board leds as OUTPUT gpios */
+ 	configure_leds(nfc_gpio);
+ 	#endif
+-	/* copy the retrieved gpio details from DT */
+-	memcpy(&nfc_dev->configs, &nfc_configs,
+-		   sizeof(struct platform_configs));
+ 
+ 	/* init mutex and queues */
+ 	init_waitqueue_head(&nfc_dev->read_wq);
+diff --git a/vendor/qcom/proprietary/nfc-devicetree/nxp/bengal-nfc-mt5611.dtsi b/vendor/qcom/proprietary/nfc-devicetree/nxp/bengal-nfc-mt5611.dtsi
+index 93aa40fa622..e3dad32efaa 100755
+--- a/vendor/qcom/proprietary/nfc-devicetree/nxp/bengal-nfc-mt5611.dtsi
++++ b/vendor/qcom/proprietary/nfc-devicetree/nxp/bengal-nfc-mt5611.dtsi
+@@ -10,6 +10,8 @@
+ 			   /delete-property/ qcom,sn-firm;
+ 			   nxp,nxpnfc-irq = <&tlmm 70 0x00>;
+ 			   nxp,nxpnfc-ven = <&tlmm 69 0x00>;
++			   /* PN722x MODE: L=NFC Forum, H=EMVCo; controlled via /sys/class/nxp-nfc/nxpnfc/nfc_mode */
++			   nxp,nxpnfc-mode_sw = <&tlmm 31 0x00>;
+                qcom,sn-clkreq = <&tlmm 86 0x00>;
+                qcom,sn-vdd-1p8-supply = <&L9A>;
+                qcom,sn-vdd-1p8-voltage = <1800000 1800000>;
+@@ -21,6 +23,6 @@
+                interrupts = <70 0>;
+                interrupt-names = "nfc_irq";
+                pinctrl-names = "nfc_active", "nfc_suspend";
+-               pinctrl-0 = <&nfc_int_active &nfc_enable_active>;
+-               pinctrl-1 = <&nfc_int_suspend &nfc_enable_suspend>;
++               pinctrl-0 = <&nfc_int_active &nfc_enable_active &nfc_mode_active>;
++               pinctrl-1 = <&nfc_int_suspend &nfc_enable_suspend &nfc_mode_suspend>;
+ };
+diff --git a/vendor/qcom/proprietary/nfc-devicetree/nxp/bengal-nfc-pinctrl-mt5611.dtsi b/vendor/qcom/proprietary/nfc-devicetree/nxp/bengal-nfc-pinctrl-mt5611.dtsi
+index ef6596be980..26e300efa0e 100755
+--- a/vendor/qcom/proprietary/nfc-devicetree/nxp/bengal-nfc-pinctrl-mt5611.dtsi
++++ b/vendor/qcom/proprietary/nfc-devicetree/nxp/bengal-nfc-pinctrl-mt5611.dtsi
+@@ -1,7 +1,7 @@
+ &nfc_enable_active {
+ 			/* active state */
+ 			mux {
+-				/* 69: Enable 31: Firmware */
++				/* 69: VEN/Enable */
+ 				pins = "gpio69";
+ 				function = "gpio";
+ 			};
+@@ -16,7 +16,7 @@
+ &nfc_enable_suspend {
+ 			/* sleep state */
+ 			mux {
+-				/* 69: Enable 31: Firmware */
++				/* 69: VEN/Enable */
+ 				pins = "gpio69";
+ 				function = "gpio";
+ 			};
+@@ -28,3 +28,34 @@
+ 			};
+ };
+ 
++&tlmm {
++	nfc {
++		nfc_mode_active: nfc_mode_active {
++			mux {
++				/* 31: PN722x MODE (L=NFC Forum, H=EMVCo) */
++				pins = "gpio31";
++				function = "gpio";
++			};
++
++			config {
++				pins = "gpio31";
++				drive-strength = <2>; /* 2 MA */
++				bias-disable;
++				output-low;
++			};
++		};
++
++		nfc_mode_suspend: nfc_mode_suspend {
++			mux {
++				pins = "gpio31";
++				function = "gpio";
++			};
++
++			config {
++				pins = "gpio31";
++				drive-strength = <2>; /* 2 MA */
++				bias-disable;
++			};
++		};
++	};
++};
+-- 
+2.34.1
+

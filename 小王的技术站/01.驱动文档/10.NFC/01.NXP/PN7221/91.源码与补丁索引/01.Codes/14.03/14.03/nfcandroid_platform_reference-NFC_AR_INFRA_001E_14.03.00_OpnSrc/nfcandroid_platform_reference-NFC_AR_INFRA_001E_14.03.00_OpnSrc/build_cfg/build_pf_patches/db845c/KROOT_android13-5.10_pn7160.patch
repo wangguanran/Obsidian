@@ -1,0 +1,116 @@
+diff --git a/arch/arm64/boot/dts/qcom/sdm845-db845c.dts b/arch/arm64/boot/dts/qcom/sdm845-db845c.dts
+index 96d36b38f269..5c0058b3a032 100644
+--- a/arch/arm64/boot/dts/qcom/sdm845-db845c.dts
++++ b/arch/arm64/boot/dts/qcom/sdm845-db845c.dts
+@@ -228,8 +228,8 @@ vreg_s4a_1p8: vreg-s4a-1p8 {
+ 		compatible = "regulator-fixed";
+ 		regulator-name = "vreg_s4a_1p8";
+ 
+-		regulator-min-microvolt = <1800000>;
+-		regulator-max-microvolt = <1800000>;
++		regulator-min-microvolt = <1850000>;
++		regulator-max-microvolt = <1850000>;
+ 		regulator-always-on;
+ 	};
+ 
+@@ -473,12 +473,21 @@ &i2c11 {
+ 	/* On Low speed expansion */
+ 	label = "LS-I2C1";
+ 	status = "okay";
++	clock-frequency = <1000000>;
++	nxpnfc@28 {
++		compatible = "nxp,nxpnfc";
++		reg = <0x28>;
++		nxp,nxpnfc-irq = <&tlmm 49 00>;
++		nxp,nxpnfc-ven = <&tlmm 50 00>;
++		nxp,nxpnfc-fw-dwnld = <&tlmm 51 00>;
++		pinctrl-names = "default";
++	};	
+ };
+ 
+ &i2c14 {
+ 	/* On Low speed expansion */
+ 	label = "LS-I2C0";
+-	status = "okay";
++	status = "disabled";
+ };
+ 
+ &mdss {
+diff --git a/arch/arm64/boot/dts/qcom/sdm845.dtsi b/arch/arm64/boot/dts/qcom/sdm845.dtsi
+index ea6e3a11e641..81d0922820fb 100644
+--- a/arch/arm64/boot/dts/qcom/sdm845.dtsi
++++ b/arch/arm64/boot/dts/qcom/sdm845.dtsi
+@@ -1120,6 +1120,7 @@ qupv3_id_0: geniqup@8c0000 {
+ 			clock-names = "m-ahb", "s-ahb";
+ 			clocks = <&gcc GCC_QUPV3_WRAP_0_M_AHB_CLK>,
+ 				 <&gcc GCC_QUPV3_WRAP_0_S_AHB_CLK>;
++			iommus = <&apps_smmu 0x003 0x0>;
+ 			#address-cells = <2>;
+ 			#size-cells = <2>;
+ 			ranges;
+@@ -1460,6 +1461,7 @@ qupv3_id_1: geniqup@ac0000 {
+ 			clock-names = "m-ahb", "s-ahb";
+ 			clocks = <&gcc GCC_QUPV3_WRAP_1_M_AHB_CLK>,
+ 				 <&gcc GCC_QUPV3_WRAP_1_S_AHB_CLK>;
++			iommus = <&apps_smmu 0x6c3 0x0>;
+ 			#address-cells = <2>;
+ 			#size-cells = <2>;
+ 			ranges;
+@@ -2369,6 +2371,10 @@ pinmux {
+ 					pins = "gpio33", "gpio34";
+ 					function = "qup14";
+ 				};
++				pinconf {
++					pins = "gpio33", "gpio34";
++					bias-high-impedance;
++				};
+ 			};
+ 
+ 			qup_i2c15_default: qup-i2c15-default {
+diff --git a/arch/arm64/configs/db845c_gki.fragment b/arch/arm64/configs/db845c_gki.fragment
+index 7260af26f4a3..7a50bad5f0ce 100644
+--- a/arch/arm64/configs/db845c_gki.fragment
++++ b/arch/arm64/configs/db845c_gki.fragment
+@@ -118,6 +118,7 @@ CONFIG_SOUNDWIRE_QCOM=m
+ CONFIG_SLIMBUS=m
+ CONFIG_SLIM_QCOM_NGD_CTRL=m
+ CONFIG_DMABUF_HEAPS_SYSTEM=m
++CONFIG_NXP_NFC_I2C=m
+ # CONFIG_CXD2880_SPI_DRV is not set
+ # CONFIG_MEDIA_TUNER_SIMPLE is not set
+ # CONFIG_MEDIA_TUNER_TDA18250 is not set
+diff --git a/drivers/i2c/busses/i2c-qcom-geni.c b/drivers/i2c/busses/i2c-qcom-geni.c
+index 86f028febce3..dd8365c54dc7 100644
+--- a/drivers/i2c/busses/i2c-qcom-geni.c
++++ b/drivers/i2c/busses/i2c-qcom-geni.c
+@@ -132,7 +132,7 @@ struct geni_i2c_clk_fld {
+ static const struct geni_i2c_clk_fld geni_i2c_clk_map[] = {
+ 	{KHZ(100), 7, 10, 11, 26},
+ 	{KHZ(400), 2,  5, 12, 24},
+-	{KHZ(1000), 1, 3,  9, 18},
++	{KHZ(1000), 1, 3,  9, 15},
+ };
+ 
+ static int geni_i2c_clk_map_idx(struct geni_i2c_dev *gi2c)
+diff --git a/drivers/staging/android/ion/heaps/ion_system_heap.c b/drivers/staging/android/ion/heaps/ion_system_heap.c
+index fc630492996f..a3f294d5fded 100644
+--- a/drivers/staging/android/ion/heaps/ion_system_heap.c
++++ b/drivers/staging/android/ion/heaps/ion_system_heap.c
+@@ -22,6 +22,7 @@
+ 
+ static gfp_t high_order_gfp_flags = (GFP_HIGHUSER | __GFP_ZERO | __GFP_NOWARN |
+ 				     __GFP_NORETRY) & ~__GFP_RECLAIM;
++static gfp_t mid_order_gfp_flags  = GFP_HIGHUSER | __GFP_ZERO | __GFP_NOWARN;
+ static gfp_t low_order_gfp_flags  = GFP_HIGHUSER | __GFP_ZERO;
+ static const unsigned int orders[] = {8, 4, 0};
+ 
+@@ -238,6 +239,9 @@ static int ion_system_heap_create_pools(struct ion_page_pool **pools)
+ 		struct ion_page_pool *pool;
+ 		gfp_t gfp_flags = low_order_gfp_flags;
+ 
++		if (orders[i] > 1)
++			gfp_flags = mid_order_gfp_flags;
++
+ 		if (orders[i] > 4)
+ 			gfp_flags = high_order_gfp_flags;
+ 

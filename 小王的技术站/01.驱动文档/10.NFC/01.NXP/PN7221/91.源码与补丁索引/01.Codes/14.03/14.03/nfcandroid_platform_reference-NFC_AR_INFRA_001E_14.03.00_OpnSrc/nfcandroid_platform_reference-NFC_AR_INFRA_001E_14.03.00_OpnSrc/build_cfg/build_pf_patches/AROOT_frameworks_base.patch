@@ -1,0 +1,106 @@
+diff --git a/core/java/android/nfc/INfcAdapter.aidl b/core/java/android/nfc/INfcAdapter.aidl
+index a6d8cafe8263..75f5ae952926 100644
+--- a/core/java/android/nfc/INfcAdapter.aidl
++++ b/core/java/android/nfc/INfcAdapter.aidl
+@@ -13,6 +13,26 @@
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+  */
++ /******************************************************************************
++  *
++  *  The original Work has been changed by NXP.
++  *
++  *  Copyright 2015-2021 NXP
++  *
++  *  Licensed under the Apache License, Version 2.0 (the "License");
++  *  you may not use this file except in compliance with the License.
++  *  You may obtain a copy of the License at
++  *
++  *  http://www.apache.org/licenses/LICENSE-2.0
++  *
++  *  Unless required by applicable law or agreed to in writing, software
++  *  distributed under the License is distributed on an "AS IS" BASIS,
++  *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++  *  See the License for the specific language governing permissions and
++  *  limitations under the License.
++  *
++ ******************************************************************************/
++
+ 
+ package android.nfc;
+ 
+@@ -73,6 +93,8 @@ interface INfcAdapter
+     boolean isControllerAlwaysOnSupported();
+     void registerControllerAlwaysOnListener(in INfcControllerAlwaysOnListener listener);
+     void unregisterControllerAlwaysOnListener(in INfcControllerAlwaysOnListener listener);
++    IBinder getNfcAdapterVendorInterface(in String vendor);
++    IBinder getNxpNfcTdaAdapterVendorInterface(in String vendor);
+     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.WRITE_SECURE_SETTINGS)")
+     boolean isTagIntentAppPreferenceSupported();
+     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.WRITE_SECURE_SETTINGS)")
+diff --git a/core/java/android/os/BinderProxy.java b/core/java/android/os/BinderProxy.java
+index 1929a4d562d4..e98e0ab2c7e2 100644
+--- a/core/java/android/os/BinderProxy.java
++++ b/core/java/android/os/BinderProxy.java
+@@ -227,7 +227,7 @@ public final class BinderProxy implements IBinder {
+                 Log.v(Binder.TAG, "BinderProxy map growth! bucket size = " + size
+                         + " total = " + totalSize);
+                 mWarnBucketSize += WARN_INCREMENT;
+-                if (Build.IS_DEBUGGABLE && totalSize >= CRASH_AT_SIZE) {
++                /*if (Build.IS_DEBUGGABLE && totalSize >= CRASH_AT_SIZE) {
+                     // Use the number of uncleared entries to determine whether we should
+                     // really report a histogram and crash. We don't want to fundamentally
+                     // change behavior for a debuggable process, so we GC only if we are
+@@ -246,7 +246,7 @@ public final class BinderProxy implements IBinder {
+                                 + (totalSize - totalUnclearedSize) + " of " + totalSize
+                                 + " are cleared");
+                     }
+-                }
++                }*/
+             }
+         }
+ 
+diff --git a/core/res/res/values/config.xml b/core/res/res/values/config.xml
+index bd0fe40e758d..8f253a9741df 100644
+--- a/core/res/res/values/config.xml
++++ b/core/res/res/values/config.xml
+@@ -2800,7 +2800,7 @@
+     <bool name="config_syncstorageengine_masterSyncAutomatically">true</bool>
+ 
+     <!--  Maximum number of supported users -->
+-    <integer name="config_multiuserMaximumUsers">1</integer>
++    <integer name="config_multiuserMaximumUsers">2</integer>
+ 
+     <!-- Maximum number of users we allow to be running at a time -->
+     <integer name="config_multiuserMaxRunningUsers">3</integer>
+@@ -2860,7 +2860,7 @@
+     <bool name="config_canSwitchToHeadlessSystemUser">false</bool>
+ 
+     <!-- Whether UI for multi user should be shown -->
+-    <bool name="config_enableMultiUserUI">false</bool>
++    <bool name="config_enableMultiUserUI">true</bool>
+ 
+     <!-- Whether multiple admins are allowed on the device. If set to true, new users can be created
+      with admin privileges and admin privileges can be granted/revoked from existing users. -->
+diff --git a/services/core/java/com/android/server/Watchdog.java b/services/core/java/com/android/server/Watchdog.java
+index 62651dd80cd9..2b8b62eee92e 100644
+--- a/services/core/java/com/android/server/Watchdog.java
++++ b/services/core/java/com/android/server/Watchdog.java
+@@ -192,7 +192,7 @@ public class Watchdog implements Dumpable {
+     private final HandlerChecker mMonitorChecker;
+     private ActivityManagerService mActivity;
+     private IActivityController mController;
+-    private boolean mAllowRestart = true;
++    private boolean mAllowRestart = false;
+     // We start with DEFAULT_TIMEOUT. This will then be update with the timeout values from Settings
+     // once the settings provider is initialized.
+     private volatile long mWatchdogTimeoutMillis = DEFAULT_TIMEOUT;
+@@ -571,7 +571,7 @@ public class Watchdog implements Dumpable {
+ 
+     public void setAllowRestart(boolean allowRestart) {
+         synchronized (mLock) {
+-            mAllowRestart = allowRestart;
++            mAllowRestart = false;
+         }
+     }
+ 

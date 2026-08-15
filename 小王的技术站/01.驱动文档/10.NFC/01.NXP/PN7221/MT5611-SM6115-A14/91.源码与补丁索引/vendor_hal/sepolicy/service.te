@@ -1,0 +1,5 @@
+###
+### HAL Services
+###
+type hal_nxpnfc_service, vendor_service, service_manager_type;
+

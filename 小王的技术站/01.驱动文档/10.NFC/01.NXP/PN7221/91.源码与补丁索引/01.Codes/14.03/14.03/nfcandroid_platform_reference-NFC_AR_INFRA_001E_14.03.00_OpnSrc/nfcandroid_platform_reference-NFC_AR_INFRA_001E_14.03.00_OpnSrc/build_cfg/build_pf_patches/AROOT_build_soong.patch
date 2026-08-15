@@ -1,0 +1,11 @@
+diff --git a/cc/config/vndk.go b/cc/config/vndk.go
+index dd612ce63..861672a8c 100644
+--- a/cc/config/vndk.go
++++ b/cc/config/vndk.go
+@@ -42,4 +42,6 @@ var VndkMustUseVendorVariantList = []string{
+ 	"libstagefright_xmlparser",
+ 	"libui",
+ 	"libxml2",
++	"vendor.nxp.emvco-V1-ndk",
++	"aidl.vendor.nxp.nxpnfc-V1-ndk",
+ }

@@ -1,0 +1,2 @@
+vendor.nxp.nxpnfc.INxpNfc/default                             u:object_r:hal_nxpnfc_service:s0
+vendor.nxp.nxpnfc.INfc/default                             u:object_r:hal_nfc_service:s0

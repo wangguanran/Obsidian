@@ -1,0 +1,28 @@
+#include "bengal-nfc-common.dtsi"
+#include "bengal-nfc-pinctrl-mt5611.dtsi"
+#include <dt-bindings/clock/qcom,rpmcc.h>
+
+&nxp_nfc{
+               compatible = "qcom,sn-nci";
+               reg = <0x28>;
+               /delete-property/ qcom,sn-irq;
+               /delete-property/ qcom,sn-ven;
+			   /delete-property/ qcom,sn-firm;
+			   nxp,nxpnfc-irq = <&tlmm 70 0x00>;
+			   nxp,nxpnfc-ven = <&tlmm 69 0x00>;
+			   /* PN722x MODE: L=NFC Forum, H=EMVCo; controlled via /sys/class/nxp-nfc/nxpnfc/nfc_mode */
+			   nxp,nxpnfc-mode_sw = <&tlmm 31 0x00>;
+               qcom,sn-clkreq = <&tlmm 86 0x00>;
+               qcom,sn-vdd-1p8-supply = <&L9A>;
+               qcom,sn-vdd-1p8-voltage = <1800000 1800000>;
+               qcom,sn-vdd-1p8-current = <157000>;
+               qcom,clk-src = "RFCLK1";
+               clocks = <&rpmcc RPM_SMD_RF_CLK1>;
+               clock-names = "ref_clk";
+               interrupt-parent = <&tlmm>;
+               interrupts = <70 0>;
+               interrupt-names = "nfc_irq";
+               pinctrl-names = "nfc_active", "nfc_suspend";
+               pinctrl-0 = <&nfc_int_active &nfc_enable_active &nfc_mode_active>;
+               pinctrl-1 = <&nfc_int_suspend &nfc_enable_suspend &nfc_mode_suspend>;
+};

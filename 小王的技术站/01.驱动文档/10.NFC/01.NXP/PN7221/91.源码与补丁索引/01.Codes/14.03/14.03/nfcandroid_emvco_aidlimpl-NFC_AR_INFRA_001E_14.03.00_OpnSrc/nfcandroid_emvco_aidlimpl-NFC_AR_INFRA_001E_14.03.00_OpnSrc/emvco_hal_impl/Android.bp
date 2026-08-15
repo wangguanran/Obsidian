@@ -1,0 +1,69 @@
+//
+//
+//  Copyright 2022-2023 NXP
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+//
+cc_library_shared {
+    name: "emvco_poller",
+    proprietary: true,
+    cflags: [
+        "-Wall",
+        "-Werror",
+        "-Wextra",
+        "-Wno-implicit-fallthrough",
+        "-DNXP_EXTNS=TRUE",
+    ],
+
+    srcs: [
+        "api/emvco_hal.c",
+        "dm/emvco_dm.c",
+        "emvco/cl/emvco_cl.c",
+        "emvco/ct/emvco_ct.c",
+        "log/emvco_log.c",
+        "nci/emvco_nci_ext.c",
+        "nci/emvco_ncif.c",
+        "osal/osal_memory.c",
+        "osal/osal_message_queue_lib.c",
+        "osal/osal_thread.c",
+        "osal/osal_timer.c",
+        "osal/osal_tml.c",
+        "peripherals/peripherals.c",
+        "tml/emvco_tml.c",
+        "tml/emvco_tml_i2c.c",
+        "utils/emvco_config.c",
+        "utils/emvco_util.c",
+        "utils/map.c",
+    ],
+
+    local_include_dirs: [
+        "api",
+        "dm",
+        "emvco/ct",
+        "emvco/cl",
+        "inc/common",
+        "log",
+        "nci",
+        "osal",
+        "peripherals",
+        "tml",
+        "utils",
+    ],
+
+    shared_libs: [
+        "liblog",
+        "libcutils",
+        "libdl",
+    ],
+}

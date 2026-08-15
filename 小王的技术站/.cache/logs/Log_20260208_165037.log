@@ -1,0 +1,47 @@
+[2026-02-08 16:50:37,037] [DEBUG   ] [__main__.py             ] [main                    ] [806 ] sys.argv: ['/Users/wangguanran/.local/bin/projman', '--help']
+[2026-02-08 16:50:37,037] [DEBUG   ] [profiler.py             ] [wrapper                 ] [27  ] _load_common_config took 0.000151 seconds
+[2026-02-08 16:50:37,037] [DEBUG   ] [__main__.py             ] [main                    ] [822 ] env: 
+{
+    "root_path": "/Users/wangguanran/Library/Mobile Documents/iCloud~md~obsidian/Documents/小王的技术站",
+    "projects_path": "/Users/wangguanran/Library/Mobile Documents/iCloud~md~obsidian/Documents/小王的技术站/projects",
+    "po_configs": {}
+}
+[2026-02-08 16:50:37,037] [DEBUG   ] [__main__.py             ] [main                    ] [823 ] Loaded 0 po configurations.
+[2026-02-08 16:50:37,037] [DEBUG   ] [__main__.py             ] [main                    ] [824 ] Po configurations: []
+[2026-02-08 16:50:37,038] [DEBUG   ] [__main__.py             ] [__write_projects_info_to_boards] [242 ] Project information written to: /Users/wangguanran/Library/Mobile Documents/iCloud~md~obsidian/Documents/小王的技术站/projects/boardA/projects.json
+[2026-02-08 16:50:37,038] [DEBUG   ] [profiler.py             ] [wrapper                 ] [27  ] _load_all_projects took 0.000308 seconds
+[2026-02-08 16:50:37,038] [DEBUG   ] [__main__.py             ] [main                    ] [827 ] Loaded 2 projects.
+[2026-02-08 16:50:37,038] [DEBUG   ] [__main__.py             ] [main                    ] [828 ] Loaded projects info:
+{
+    "boardA": {
+        "config": {
+            "PROJECT_PLATFORM": "platA",
+            "PROJECT_CUSTOMER": "custA",
+            "PROJECT_PO_CONFIG": " ",
+            "PROJECT_NAME": "boardA"
+        },
+        "board_name": "boardA",
+        "board_path": "/Users/wangguanran/Library/Mobile Documents/iCloud~md~obsidian/Documents/小王的技术站/projects/boardA",
+        "ini_file": "/Users/wangguanran/Library/Mobile Documents/iCloud~md~obsidian/Documents/小王的技术站/projects/boardA/boardA.ini",
+        "parent": null,
+        "children": []
+    },
+    "projA": {
+        "config": {
+            "PROJECT_PLATFORM": "platA",
+            "PROJECT_CUSTOMER": "custA",
+            "PROJECT_PO_CONFIG": " ",
+            "PROJECT_NAME": "projA"
+        },
+        "board_name": "boardA",
+        "board_path": "/Users/wangguanran/Library/Mobile Documents/iCloud~md~obsidian/Documents/小王的技术站/projects/boardA",
+        "ini_file": "/Users/wangguanran/Library/Mobile Documents/iCloud~md~obsidian/Documents/小王的技术站/projects/boardA/boardA.ini",
+        "parent": null,
+        "children": []
+    }
+}
+[2026-02-08 16:50:37,038] [DEBUG   ] [__main__.py             ] [_import_platform_scripts] [329 ] Scripts directory not found: /Users/wangguanran/Library/Mobile Documents/iCloud~md~obsidian/Documents/小王的技术站/projects/scripts
+[2026-02-08 16:50:37,038] [DEBUG   ] [profiler.py             ] [wrapper                 ] [27  ] _import_platform_scripts took 0.000020 seconds
+[2026-02-08 16:50:37,038] [DEBUG   ] [profiler.py             ] [wrapper                 ] [27  ] _load_builtin_plugin_operations took 0.000142 seconds
+[2026-02-08 16:50:37,038] [DEBUG   ] [__main__.py             ] [main                    ] [837 ] Loaded 15 builtin operations.
+[2026-02-08 16:50:37,038] [DEBUG   ] [__main__.py             ] [main                    ] [838 ] Builtin operations: ['project_new', 'project_del', 'board_new', 'board_del', 'po_apply', 'po_revert', 'po_new', 'po_update', 'po_del', 'po_list', 'project_diff', 'project_pre_build', 'project_do_build', 'project_post_build', 'project_build']
