@@ -216,13 +216,7 @@ KHAJE_BOARDS += \
 
 ```diff
 From 82337bf7a36917fdaf482d7be1630683e9a480d7 Mon Sep 17 00:00:00 2001
-From: wangguanran <wangguanran@example.com>
 Date: Tue, 3 Mar 2026 13:10:11 +0000
-Subject: [PATCH] [MT5825][TaskID]87133[Description]buzzer and NFC share se5v
- for v1.01/v1.02[Solution]stage hw102 overlay + regulator refcount power
- control[Owner]wangguanran
-
-Change-Id: I25859e9b4ba8c03eb7a3c06af2c3720c7540ed15
 ---
  .../qcom/proprietary/devicetree/qcom/Makefile |  4 +-
  .../devicetree/qcom/khaje-idp-pm7250b.dtsi    | 34 +---------
@@ -260,33 +254,17 @@ index 59988e2278f..03ec319c227 100755
  		#include "qg-batterydata-alium-3600mah.dtsi"
  	};
  
--/* Modify:wangguanran on: Tue, 06 Jan 2026 08:55:57 +0000
-- * GPIO simulated PWM causes crackling noise in buzzer, changed to hardware PWM control
--        gpio-pwm{
--                status = "ok";
--                compatible = "gpio-pwm";
--                pinctrl-names = "default";
--                pinctrl-0 = <&pm7250b_gpio8_buzzer_gpio_default>;
--                meig,gpio-pwm = <&pm7250b_gpios 8 GPIO_ACTIVE_HIGH>;
--        };
-- */
--    pwm_beeper: pwm-beeper {
--        compatible = "pwm-beeper";
--        pwms = <&pm6125_pwm 0 1000000>;
--    };
--// End of Modify: wangguanran
+
          usb-speed-show {
              status = "ok";
              compatible = "usb-speed-show";
 @@ -35,7 +20,7 @@
  		compatible = "gpio-userspace";
- /* Modify:wangguanran on: Thu, 29 Jan 2026 10:28:14 +0000 */
  		pinctrl-names = "default";
 -		pinctrl-0 = <&pm6125_gpio6_redrive_vcc_enable &pm7250b_gpio8_se_5v_enable &pm7250b_gpio12_buzzer_detect>;
 +		pinctrl-0 = <&pm6125_gpio6_redrive_vcc_enable &pm7250b_gpio12_buzzer_detect>;
- // End of Modify: wangguanran
- 
- 		scr-led {
+
+		scr-led {
 @@ -54,12 +39,6 @@
  			gpios = <&pm6125_gpios 6 GPIO_ACTIVE_HIGH>;
  			default-state = <1>; // 0-low, 1-high
@@ -451,8 +429,7 @@ index 00000000000..574cb210cb5
 ## 文档修订（2026-03-05）
 
 对应提交更新：
-1. Gerrit：`http://[内网Gerrit]/c/LA.VENDOR.13.2.1/+/168795`
-2. Commit：`82337bf7a36917fdaf482d7be1630683e9a480d7`
+1. Commit：`82337bf7a36917fdaf482d7be1630683e9a480d7`
 
 相对 `e13b6e...` 的补充变更：
 1. `kernel_platform/msm-kernel/drivers/input/misc/pwm-beeper.c` 回退到提交前状态（仅移除历史多余空行）。

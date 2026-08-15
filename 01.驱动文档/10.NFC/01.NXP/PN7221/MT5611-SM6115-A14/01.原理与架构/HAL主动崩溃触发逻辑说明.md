@@ -13,14 +13,14 @@ NFC HAL 的“主动崩溃”由 `phNxpNciHal_emergency_recovery()` 内部显式
 
 ### 2. 证据
 - HAL 内显式 `abort()`：
-  - `/home1/wangguanran/workspace/MT582_A14/LA.VENDOR.13.2.1.R2/hardware/nxp/nfc/pn72xx/halimpl/utils/phNxpNciHal_utils.cc:484`
-  - `/home1/wangguanran/workspace/MT582_A14/LA.VENDOR.13.2.1.R2/hardware/nxp/nfc/pn72xx/halimpl/utils/phNxpNciHal_utils.cc:490`
+  - `hardware/nxp/nfc/pn72xx/halimpl/utils/phNxpNciHal_utils.cc:484`
+  - `hardware/nxp/nfc/pn72xx/halimpl/utils/phNxpNciHal_utils.cc:490`
 - 触发入口（CORE_RESET_NTF 分支）：
-  - `/home1/wangguanran/workspace/MT582_A14/LA.VENDOR.13.2.1.R2/hardware/nxp/nfc/pn72xx/halimpl/hal/phNxpNciHal_ext.cc:517`
-  - `/home1/wangguanran/workspace/MT582_A14/LA.VENDOR.13.2.1.R2/hardware/nxp/nfc/pn72xx/halimpl/hal/phNxpNciHal_ext.cc:555`
+  - `hardware/nxp/nfc/pn72xx/halimpl/hal/phNxpNciHal_ext.cc:517`
+  - `hardware/nxp/nfc/pn72xx/halimpl/hal/phNxpNciHal_ext.cc:555`
 - Framework 侧也存在独立 abort 路径（用于 watchdog）：
-  - `/home1/wangguanran/workspace/MT582_A14/LA.VENDOR.13.2.1.R2/packages/apps/Nfc/src/com/android/nfc/NfcService.java:2231`
-  - `/home1/wangguanran/workspace/MT582_A14/LA.VENDOR.13.2.1.R2/packages/apps/Nfc/nci/jni/NativeNfcManager.cpp:1783`
+  - `packages/apps/Nfc/src/com/android/nfc/NfcService.java:2231`
+  - `packages/apps/Nfc/nci/jni/NativeNfcManager.cpp:1783`
 
 ### 3. 调用逻辑
 1. HAL 收到 `CORE_RESET_NTF`，在 `phNxpNciHal_ext_process_nfc_init_rsp()` 解析。

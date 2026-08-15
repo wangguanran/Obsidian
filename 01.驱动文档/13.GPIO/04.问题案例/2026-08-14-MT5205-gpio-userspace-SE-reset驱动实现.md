@@ -1,10 +1,9 @@
-# MT5205 gpio-userspace 驱动实现（SE reset / MDB reset，禅道 Task 118732）
+# MT5205 gpio-userspace 驱动实现（SE reset / MDB reset）
 
 ## 基本信息
 
 | 字段 | 值 |
 |:---|:---|
-| 禅道编号 | Task #118732 |
 | 问题类型 | 功能实现 / Secure Element GPIO 控制 |
 | 项目 | MT5205（bengal_515_32go） |
 | 驱动模块 | `kernel_platform/msm-kernel/drivers/misc/gpio-userspace.c` |
@@ -106,8 +105,8 @@ chmod 0666 /sys/class/gpio_userspace/mdb_reset/value
 ### 编译命令
 
 ```bash
-cd /home/wangguanran/MT5205/LA.VENDOR.13.2.1
-JOBS=32 TMPDIR=/home3/wangguanran/tmp ./build_boot_vendorboot_dtbo.sh
+cd <MT5205 源码根目录>
+JOBS=32 TMPDIR=<临时目录> ./build_boot_vendorboot_dtbo.sh
 ```
 
 ### 预期产物
@@ -123,17 +122,7 @@ JOBS=32 TMPDIR=/home3/wangguanran/tmp ./build_boot_vendorboot_dtbo.sh
 
 ## 补丁内容
 
-> 原始补丁路径：`/home3/wangguanran/documents/aosp-log-analysis-workspace/patches/MT5205-gpio-userspace-only/MT5205-gpio-userspace-only.patch`
-
 ```diff
-From 48aeb9c09711500e3004ef99d78cfe590a795c8c Mon Sep 17 00:00:00 2001
-From: wangguanran <wangguanran@example.com>
-Date: Wed, 12 Aug 2026 13:03:32 +0000
-Subject: [PATCH] [MT5205][TaskID]118732[Description] Secure Element SE reset
- GPIO via gpio-userspace [Solution] Add gpio-userspace driver and DT for
- se_reset/mdb_reset default-high [Owner]wangguanran
-
-Change-Id: If9458d966083edc78bce75730a1aa76321473e4e
 ---
  device/qcom/bengal_515_32go/init.target.rc    |   7 +
  .../arm64/configs/vendor/bengal_GKI.config    |   1 +
