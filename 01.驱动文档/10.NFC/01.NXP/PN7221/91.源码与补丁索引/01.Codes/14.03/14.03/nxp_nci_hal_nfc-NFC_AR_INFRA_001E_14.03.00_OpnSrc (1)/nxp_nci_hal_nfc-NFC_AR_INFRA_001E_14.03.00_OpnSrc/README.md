@@ -1,4 +1,6 @@
 # nxp_nci_hal_nfc
+
+> **版本号：v1.0**
 AOSP NFC Service code with JNI API’s Along with NXP feature extensions
 
 

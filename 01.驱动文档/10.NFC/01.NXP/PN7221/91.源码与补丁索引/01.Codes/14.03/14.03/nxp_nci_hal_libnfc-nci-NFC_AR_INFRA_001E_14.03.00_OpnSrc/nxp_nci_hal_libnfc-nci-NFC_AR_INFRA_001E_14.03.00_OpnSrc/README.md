@@ -1,4 +1,6 @@
 # nxp_nci_hal_libnfc-nci
+
+> **版本号：v1.0**
 AOSP NFC Library source code along with NXP feature library implementation
 
 #### Git Repository

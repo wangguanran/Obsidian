@@ -1,5 +1,7 @@
 # ProjectC gpio-userspace 驱动实现（SE reset / MDB reset）
 
+> **版本号：v1.0**
+
 ## 基本信息
 
 | 字段 | 值 |

@@ -1,4 +1,6 @@
 # nfcandroid_platform_reference
+
+> **版本号：v1.0**
 DB845C and linux Kernal patches
 
 #### Git Repository

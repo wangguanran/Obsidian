@@ -1,5 +1,7 @@
 # 修改历史摘要
 
+> **版本号：v1.0**
+
 > 基线版本：IOT_High_Mid_2024.SPF.1.0 | ES 0.0.002.0 | LA.VENDOR.13.2.1.r2-05100-DIVAR.QSSI14.0-1 | LA.QSSI.14.0.r1-15100-qssi.0-1 | KERNEL.PLATFORM.2.0.r12-02200-kernel.0-2
 
 ## 修改列表

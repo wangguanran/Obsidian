@@ -1,4 +1,6 @@
 # nfcandroid_nfc_hidlimpl
+
+> **版本号：v1.0**
 Nxp’s and AOSP Hardware Abstraction layer
 
 

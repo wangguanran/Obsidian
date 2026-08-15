@@ -1,4 +1,6 @@
 # nfcandroid_platform_drivers
+
+> **版本号：v1.0**
 DB845C and Hikey board and linux I2C client drivers and patches
 
 

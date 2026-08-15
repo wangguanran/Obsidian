@@ -1,5 +1,7 @@
 # SM6225 DTS BoardID/Stage 分流说明
 
+> **版本号：v1.0**
+
 适用范围：
 - Qualcomm SM6225（Khaje）平台
 - 同一软件基线支持多个硬件小版本（如 v101/v102）

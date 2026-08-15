@@ -1,5 +1,7 @@
 ## Android 8.1（展锐）Thermal 温控策略说明（基于 `thermalSensorsConfig.xml`）
 
+> **版本号：v1.0**
+
 - **温度单位**: 配置中的温度为毫摄氏度（m°C），如 50000=50°C
 - **采样**: 各 `sensor` 通过 `polling_delay` 轮询温度，并在 `AvgPeriod` 内做均值
 - **分级**: `zone_level` 按温度阈值分级，进入级别后执行对应 `trip` 下的 `action`

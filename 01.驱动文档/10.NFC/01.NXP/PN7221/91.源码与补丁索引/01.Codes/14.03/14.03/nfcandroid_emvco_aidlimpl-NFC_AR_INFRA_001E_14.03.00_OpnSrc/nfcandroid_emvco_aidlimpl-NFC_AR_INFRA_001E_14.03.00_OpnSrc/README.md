@@ -1,4 +1,6 @@
 # nfcandroid_emvco_aidlimpl
+
+> **版本号：v1.0**
 AOSP based Nxp’s EMVCo CL L1 Library, EMVCo CT library  and HAL
 
 #### Git Repository
