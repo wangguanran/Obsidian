@@ -8,6 +8,16 @@
 
 所有文件来源于 Gerrit Change #196024。
 
+### 源码文件状态
+
+> ⚠️ **源码文件不在本地归档**
+>
+> 项目 `meigla/kernel/qcom` 不在 134 服务器上，无法从源码树直接检索驱动文件。
+> 当前仅归档了 Gerrit patch 文件本身（`patches/196024.patch`），该 patch 包含完整的驱动源码（~10K 行，19 个文件）。
+> 如需获取源码，请通过以下方式：
+> - 从 Gerrit 拉取补丁后应用（见下方"获取方式"）
+> - 通过 patch 文件直接查看（含完整 diff 内容）
+
 ### 驱动源码 (`drivers/net/usb/ax_usb_nic/`)
 
 | 文件 | 说明 |
@@ -37,11 +47,20 @@
 | configs/lahaina_consolidate.bzl | 平台构建配置 (+1) |
 | configs/lahaina_perf.bzl | 平台构建配置 (+1) |
 
+## 补丁归档
+
+| 文件 | 大小 | 说明 |
+|------|------|------|
+| [[01.驱动文档/15.USB/00.Unknown/ax88179a/QCM6490-A16/91.源码与补丁索引/patches/196024.patch\|196024.patch]] | 272 KB | Gerrit Change #196024 完整补丁 (+10205/-19) |
+
 ## 获取方式
 
 ```bash
 # 从 Gerrit 拉取补丁（需内网访问权限）
 git fetch <gerrit_remote> refs/changes/24/196024/1 && git checkout FETCH_HEAD
+
+# 或直接查看本地归档的 patch 文件
+# 路径: 91.源码与补丁索引/patches/196024.patch
 ```
 
 ## 相关文档

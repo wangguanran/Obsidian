@@ -1,0 +1,25 @@
+[PATCH] [MC5616][93821][Sensor]Trim SSC netrani vendor libs to sns_sc7a20 [Owner]zhourulei
+
+diff --git a/ADSP.HT.5.7/adsp_proc/ssc/chipset/netrani/por.py b/ADSP.HT.5.7/adsp_proc/ssc/chipset/netrani/por.py
+index a9ab0fa..9de8eab 100755
+--- a/ADSP.HT.5.7/adsp_proc/ssc/chipset/netrani/por.py
++++ b/ADSP.HT.5.7/adsp_proc/ssc/chipset/netrani/por.py
+@@ -22,13 +22,7 @@
+     
+     if 'SSC_TARGET_X86' not in env['CPPDEFINES']:
+         # POR sensors list
+-        include_sensor_vendor_libs.extend(['lsm6dst',
+-                                           'sns_ak0991x',
+-                                           'sns_tmd2725',
+-                                           'sns_lps22hx',
+-                                           'sns_sx932x',                 
+-                                           'sns_bu52053nvx',
+-                                           'sns_sc7a20'])
++        include_sensor_vendor_libs.extend(['sns_sc7a20'])
+         env.Replace(SSC_INCLUDE_SENS_VEND_LIBS=include_sensor_vendor_libs)
+
+         # TODO : Disable close to WAIPIO CS (Enable Registry Debug)
+
+Patch file size: 1082 bytes
+Source: Gerrit Change #196014
+Archived from: 134 server repodiff

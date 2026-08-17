@@ -198,7 +198,13 @@ ptp4l -i ethX -m
 
 ## 源码归档
 
-驱动源码目录结构：
+> ⚠️ **源码文件不在本地归档**
+>
+> 项目 `meigla/kernel/qcom` 不在 134 服务器上，无法从源码树直接检索驱动文件。
+> 当前仅归档了 Gerrit patch 文件本身（`patches/196024.patch`），该 patch 包含完整的驱动源码（~10K 行，19 个文件）。
+> 如需获取源码，请查看 [[01.驱动文档/15.USB/00.Unknown/ax88179a/QCM6490-A16/91.源码与补丁索引/patches/196024.patch|patches/196024.patch]] 或从 Gerrit 拉取补丁。
+
+驱动源码目录结构（来自 patch 内容）：
 
 ```
 drivers/net/usb/ax_usb_nic/
@@ -218,7 +224,13 @@ drivers/net/usb/ax_usb_nic/
 
 驱动源码归档路径：[[01.驱动文档/15.USB/00.Unknown/ax88179a/QCM6490-A16/91.源码与补丁索引/kernel_driver/|91.源码与补丁索引/kernel_driver/]]
 
+补丁文件归档路径：[[01.驱动文档/15.USB/00.Unknown/ax88179a/QCM6490-A16/91.源码与补丁索引/patches/196024.patch|patches/196024.patch]]
+
 ## 引用文件索引
+
+> ⚠️ 以下所有文件均来自 Gerrit Change #196024 的 patch 内容，源码文件未在本地归档
+> （项目 `meigla/kernel/qcom` 不在 134 服务器上）。完整差异见：
+> [[01.驱动文档/15.USB/00.Unknown/ax88179a/QCM6490-A16/91.源码与补丁索引/patches/196024.patch|patches/196024.patch]]
 
 | 序号 | 文件路径 | 变更类型 | 行数变更 |
 |------|----------|----------|----------|

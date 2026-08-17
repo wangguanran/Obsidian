@@ -1,0 +1,399 @@
+[PATCH] [MT5205][120574][uart][Description]fastboot oem uartdebug SE4 console/HS switch[Owner]tengqi
+
+diff --git a/kernel_platform/bootable/bootloader/edk2/QcomModulePkg/Include/Library/DeviceInfo.h b/kernel_platform/bootable/bootloader/edk2/QcomModulePkg/Include/Library/DeviceInfo.h
+index 3eff8cf..4fed12a 100644
+--- a/kernel_platform/bootable/bootloader/edk2/QcomModulePkg/Include/Library/DeviceInfo.h
++++ b/kernel_platform/bootable/bootloader/edk2/QcomModulePkg/Include/Library/DeviceInfo.h
+@@ -113,8 +113,19 @@
+   UINTN GoldenSnapshot;
+   CHAR8 AudioFramework[MAX_AUDIO_FW_LENGTH];
+   BOOLEAN IsIpcLoggingEnabled;
++  /*
++   * fastboot oem uartdebug (user & userdebug):
++   * 0 = default: userdebug/eng ON, user OFF
++   * 1 = force on (ttyMSM0 console)
++   * 2 = force off (SE4 as ttyHS2)
++   */
++  UINT8 ConsoleLoggingMode;
+ } DeviceInfo;
+ 
++#define CONSOLE_LOG_MODE_DEFAULT 0
++#define CONSOLE_LOG_MODE_ON      1
++#define CONSOLE_LOG_MODE_OFF     2
++
+ struct verified_boot_verity_mode {
+   BOOLEAN verity_mode_enforcing;
+   CHAR8 *name;
+@@ -131,6 +142,8 @@
+ BOOLEAN IsEnforcing (VOID);
+ BOOLEAN IsChargingScreenEnable (VOID);
+ BOOLEAN IsIpcLoggingEnabled (VOID);
++UINT8 GetConsoleLoggingMode (VOID);
++BOOLEAN IsConsoleLoggingEffectiveOn (VOID);
+ VOID GetBootloaderVersion (CHAR8 *BootloaderVersion, UINT32 Len);
+ VOID GetRadioVersion (CHAR8 *RadioVersion, UINT32 Len);
+ EFI_STATUS EnableChargingScreen (BOOLEAN IsEnabled);
+@@ -155,4 +168,6 @@
+ ReadAudioFrameWork (CHAR8 **CmdLine, UINT32 *CmdLineLen);
+ EFI_STATUS
+ SetIpcLoggingEnabled (BOOLEAN IsEnabled);
++EFI_STATUS
++SetConsoleLoggingMode (UINT8 Mode);
+ #endif
+diff --git a/kernel_platform/bootable/bootloader/edk2/QcomModulePkg/Library/BootLib/DeviceInfo.c b/kernel_platform/bootable/bootloader/edk2/QcomModulePkg/Library/BootLib/DeviceInfo.c
+index d85454c..4982591 100644
+--- a/kernel_platform/bootable/bootloader/edk2/QcomModulePkg/Library/BootLib/DeviceInfo.c
++++ b/kernel_platform/bootable/bootloader/edk2/QcomModulePkg/Library/BootLib/DeviceInfo.c
+@@ -66,6 +66,7 @@
+ #include "LinuxLoaderLib.h"
+ #include "Board.h"
+ #include <FastbootLib/FastbootCmds.h>
++#include <Library/BootLinux.h>
+ #include <Library/MemoryAllocationLib.h>
+ #include <Library/PartitionTableUpdate.h>
+ #include <Library/Recovery.h>
+@@ -106,6 +107,24 @@
+   return DevInfo.IsIpcLoggingEnabled;
+ }
+ 
++UINT8 GetConsoleLoggingMode (VOID)
++{
++  return DevInfo.ConsoleLoggingMode;
++}
++
++BOOLEAN IsConsoleLoggingEffectiveOn (VOID)
++{
++  UINT8 Mode = GetConsoleLoggingMode ();
++
++  if (Mode == CONSOLE_LOG_MODE_ON)
++    return TRUE;
++  if (Mode == CONSOLE_LOG_MODE_OFF)
++    return FALSE;
++
++  /* DEFAULT: console on for userdebug/eng, off for user */
++  return !TargetBuildVariantUser ();
++}
++
+ VOID
+ GetDevInfo (DeviceInfo **DevInfoPtr)
+ {
+@@ -159,6 +178,29 @@
+ }
+ 
+ EFI_STATUS
++SetConsoleLoggingMode (UINT8 Mode)
++{
++  EFI_STATUS Status = EFI_SUCCESS;
++
++  if (Mode != CONSOLE_LOG_MODE_DEFAULT &&
++      Mode != CONSOLE_LOG_MODE_ON &&
++      Mode != CONSOLE_LOG_MODE_OFF) {
++    return EFI_INVALID_PARAMETER;
++  }
++
++  if (GetConsoleLoggingMode () != Mode) {
++    DevInfo.ConsoleLoggingMode = Mode;
++    Status = ReadWriteDeviceInfo (WRITE_CONFIG, &DevInfo, sizeof (DevInfo));
++    if (Status != EFI_SUCCESS) {
++      DEBUG ((EFI_D_ERROR, "Error setting console logging mode %d: %r\n",
++              Mode, Status));
++      return Status;
++    }
++  }
++  return Status;
++}
++
++EFI_STATUS
+ StoreAudioFrameWork (CONST CHAR8 *CmdLine, UINT32 CmdLineLen)
+ {
+   EFI_STATUS Status = EFI_SUCCESS;
+diff --git a/kernel_platform/bootable/bootloader/edk2/QcomModulePkg/Library/BootLib/UpdateCmdLine.c b/kernel_platform/bootable/bootloader/edk2/QcomModulePkg/Library/BootLib/UpdateCmdLine.c
+index 0c039bd..3a2821d 100644
+--- a/kernel_platform/bootable/bootloader/edk2/QcomModulePkg/Library/BootLib/UpdateCmdLine.c
++++ b/kernel_platform/bootable/bootloader/edk2/QcomModulePkg/Library/BootLib/UpdateCmdLine.c
+@@ -184,6 +184,16 @@
+ 
+ STATIC CONST CHAR8 *EnableIpcLoggingCmdLine = " qcom_ipc_logging.enabled=1";
+ 
++/*
++ * user & userdebug: fastboot oem uartdebug Qon/Qof.
++ *  ON / userdebug default -> earlycon + console=ttyMSM0 + con_enabled=1
++ *  OFF / user default     -> con_enabled=0 (SE4 usable as ttyHS2)
++ */
++STATIC CONST CHAR8 *SerialLogEarlyCon = " earlycon";
++STATIC CONST CHAR8 *SerialLogConsole = " console=ttyMSM0,115200n8";
++STATIC CONST CHAR8 *SerialLogConEnable = " qcom_geni_serial.con_enabled=1";
++STATIC CONST CHAR8 *SerialLogConDisable = " qcom_geni_serial.con_enabled=0";
++
+ #ifdef ENABLE_BOOT_REASON_BOOTPARAM
+ #define MAX_BOOT_REASON_CMD_LINE 64
+ STATIC CHAR8 BootReasonCmdLine[MAX_BOOT_REASON_CMD_LINE];
+@@ -1102,6 +1112,18 @@
+     AsciiStrCatS (Dst, MaxCmdLineLen, Src);
+   }
+ 
++  if (IsConsoleLoggingEffectiveOn ()) {
++    Src = SerialLogEarlyCon;
++    AsciiStrCatS (Dst, MaxCmdLineLen, Src);
++    Src = SerialLogConsole;
++    AsciiStrCatS (Dst, MaxCmdLineLen, Src);
++    Src = SerialLogConEnable;
++    AsciiStrCatS (Dst, MaxCmdLineLen, Src);
++  } else {
++    Src = SerialLogConDisable;
++    AsciiStrCatS (Dst, MaxCmdLineLen, Src);
++  }
++
+ #ifdef ENABLE_BOOT_REASON_BOOTPARAM
+   if (BootParamlistPtr->BootReason) {
+     Src = BootReasonCmdLine;
+@@ -1869,6 +1891,14 @@
+   }
+ #endif
+ 
++  if (IsConsoleLoggingEffectiveOn ()) {
++    CmdLineLen += AsciiStrLen (SerialLogEarlyCon);
++    CmdLineLen += AsciiStrLen (SerialLogConsole);
++    CmdLineLen += AsciiStrLen (SerialLogConEnable);
++  } else {
++    CmdLineLen += AsciiStrLen (SerialLogConDisable);
++  }
++
+   Param.Recovery = Recovery;
+   Param.MultiSlotBoot = MultiSlotBoot;
+   Param.AlarmBoot = AlarmBoot;
+diff --git a/kernel_platform/bootable/bootloader/edk2/QcomModulePkg/Library/FastbootLib/FastbootCmds.c b/kernel_platform/bootable/bootloader/edk2/QcomModulePkg/Library/FastbootLib/FastbootCmds.c
+index 5034e21..76f673c 100644
+--- a/kernel_platform/bootable/bootloader/edk2/QcomModulePkg/Library/FastbootLib/FastbootCmds.c
++++ b/kernel_platform/bootable/bootloader/edk2/QcomModulePkg/Library/FastbootLib/FastbootCmds.c
+@@ -3631,6 +3631,34 @@
+ }
+ 
+ STATIC VOID
++CmdOemEnableConsoleLogging (CONST CHAR8 *Arg, VOID *Data, UINT32 Size)
++{
++  EFI_STATUS Status = EFI_SUCCESS;
++  DEBUG ((EFI_D_INFO, "Enabling debug UART console (ttyMSM0)\n"));
++
++  Status = SetConsoleLoggingMode (CONSOLE_LOG_MODE_ON);
++  if (Status != EFI_SUCCESS) {
++    FastbootFail ("Failed to enable Console Logging");
++  } else {
++    FastbootOkay ("debuguart on (ttyMSM0); reboot to apply");
++  }
++}
++
++STATIC VOID
++CmdOemDisableConsoleLogging (CONST CHAR8 *Arg, VOID *Data, UINT32 Size)
++{
++  EFI_STATUS Status = EFI_SUCCESS;
++  DEBUG ((EFI_D_INFO, "Disabling debug UART console\n"));
++
++  Status = SetConsoleLoggingMode (CONSOLE_LOG_MODE_OFF);
++  if (Status != EFI_SUCCESS) {
++    FastbootFail ("Failed to disable Console Logging");
++  } else {
++    FastbootOkay ("debuguart off; reboot to apply");
++  }
++}
++
++STATIC VOID
+ CmdOemOffModeCharger (CONST CHAR8 *Arg, VOID *Data, UINT32 Size)
+ {
+   CHAR8 *Ptr = NULL;
+@@ -3999,6 +4027,14 @@
+                IsChargingScreenEnable () ? "true" : "false");
+   FastbootInfo (DeviceInfo);
+   WaitForTransferComplete ();
++  AsciiSPrint (DeviceInfo, sizeof (DeviceInfo),
++               "Console logging: %a (effective %a)",
++               (GetConsoleLoggingMode () == CONSOLE_LOG_MODE_ON) ? "on" :
++               (GetConsoleLoggingMode () == CONSOLE_LOG_MODE_OFF) ? "off" :
++               (TargetBuildVariantUser () ? "default(user)" : "default(debug)"),
++               IsConsoleLoggingEffectiveOn () ? "on" : "off");
++  FastbootInfo (DeviceInfo);
++  WaitForTransferComplete ();
+ 
+   if (IsHibernationEnabled ()) {
+     AsciiSPrint (DeviceInfo, sizeof (DeviceInfo), "Erase swap on restore: %a",
+@@ -4486,6 +4522,9 @@
+       {"oem ipc-logging", CmdOemIpcLogging},
+       {"oem enable-ipc-logging", CmdOemEnableIpcLogging},
+       {"oem disable-ipc-logging", CmdOemDisableIpcLogging},
++      /* MT5205/SM6115 user: toggle SE4 debug UART kernel console */
++      {"oem uartdebug Qon", CmdOemEnableConsoleLogging},
++      {"oem uartdebug Qof", CmdOemDisableConsoleLogging},
+   };
+ 
+   /* Register the commands only for non-user builds */
+diff --git a/kernel_platform/common/drivers/tty/serial/qcom_geni_serial.c b/kernel_platform/common/drivers/tty/serial/qcom_geni_serial.c
+index 8be8f81..f9451d6 100644
+--- a/kernel_platform/common/drivers/tty/serial/qcom_geni_serial.c
++++ b/kernel_platform/common/drivers/tty/serial/qcom_geni_serial.c
+@@ -1362,21 +1362,32 @@
+ 	struct resource *res;
+ 	int irq;
+ 	bool console = false;
++	bool is_debug_uart = false;
+ 	struct uart_driver *drv;
+ 
+-	if (of_device_is_compatible(pdev->dev.of_node, "qcom,geni-debug-uart"))
+-		console = true;
++	is_debug_uart = of_device_is_compatible(pdev->dev.of_node,
++						"qcom,geni-debug-uart");
++	/*
++	 * Debug UART (SE4): con_enabled=1 -> ttyMSM console;
++	 * con_enabled=0 -> fall back to HS UART (hsuart alias, e.g. ttyHS2)
++	 * so the same port can be used as a normal serial device.
++	 */
++	console = is_debug_uart && con_enabled;
+ 
+ 	if (console) {
+ 		drv = &qcom_geni_console_driver;
+ 		line = of_alias_get_id(pdev->dev.of_node, "serial");
+ 	} else {
+ 		drv = &qcom_geni_uart_driver;
+-		line = of_alias_get_id(pdev->dev.of_node, "serial");
+-		if (line == -ENODEV) /* compat with non-standard aliases */
+-			line = of_alias_get_id(pdev->dev.of_node, "hsuart");
++		line = of_alias_get_id(pdev->dev.of_node, "hsuart");
++		if (line == -ENODEV)
++			line = of_alias_get_id(pdev->dev.of_node, "serial");
+ 	}
+ 
++	if (is_debug_uart && !con_enabled)
++		dev_info(&pdev->dev,
++			 "Console disabled; registering as ttyHS%d\n", line);
++
+ 	port = get_port_from_line(line, console);
+ 	if (IS_ERR(port)) {
+ 		dev_err(&pdev->dev, "Invalid line %d\n", line);
+@@ -1385,16 +1396,6 @@
+ 
+ 	port->is_console = console;
+ 
+-	if (console && !con_enabled) {
+-		dev_err(&pdev->dev, "%s, Console Disabled\n", __func__);
+-		ret = pinctrl_pm_select_sleep_state(&pdev->dev);
+-		if (ret)
+-			dev_err(&pdev->dev,
+-				"failed to set pinctrl state to sleep %d\n", ret);
+-		platform_set_drvdata(pdev, port);
+-		return ret;
+-	}
+-
+ 	uport = &port->uport;
+ 	/* Don't allow 2 drivers to access the same port */
+ 	if (uport->private_data)
+diff --git a/kernel_platform/msm-kernel/drivers/tty/serial/qcom_geni_serial.c b/kernel_platform/msm-kernel/drivers/tty/serial/qcom_geni_serial.c
+index 8be8f81..f9451d6 100644
+--- a/kernel_platform/msm-kernel/drivers/tty/serial/qcom_geni_serial.c
++++ b/kernel_platform/msm-kernel/drivers/tty/serial/qcom_geni_serial.c
+@@ -1362,21 +1362,32 @@
+ 	struct resource *res;
+ 	int irq;
+ 	bool console = false;
++	bool is_debug_uart = false;
+ 	struct uart_driver *drv;
+ 
+-	if (of_device_is_compatible(pdev->dev.of_node, "qcom,geni-debug-uart"))
+-		console = true;
++	is_debug_uart = of_device_is_compatible(pdev->dev.of_node,
++						"qcom,geni-debug-uart");
++	/*
++	 * Debug UART (SE4): con_enabled=1 -> ttyMSM console;
++	 * con_enabled=0 -> fall back to HS UART (hsuart alias, e.g. ttyHS2)
++	 * so the same port can be used as a normal serial device.
++	 */
++	console = is_debug_uart && con_enabled;
+ 
+ 	if (console) {
+ 		drv = &qcom_geni_console_driver;
+ 		line = of_alias_get_id(pdev->dev.of_node, "serial");
+ 	} else {
+ 		drv = &qcom_geni_uart_driver;
+-		line = of_alias_get_id(pdev->dev.of_node, "serial");
+-		if (line == -ENODEV) /* compat with non-standard aliases */
+-			line = of_alias_get_id(pdev->dev.of_node, "hsuart");
++		line = of_alias_get_id(pdev->dev.of_node, "hsuart");
++		if (line == -ENODEV)
++			line = of_alias_get_id(pdev->dev.of_node, "serial");
+ 	}
+ 
++	if (is_debug_uart && !con_enabled)
++		dev_info(&pdev->dev,
++			 "Console disabled; registering as ttyHS%d\n", line);
++
+ 	port = get_port_from_line(line, console);
+ 	if (IS_ERR(port)) {
+ 		dev_err(&pdev->dev, "Invalid line %d\n", line);
+@@ -1385,16 +1396,6 @@
+ 
+ 	port->is_console = console;
+ 
+-	if (console && !con_enabled) {
+-		dev_err(&pdev->dev, "%s, Console Disabled\n", __func__);
+-		ret = pinctrl_pm_select_sleep_state(&pdev->dev);
+-		if (ret)
+-			dev_err(&pdev->dev,
+-				"failed to set pinctrl state to sleep %d\n", ret);
+-		platform_set_drvdata(pdev, port);
+-		return ret;
+-	}
+-
+ 	uport = &port->uport;
+ 	/* Don't allow 2 drivers to access the same port */
+ 	if (uport->private_data)
+diff --git a/kernel_platform/qcom/proprietary/devicetree/qcom/scuba.dtsi b/kernel_platform/qcom/proprietary/devicetree/qcom/scuba.dtsi
+index 98db1d2..dab86fe 100755
+--- a/kernel_platform/qcom/proprietary/devicetree/qcom/scuba.dtsi
++++ b/kernel_platform/qcom/proprietary/devicetree/qcom/scuba.dtsi
+@@ -32,10 +32,14 @@
+ 		mmc0 = &sdhc_1; /* SDC1 eMMC slot */
+ 		mmc1 = &sdhc_2; /* SDC2 SD Card slot */
+ 		serial0 = &qupv3_se4_2uart;
++		/* MT5205: BT/legacy SE3 -> ttyHS0; MDB=SE5 -> ttyHS1 */
+ 		hsuart0 = &qupv3_se3_4uart;
+-		/* MT5205: RS232=SE1 -> ttyHS1; MDB=SE5 -> ttyHS2 (ref 50101) */
+-		hsuart1 = &qupv3_se1_4uart;
+-		hsuart2 = &qupv3_se5_4uart;
++		hsuart1 = &qupv3_se5_4uart;
++		/*
++		 * SE4 debug UART: ttyMSM0 when con_enabled=1;
++		 * same SE as ttyHS2 when console off (oem uartdebug Qof).
++		 */
++		hsuart2 = &qupv3_se4_2uart;
+ 	};
+ 
+ 	cpus {
+@@ -2518,19 +2522,19 @@
+ #include "scuba-usb.dtsi"
+ #include "msm-arm-smmu-scuba.dtsi"
+ 
+-/* MT5205: SE1 claimed by RS232 UART (gpio69/70); disable I2C/PM8008 on SE1 */
++/* MT5205: SE1 UART removed; keep SE1 I2C disabled (PM8008 include) */
+ &qupv3_se1_i2c {
+ 	status = "disabled";
+ 	#include "pm8008.dtsi"
+ };
+ 
+ &qupv3_se1_4uart {
+-	/* MT5205 RS232: GPIO69/70 -> ttyHS1 */
+-	status = "ok";
++	/* MT5205: former ttyHS1 (RS232 SE1) removed */
++	status = "disabled";
+ };
+ 
+ &qupv3_se5_4uart {
+-	/* MT5205 MDB: GPIO16/17 -> ttyHS2 */
++	/* MT5205 MDB: GPIO16/17 -> ttyHS1 */
+ 	status = "ok";
+ };
+ 
+@@ -2751,6 +2755,7 @@
+ };
+ 
+ &qupv3_se3_4uart {
++	/* MT5205: BT UART SE3 -> ttyHS0 (kept; scuba-bt also enables) */
+ 	status = "ok";
+ };

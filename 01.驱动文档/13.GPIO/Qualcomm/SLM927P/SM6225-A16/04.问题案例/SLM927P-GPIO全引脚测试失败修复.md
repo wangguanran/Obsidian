@@ -217,6 +217,53 @@ index 11bc8d0..cabf108 100755
 | `device/qcom/bengal_515/SLM927P_gpio.sh` | device/qcom/bengal_515 |
 | `kernel_platform/qcom/proprietary/devicetree/qcom/khaje.dtsi` | kernel_platform |
 
+### 源码归档状态
+
+**归档来源**：134服务器 `/home3/wangguanran/workspace/MT5205/LA.VENDOR.13.2.1`（分支 `gerrit/MT5205`）
+
+| 文件 | 134状态 | 归档状态 |
+|------|---------|---------|
+| `SLM927P_gpio.sh` | ❌ 不存在（不在git历史中，也不在文件系统中） | 从patch diff重建before/after版本 |
+| `khaje.dtsi` | ✅ 存在（4272行，已复制到本地） | 已复制，但当前版本不包含patch修改的`qupv3_se5_4uart`段 |
+
+**说明**：
+- `SLM927P_gpio.sh` 在134 repo中不存在，可能是通过其他未合并的gerrit change添加的，或是客户分支独有文件
+- `khaje.dtsi` 当前版本不包含 `qupv3_se5_4uart` / `rs485-en-gpio` 配置，patch修改的上下文（行4284）超出文件范围（4272行）
+- 参考：`scuba.dtsi` 中有 `qupv3_se5_4uart` 配置，`monaco-pinctrl.dtsi` 中有 `qupv3_se5_4uart_pins` 定义
+
+### 补丁验证结果
+
+**补丁文件**：`#195832`（`/tmp/gerrit-patches-rest/195832.patch`）
+
+| 验证项 | 结果 | 说明 |
+|--------|------|------|
+| 脚本文件存在性 | ❌ 失败 | `SLM927P_gpio.sh` 在134 repo中不存在 |
+| DTS上下文匹配 | ❌ 失败 | `khaje.dtsi` 缺少 `qupv3_se5_4uart` 段，patch无法定位上下文 |
+| 整体可应用性 | ❌ 失败 | 补丁无法直接应用到当前 `gerrit/MT5205` 分支 |
+
+**结论**：补丁 #195832 是基于134 repo的上游/客户定制分支创建的，无法直接应用到当前 `gerrit/MT5205` 分支。需要先合并/同步包含 `qupv3_se5_4uart` 配置和 `SLM927P_gpio.sh` 文件的上游变更。
+
+### 移植文档检查
+
+**状态**：❌ 缺失
+
+当前 `SLM927P/SM6225-A16/` 目录结构：
+```
+SM6225-A16/
+└── 04.问题案例/        ← 仅有问题案例
+    ├── SLM927P-GPIO全引脚测试失败修复.md
+    └── 分析/
+        └── SLM927P-GPIO全引脚测试失败修复-分析.md
+```
+
+**缺失目录**（按标准结构）：
+- `01.原理与架构/` — GPIO驱动分析总结
+- `02.Bringup与配置/` — **移植文档应在此目录**（含91.源码与补丁索引/子目录）
+- `03.设备树/` — DTS配置说明
+- `92.工具与软件/` — GPIO测试工具
+
+> 移植文档（Porting Guide）应包含：GPIO引脚映射、pinmux配置说明、测试脚本使用方法、常见问题排查步骤。
+
 ---
 
 ## 引用文件索引

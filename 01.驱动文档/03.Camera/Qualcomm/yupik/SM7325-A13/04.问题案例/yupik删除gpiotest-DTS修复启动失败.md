@@ -120,13 +120,17 @@ dtc -I dtb -O dts dtbo.img | grep -i gpiotest
 | 类型 | Bug（boot failure） |
 | 提交标题 | [HXB_SNM932_PinMingTong][TaskID]120654 device cannot boot - remove useless gpiotest dts |
 
-### 补丁内容
+### 补丁文件
 
-补丁详情请参考 Gerrit Change #195900。
+已归档到 `[[02.Bringup与配置/91.源码与补丁索引/patches/195900-remove-gpiotest-dts.patch|195900-remove-gpiotest-dts.patch]]`（393KB，15,146 行）。
 
 ### 补丁验证
 
 ⚠️ **无法直接获取**，因 Gerrit 服务器访问受限。
+
+### 源码状态
+
+⚠️ **源码不在本地**。项目 `LA.UM.9.14.1` 在 134 服务器上没有，仅归档了本次补丁本身。所有涉及的源码文件（`vendor/qcom/proprietary/camera-devicetree/`、`devicetree/qcom/`、`display-devicetree/` 等）均不在本地仓库中，无法直接引用。
 
 ## 引用文件索引
 

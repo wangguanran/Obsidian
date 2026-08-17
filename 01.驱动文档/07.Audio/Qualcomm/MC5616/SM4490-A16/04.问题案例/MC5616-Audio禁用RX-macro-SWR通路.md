@@ -131,7 +131,16 @@ tinyplay /data/test.wav
 tinycap /data/record.wav
 ```
 
-> ⚠️ 补丁验证：无法直接获取，请在实际硬件上按上述步骤验证。
+### 5. 补丁验证结果
+
+| 验证项目 | 结果 | 说明 |
+|---------|------|------|
+| 补丁可应用性 | ✅ 干净应用 | 已通过 git apply 验证，在 134 HEAD 基线无冲突 |
+| 变更文件 | 4 个 | lpass-cdc-rx-macro.c (+31/-13), waipio.c (+10/-2), overlay.dtsi (+7/-7), qrd.dtsi (+0/-4) |
+| 134 仓库状态 | ⚠️ 未合入 | 当前 HEAD 6ebcb463ebb 未包含该补丁 |
+| 文件权限 | ⚠️ 仅警告 | 100644 vs 100755 差异，不影响功能 |
+
+> 补丁文件：`/tmp/gerrit-patches-rest/196025.patch`
 
 ## 补丁内容
 
@@ -308,14 +317,33 @@ index e5e178b..9341cd9 100755
 
 ## 源码归档
 
-- **Gerrit**: #196025（暂无法直接获取补丁内容）
-- **分支**: master_Snapdragon_Premium_High_2021.SPF.2.0.2_MC5616
-- **项目**: LA.VENDOR.1.0.R1
+| 文件 | 归档路径 | 说明 |
+|------|---------|------|
+| `lpass-cdc-rx-macro.c` | [[04.问题案例/源码归档/lpass-cdc-rx-macro.c\|lpass-cdc-rx-macro.c]] | 补丁前基线，4846行，来自 134 HEAD |
+| `waipio.c` | [[04.问题案例/源码归档/waipio.c\|waipio.c]] | 补丁前基线，2453行，来自 134 HEAD |
+| `parrot-audio-overlay.dtsi` | [[04.问题案例/源码归档/parrot-audio-overlay.dtsi\|parrot-audio-overlay.dtsi]] | 补丁前基线，700行，来自 134 HEAD |
+| `parrot-audio-qrd.dtsi` | [[04.问题案例/源码归档/parrot-audio-qrd.dtsi\|parrot-audio-qrd.dtsi]] | 补丁前基线，32行，来自 134 HEAD |
+| 归档索引 | [[04.问题案例/源码归档/README.md\|README.md]] | 含 commit 历史、补丁验证状态 |
+
+- **134 仓库**: `/home3/wangguanran/workspace/MC5616/LA.VENDOR.1.0.R1` (HEAD `6ebcb463ebb`)
+- **分支**: `master_Snapdragon_Premium_High_2021.SPF.2.0.2_MC5616`
+- **补丁状态**: Gerrit #196025 MERGED，134 仓库 **未合入**
 
 ## 引用文件索引
 
 - [[01.驱动文档/07.Audio/Qualcomm/MC5616/SM4490-A16/04.问题案例/分析/MC5616-Audio禁用RX-macro-SWR通路-分析|分析文档]]
+- [[04.问题案例/源码归档/README.md|源码归档索引]]
 - 关联模块：[[01.驱动文档/07.Audio/Qualcomm/|Qualcomm Audio 驱动文档]]
+
+## 移植文档状态
+
+| 检查项 | 状态 | 说明 |
+|--------|------|------|
+| 移植文档 (02.Bringup与配置/) | ❌ 缺失 | SM4490-A16 目录下无移植文档，需补充 Audio Bringup 整体流程 |
+| 源码与补丁索引 (02.Bringup与配置/91.源码与补丁索引/) | ❌ 缺失 | 当前仅归档于 04.问题案例/源码归档/，需按规范迁移 |
+| 00.总览.md | ❌ 缺失 | 无平台 Audio 总览文档 |
+
+> 根据 Obsidian 驱动文档规范，移植文档应存放于 `02.Bringup与配置/` 目录，当前所有内容仅归档于 `04.问题案例/`。
 
 ---
 
