@@ -131,6 +131,78 @@ GPIO 全引脚测试（gpio full pin test）在 SLM927P 平台上测试失败。
 
 ---
 
+## 补丁内容
+
+```diff
+[PATCH] [SLM927P_A16][TaskID]110758[Description] gpio full pin test failed[Solution]modify dts [Owner]wanghao_sh
+
+diff --git a/device/qcom/bengal_515/SLM927P_gpio.sh b/device/qcom/bengal_515/SLM927P_gpio.sh
+index 4b7e739..c70a7a9 100644
+--- a/device/qcom/bengal_515/SLM927P_gpio.sh
++++ b/device/qcom/bengal_515/SLM927P_gpio.sh
+@@ -1,11 +1,10 @@
+ #!/vendor/bin/sh
+ #gpio偏移 398
+-#gpio_num1=(45  71  16  3   14  85  1    107 49  102  66  96    47   12)
+-#gpio_num2=(40  106 17  2   52  42  0    41  112 103  38  39    105  13)
+-gpio_num1=( 443 469 414 401 412 483 399  505 447 500  464 494   445  410)
+-gpio_num2=( 438 504 415 400 450 440 398  439 510 501  436 437   503  411)
+-gpio_single_input=(495 468 496 497 498 499 429 )
+-gpio_single_input1=(466)
++#gpio_num1=(45  71  16  3   14  68  85  1    107 54  102  66  96   28  58   12   97   69)
++#gpio_num2=(40  106 17  2   52  65  42  0    41  112 103  38  39   31  105  13   84   70)
++gpio_num1=( 443 469 414 401 412 466 483 399  505 452 500  464 494  426 456  410  495  467)
++gpio_num2=( 438 504 415 400 450 463 440 398  439 510 501  436 437  429 503  411  482  468)
++gpio_single_input=(496 497 498 499  )
+ ###
+ if [ "$1" = "gpio_test" ]
+ then
+@@ -167,26 +166,6 @@
+ 			test_result=0
+ 		fi
+ 	done
+-	echo single_pin
+-	echo "[single_pin]" >> /mnt/vendor/persist/gpiotest/gpio_test.ini
+-	for in_dirval in ${gpio_single_input1[@]}
+-	do		
+-		echo $in_dirval > /sys/class/gpio/export
+-		echo in > /sys/class/gpio/gpio$in_dirval/direction	
+-		echo gpio$in_dirval
+-		in_pull_dirction=`cat /sys/class/gpio/gpio$((in_dirval))/direction`
+-		echo $in_pull_dirction
+-		in_pull_state=`cat /sys/class/gpio/gpio$((in_dirval))/value`
+-		echo $in_pull_state
+-		
+-		if [[ $in_pull_dirction == in ]] && [[ $in_pull_state -eq  1 ]]
+-		then	
+-			echo "gpio$in_dirval=true" >> /mnt/vendor/persist/gpiotest/gpio_test.ini
+-		else
+-			echo "gpio$in_dirval=false" >> /mnt/vendor/persist/gpiotest/gpio_test.ini
+-			test_result=0
+-		fi
+-	done	
+ #######################single_pin测试###########################################	
+ 	
+ ###################### Final stroke #####################################	
+@@ -202,4 +181,3 @@
+ 	chmod 0744 /mnt/vendor/persist/gpiotest/gpio_test_final.ini
+ fi
+ 
+-
+diff --git a/kernel_platform/qcom/proprietary/devicetree/qcom/khaje.dtsi b/kernel_platform/qcom/proprietary/devicetree/qcom/khaje.dtsi
+index 11bc8d0..cabf108 100755
+--- a/kernel_platform/qcom/proprietary/devicetree/qcom/khaje.dtsi
++++ b/kernel_platform/qcom/proprietary/devicetree/qcom/khaje.dtsi
+@@ -4284,6 +4284,6 @@
+ 
+ &qupv3_se5_4uart {
+ 	qcom,auto-suspend-disable;
+-	qcom,rs485-en-gpio = <&tlmm 65 0x00>;
++//	qcom,rs485-en-gpio = <&tlmm 65 0x00>;
+ 	status = "ok";
+ };
+```
+
 ## 源码归档
 
 ### 涉及文件

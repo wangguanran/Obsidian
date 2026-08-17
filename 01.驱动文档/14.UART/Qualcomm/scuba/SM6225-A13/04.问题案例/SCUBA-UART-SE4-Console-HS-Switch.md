@@ -117,6 +117,72 @@ cat /sys/kernel/debug/uart/*/info
 
 ---
 
+## 补丁内容
+
+```diff
+[PATCH] [MT5205][120574][uart][Description]fastboot oem uartdebug SE4 console/HS switch[Owner]tengqi
+
+diff --git a/kernel_platform/bootable/bootloader/edk2/QcomModulePkg/Include/Library/DeviceInfo.h b/kernel_platform/bootable/bootloader/edk2/QcomModulePkg/Include/Library/DeviceInfo.h
+index 3eff8cf..4fed12a 100644
+--- a/kernel_platform/bootable/bootloader/edk2/QcomModulePkg/Include/Library/DeviceInfo.h
++++ b/kernel_platform/bootable/bootloader/edk2/QcomModulePkg/Include/Library/DeviceInfo.h
+@@ -113,8 +113,19 @@
+   UINTN GoldenSnapshot;
+   CHAR8 AudioFramework[MAX_AUDIO_FW_LENGTH];
+   BOOLEAN IsIpcLoggingEnabled;
++  /*
++   * fastboot oem uartdebug (user & userdebug):
++   * 0 = default: userdebug/eng ON, user OFF
++   * 1 = force on (ttyMSM0 console)
++   * 2 = force off (SE4 as ttyHS2)
++   */
++  UINT8 ConsoleLoggingMode;
+ } DeviceInfo;
+ 
++#define CONSOLE_LOG_MODE_DEFAULT 0
++#define CONSOLE_LOG_MODE_ON      1
++#define CONSOLE_LOG_MODE_OFF     2
++
+ struct verified_boot_verity_mode {
+   BOOLEAN verity_mode_enforcing;
+   CHAR8 *name;
+@@ -131,6 +142,8 @@
+ BOOLEAN IsEnforcing (VOID);
+ BOOLEAN IsChargingScreenEnable (VOID);
+ BOOLEAN IsIpcLoggingEnabled (VOID);
++UINT8 GetConsoleLoggingMode (VOID);
++BOOLEAN IsConsoleLoggingEffectiveOn (VOID);
+ VOID GetBootloaderVersion (CHAR8 *BootloaderVersion, UINT32 Len);
+ VOID GetRadioVersion (CHAR8 *RadioVersion, UINT32 Len);
+ EFI_STATUS EnableChargingScreen (BOOLEAN IsEnabled);
+@@ -155,4 +168,6 @@
+ ReadAudioFrameWork (CHAR8 **CmdLine, UINT32 *CmdLineLen);
+ EFI_STATUS
+ SetIpcLoggingEnabled (BOOLEAN IsEnabled);
++EFI_STATUS
++SetConsoleLoggingMode (UINT8 Mode);
+ #endif
+diff --git a/kernel_platform/bootable/bootloader/edk2/QcomModulePkg/Library/BootLib/DeviceInfo.c b/kernel_platform/bootable/bootloader/edk2/QcomModulePkg/Library/BootLib/DeviceInfo.c
+index d85454c..4982591 100644
+--- a/kernel_platform/bootable/bootloader/edk2/QcomModulePkg/Library/BootLib/DeviceInfo.c
++++ b/kernel_platform/bootable/bootloader/edk2/QcomModulePkg/Library/BootLib/DeviceInfo.c
+@@ -66,6 +66,7 @@
+ #include "LinuxLoaderLib.h"
+ #include "Board.h"
+ #include <FastbootLib/FastbootCmds.h>
+... (patch truncated, total +177/-44 lines, 399 lines)
+ 	status = "ok";
+ };
+ 
+@@ -2751,6 +2755,7 @@
+ };
+ 
+ &qupv3_se3_4uart {
++	/* MT5205: BT UART SE3 -> ttyHS0 (kept; scuba-bt also enables) */
+ 	status = "ok";
+ };
+```
+
 ## 源码归档
 
 ### 1. ABL 层代码

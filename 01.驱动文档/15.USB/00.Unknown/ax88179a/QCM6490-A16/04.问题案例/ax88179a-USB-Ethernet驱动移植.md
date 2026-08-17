@@ -18,16 +18,69 @@
 
 ## 补丁内容
 
-补丁内容请参考 Gerrit Change #196024。
+```diff
+[PATCH] [RIGEL_A16][TaskID]120099[Description]ax88179a bring up in Rigel A16[owner]qianyiping
 
-本次提交共新增 19 个文件（含 1 个配置文件修改），在 `drivers/net/usb/ax_usb_nic/` 目录下创建了完整的 ax88179a 驱动框架，包含以下核心文件：
-
-- **ax88179_178a.c / .h** — 标准 ax88179/178a 芯片驱动
-- **ax88179a_772d.c / .h** — 772d 版本芯片驱动
-- **ax_main.c / ax_main.h** — 主驱动框架，包含 USB 设备管理、网络设备注册、URB 传输等核心逻辑
-- **ax_ptp.c / ax_ptp.h** — PTP (Precision Time Protocol) 时间同步功能
-- **ax_ioctl.h** — ioctl 接口定义
-
+diff --git a/configs/lahaina_consolidate.bzl b/configs/lahaina_consolidate.bzl
+index 794089f..d1ea01a 100644
+--- a/configs/lahaina_consolidate.bzl
++++ b/configs/lahaina_consolidate.bzl
+@@ -27,5 +27,6 @@
+     "CONFIG_SDHCI_MSM_DBG": "y",
+     "CONFIG_UFS_DBG": "y",
+     "CONFIG_USB_LINK_LAYER_TEST": "m",
++    "CONFIG_USB_NET_AX_USB_NIC": "m",
+     "CONFIG_EXTCON": "y",
+ }
+diff --git a/configs/lahaina_perf.bzl b/configs/lahaina_perf.bzl
+index 85a5b0d..eb6ad49 100644
+--- a/configs/lahaina_perf.bzl
++++ b/configs/lahaina_perf.bzl
+@@ -374,6 +374,7 @@
+     "CONFIG_USB_G_WEBCAM": "m",
+     "CONFIG_USB_LAN78XX": "m",
+     "CONFIG_USB_MSM_SSPHY_QMP": "m",
++    "CONFIG_USB_NET_AX_USB_NIC": "m",
+     "CONFIG_USB_QCOM_EMU_PHY": "m",
+     "CONFIG_USB_REDRIVER": "m",
+     "CONFIG_USB_REDRIVER_NB7VPQ904M": "m",
+diff --git a/drivers/net/Kconfig b/drivers/net/Kconfig
+index 5e0c906..3f69dc4 100644
+--- a/drivers/net/Kconfig
++++ b/drivers/net/Kconfig
+@@ -50,5 +50,6 @@
+ source "$(KCONFIG_EXT_PREFIX)drivers/net/ethernet/Kconfig"
+ source "$(KCONFIG_EXT_PREFIX)drivers/net/phy/Kconfig"
+ source "$(KCONFIG_EXT_PREFIX)drivers/net/mdio_fe/Kconfig"
++source "$(KCONFIG_EXT_PREFIX)drivers/net/usb/Kconfig"
+ 
+ endif # NETDEVICES
+diff --git a/drivers/net/Makefile b/drivers/net/Makefile
+index aeff3e5..5b64d068 100644
+--- a/drivers/net/Makefile
++++ b/drivers/net/Makefile
+@@ -6,6 +6,7 @@
+ obj-y += ethernet/stmicro/stmmac/
+ obj-y += pcs/
+ obj-y += phy/aquantia/
++obj-y += usb/
+ 
+ obj-$(CONFIG_FAILOVER) += failover.o
+ failover-objs += ../../net/core/failover.o
+diff --git a/drivers/net/modules.bzl b/drivers/net/modules.bzl
+index dc5ec5e..dadef8e 100644
+... (patch truncated, total +10205/-19 lines, 10332 lines)
++            "drivers/net/usb/ax_usb_nic/ax88179a_772d.h",
++            "drivers/net/usb/ax_usb_nic/ax_ioctl.h",
++            "drivers/net/usb/ax_usb_nic/ax_ptp.h",
++        ],
++        copts = [
++            "-DENABLE_IOCTL_DEBUG",
++            "-DENABLE_INT_POLLING",
++            "-DENABLE_AX88279",
++        ],
++    )
+```
 ## 配置方式
 
 ### Kernel Kconfig 配置
