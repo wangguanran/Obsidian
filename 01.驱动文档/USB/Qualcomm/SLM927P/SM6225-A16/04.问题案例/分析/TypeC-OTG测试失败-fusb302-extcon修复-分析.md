@@ -69,7 +69,7 @@ dwc3@4e00000 { dr_mode = "peripheral"; };  /* 锁死 device */
 
 - 沿用内核既有 fusb302 驱动与 extcon 框架，无内核代码改动，纯 DT 修复；
 - 与 [[01.驱动文档/USB/Qualcomm/SLM927P/SM6225-A16/01.原理与架构/TypeC-OTG驱动架构分析.md|TypeC-OTG 驱动架构分析]] 描述的链路一致：FUSB302 检测 CC → extcon → dwc3 role switch；
-- khaje 平台其它项目（如 13.GPIO/SLM927P 平台目录）共用同一套 khaje dtsi，本改动影响所有 include khaje-idp.dtsi 的板型。
+- khaje 平台其它项目（如 GPIO/SLM927P 平台目录）共用同一套 khaje dtsi，本改动影响所有 include khaje-idp.dtsi 的板型。
 
 ---
 
