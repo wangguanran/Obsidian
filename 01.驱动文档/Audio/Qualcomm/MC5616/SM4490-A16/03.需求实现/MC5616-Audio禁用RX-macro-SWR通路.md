@@ -320,11 +320,11 @@ index e5e178b..9341cd9 100755
 
 | 文件 | 归档路径 | 说明 |
 |------|---------|------|
-| `lpass-cdc-rx-macro.c` | [[04.问题案例/源码归档/lpass-cdc-rx-macro.c\|lpass-cdc-rx-macro.c]] | 补丁前基线，4846行，来自 134 HEAD |
-| `waipio.c` | [[04.问题案例/源码归档/waipio.c\|waipio.c]] | 补丁前基线，2453行，来自 134 HEAD |
-| `parrot-audio-overlay.dtsi` | [[04.问题案例/源码归档/parrot-audio-overlay.dtsi\|parrot-audio-overlay.dtsi]] | 补丁前基线，700行，来自 134 HEAD |
-| `parrot-audio-qrd.dtsi` | [[04.问题案例/源码归档/parrot-audio-qrd.dtsi\|parrot-audio-qrd.dtsi]] | 补丁前基线，32行，来自 134 HEAD |
-| 归档索引 | [[04.问题案例/源码归档/README.md\|README.md]] | 含 commit 历史、补丁验证状态 |
+| `lpass-cdc-rx-macro.c` | [[04.问题案例/源码归档/lpass-cdc-rx-macro.c\\|lpass-cdc-rx-macro.c]] | 补丁前基线，4846行，来自 134 HEAD |
+| `waipio.c` | [[04.问题案例/源码归档/waipio.c\\|waipio.c]] | 补丁前基线，2453行，来自 134 HEAD |
+| `parrot-audio-overlay.dtsi` | [[04.问题案例/源码归档/parrot-audio-overlay.dtsi\\|parrot-audio-overlay.dtsi]] | 补丁前基线，700行，来自 134 HEAD |
+| `parrot-audio-qrd.dtsi` | [[04.问题案例/源码归档/parrot-audio-qrd.dtsi\\|parrot-audio-qrd.dtsi]] | 补丁前基线，32行，来自 134 HEAD |
+| 归档索引 | [[04.问题案例/源码归档/README.md\\|README.md]] | 含 commit 历史、补丁验证状态 |
 
 - **134 仓库**: `/home3/wangguanran/workspace/MC5616/LA.VENDOR.1.0.R1` (HEAD `6ebcb463ebb`)
 - **分支**: `master_Snapdragon_Premium_High_2021.SPF.2.0.2_MC5616`
@@ -332,9 +332,9 @@ index e5e178b..9341cd9 100755
 
 ## 引用文件索引
 
-- [[01.驱动文档/07.Audio/Qualcomm/MC5616/SM4490-A16/04.问题案例/分析/MC5616-Audio禁用RX-macro-SWR通路-分析|分析文档]]
+- [[01.驱动文档/Audio/Qualcomm/MC5616/SM4490-A16/04.问题案例/分析/MC5616-Audio禁用RX-macro-SWR通路-分析|分析文档]]
 - [[04.问题案例/源码归档/README.md|源码归档索引]]
-- 关联模块：[[01.驱动文档/07.Audio/Qualcomm/|Qualcomm Audio 驱动文档]]
+- 关联模块：[[01.驱动文档/Audio/Qualcomm/|Qualcomm Audio 驱动文档]]
 
 ## 移植文档状态
 

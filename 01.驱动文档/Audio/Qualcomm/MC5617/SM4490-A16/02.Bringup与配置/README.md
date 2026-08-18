@@ -17,8 +17,8 @@
 
 | 路径 | 说明 |
 |:---|:---|
-| `vendor/qcom/opensource/audio-hal/primary-hal/configs/parrot/parrot.mk` | parrot 平台 audio HAL 产品属性（归档：[[01.驱动文档/07.Audio/Qualcomm/MC5617/SM4490-A16/91.源码与补丁索引/vendor_hal/parrot.mk|parrot.mk]]） |
-| `vendor/qcom/opensource/audio-hal/primary-hal/hal/core/platform/Platform.cpp` | HAL 平台层（设备定制钩子，归档：[[01.驱动文档/07.Audio/Qualcomm/MC5617/SM4490-A16/91.源码与补丁索引/vendor_hal/Platform.cpp|Platform.cpp]]） |
+| `vendor/qcom/opensource/audio-hal/primary-hal/configs/parrot/parrot.mk` | parrot 平台 audio HAL 产品属性（归档：[[01.驱动文档/Audio/Qualcomm/MC5617/SM4490-A16/91.源码与补丁索引/vendor_hal/parrot.mk\|parrot.mk]]） |
+| `vendor/qcom/opensource/audio-hal/primary-hal/hal/core/platform/Platform.cpp` | HAL 平台层（设备定制钩子，归档：[[01.驱动文档/Audio/Qualcomm/MC5617/SM4490-A16/91.源码与补丁索引/vendor_hal/Platform.cpp\|Platform.cpp]]） |
 | `vendor/qcom/opensource/audio-kernel/` | 音频内核驱动（asoc、lpass-cdc codec） |
 | `vendor/qcom/proprietary/audio-devicetree/` | 音频 DTS（parrot-audio-overlay.dtsi 等） |
 
@@ -60,6 +60,6 @@ adb shell cat /proc/asound/cards
 
 ## 5. 修改历史
 
-见 [[01.驱动文档/07.Audio/Qualcomm/MC5617/SM4490-A16/91.源码与补丁索引/modified_history.md|modified_history.md]]。
+见 [[01.驱动文档/Audio/Qualcomm/MC5617/SM4490-A16/91.源码与补丁索引/modified_history.md|modified_history.md]]。
 
 _Author: wangguanran_
