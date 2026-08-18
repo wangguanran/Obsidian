@@ -1,0 +1,358 @@
+#  NFC VEN 双路径 GPIO51 控制
+
+> **版本号：v1.0**
+
+## 基本信息
+
+| 字段 | 值 |
+|:---|:---|
+| 问题编号 | ISSUE-2026-0812-002 |
+| 芯片 | Qualcomm bengal（khaje） |
+| 文档类型 | 需求实现 |
+| 严重程度 | High |
+| 报告日期 | 2026-08-12 |
+| 涉及模块 | Kernel NFC（pn7220）/ DTS（khaje-idp）/ GPIO（tlmm 51 + et6416 扩展 IO） |
+| 指派专家 | 底驱匠（android-hal-bsp-expert） |
+| 协同专家 | 通联达（android-connectivity-expert），仅当需动 NFC HAL/libnfc 时 |
+
+## 需求描述
+
+现网 NFC VEN（使能脚）由扩展 IO `EX2_P0_3_NFC_ENABLE`（`et6416_21` 扩展芯片 P0.3）控制。扩展 IO 依赖 I2C 总线；NFC 读写可能把 I2C 总线打挂，导致系统无法操作扩展 IO、无法复位 NFC。
+
+需求：增加平台 **GPIO51**（PIN AL5 / `CTLS_nPWDN` / Mode Switch SP）直驱 VEN，实现双 BOM 兼容：
+
+- **旧机（旧贴片 BOM，R4710=0R）**：保留扩展 IO 控制 VEN
+- **新贴片 BOM（R4710=NC）**：走平台 GPIO51 直驱 VEN
+
+## 环境
+
+| 项 | 值 |
+|:---|:---|
+| lunch | `bengal_515-userdebug` |
+| NFC 驱动 | `kernel_platform/msm-kernel/drivers/nfc/pn7220_i2cms/` |
+| DTS 基线 | `kernel_platform/qcom/proprietary/devicetree/qcom/khaje-idp.dtsi` |
+
+## 处理
+
+双路径 VEN 方案：新增可选 `nxp,nxpnfc-ven2`（平台 GPIO51/AL5，`CTLS_nPWDN`），旧 BOM 走扩展 IO `ven`，新 BOM 走平台 `ven2`，驱动侧 ven2-first：
+
+### 驱动修改（pn7220_i2cms）
+
+1. **[[#common.c]]**：
+   - `nfc_parse_dt()` 新增解析 `nxp,nxpnfc-ven2`（可选，无效时仅 pr_info）
+   - `gpio_set_ven()` 改为：先 `gpio_set_value(ven2)`（平台直驱，不依赖 I2C），再 `gpio_set_value(ven)`（扩展 IO）；去掉读旧值判断，统一走硬件延时
+   - `validate_nfc_state_nci()` 优先读 `ven2` 电平判断 NFC 电源状态，避免读扩展 IO 阻塞
+2. **[[#common.h]]**：新增 `DTS_VEN2_STR "nxp,nxpnfc-ven2"` 宏与 `ven2` 字段
+3. **[[#i2c_drv.c]]**：`nfc_i2c_dev_probe()` 中 `configure_gpio(ven2, GPIO_OUTPUT, "nfc_ven2")`，失败仅 pr_info（可选）
+
+### DTS 修改（khaje）
+
+4. **[[#khaje-idp.dtsi]]**：
+   - nfc 节点加 `pinctrl-names = "default"` / `pinctrl-0 = <&nfc_ven_gpio51_active>`
+   - `ven` 保留扩展 IO（legacy BOM），新增 `nxp,nxpnfc-ven2 = <&tlmm 51 0>`（payment BOM）
+5. **[[#khaje-pinctrl.dtsi]]**：新增 `nfc_ven_gpio51_active`（output-high）/ `nfc_ven_gpio51_suspend`（output-low, bias-pull-down）
+
+## 验证
+
+### Stage1 编译（2026-08-12）
+
+| 项 | 状态 | 产物 |
+|:---|:---|:---|
+| dtbs + dtboimage | PASS | `out/target/product/bengal_515/dtbo.img`（含 `nxp,nxpnfc-ven2`） |
+| vendor_boot | PASS | 同目录 `vendor_boot.img` |
+| `nxpnfc_i2c.ko` | PASS | consolidate out `drivers/nfc/pn7220_i2cms/nxpnfc_i2c.ko`（strings 含 ven2） |
+| adb | skipped_no_device | — |
+
+### 编译命令
+
+```bash
+# DTS/DTBO
+cd <codes_tree>
+JOBS=64 TMPDIR=<tmpdir> ./make_dtbo.sh
+
+# 模块
+cd LA.VENDOR.13.2.1/kernel_platform
+export BUILD_CONFIG=./msm-kernel/build.config.msm.bengal VARIANT=consolidate
+source build/_setup_env.sh
+make -C msm-kernel O="$OUT_DIR" M=drivers/nfc/pn7220_i2cms modules -j64
+```
+
+### 冒烟验证
+
+```bash
+strings dtbo.img | grep nxp,nxpnfc-ven2          # → 命中
+strings nxpnfc_i2c.ko | grep -E 'ven2|nxp,nxpnfc-ven2'   # → 命中
+```
+
+## 结论
+
+- 直接原因：VEN 控制走扩展 IO，扩展 IO 依赖 I2C，NFC 打挂 I2C 后 VEN 无法操作
+- 实际原因：VEN 复位路径与 NFC 通信共用同一条 I2C 总线，形成自锁
+- 解决方案：新增平台 GPIO51 直驱 VEN（ven2），驱动侧 ven2-first，兼容双 BOM
+- 验证结论：dtbs/dtbo/vendor_boot/ko 全部编译 PASS，strings 冒烟命中
+
+## 残留风险
+
+- 尚未在真机验证双 BOM 实际拉电时序（adb skipped_no_device）
+- suspend 状态 GPIO51 拉低 + pull-down，需确认 NFC 睡眠时 VEN 低电平是否符合硬件要求
+
+---
+
+## 续诊：冷启 GPIO51 不生效
+
+### 背景
+
+用户反馈：重刷镜像 + push ko 后**没有生效**。实机核对发现：
+
+- DT 与磁盘 ko 均含 `ven2`（新 BOM 用平台 GPIO51 直驱 VEN）
+- 但**冷启后 GPIO51 为 in low**，NFC VEN 未拉高
+- `rmmod`/`insmod` 后变为 out high（ven2=449），说明 ko 本身逻辑正确
+- 磁盘 ko 已是新版（751776），但 vendor_boot 内无 ven2 字符串
+- 只 push ko 不 reboot，运行中仍是旧模块
+
+### 实机结论
+
+| 项 | 冷启（刷机 + push ko 后） | rmmod/insmod 后 |
+|:---|:---|:---|
+| DT `nxp,nxpnfc-ven2` | 有 | 有 |
+| 磁盘 ko（含 ven2, 751776） | 有 | 有 |
+| GPIO51 | **in low** | out high |
+| expander `nfc_ven` | 可拉 out hi | 可拉 out hi |
+
+补充：推送的 `vendor_boot.img` 里没有 ven2 字符串；真正带 ven2 的是后来 push 到 `/vendor_dlkm/` 的 ko。
+
+### 修复内容
+
+1. GPIO_OUTPUT_HIGH（pinctrl 配置改为 output-high）
+2. request 失败 → ven2 = -EINVAL（置无效）
+3. -EPROBE_DEFER → 释放 expander VEN 后 defer 重试（直接 return 会泄漏已申请的 expander VEN）
+4. 去掉会与 nfc_ven2 抢脚的 pinctrl-0
+
+Patch：`<patch_path>/0002-vendor-nfc-ven2-probe-fix-coldboot.patch`
+
+### 验证
+
+| 项 | 状态 |
+|:---|:---|
+| Kernel build.sh PASS | `nxpnfc_i2c.ko` md5 `454e1afec3cf0b5b876195c2f45afd72` |
+| `make vendorbootimage dtboimage` PASS | 96MB vendor_boot + dtbo |
+| job | `-20260813-014813-256280` |
+
+### 结论
+
+不是"完全没刷上"，而是冷启后 GPIO51 没被真正驱动成输出高。根因：`configure_gpio(ven2)` 失败时 `ven2=449` 残留 → `gpio_set_ven()` 对未申请脚空操作。修复：`GPIO_OUTPUT_HIGH` + 失败置 `-EINVAL` + `EPROBE_DEFER` 走错误清理。
+
+## 补丁内容
+
+> 原始补丁路径：`<patch_path>/0001-vendor-nfc-ven2-dual-path-gpio51.patch`（同一 commit）
+
+```diff
+---
+ .../drivers/nfc/pn7220_i2cms/common.c         | 42 +++++++++++++++----
+ .../drivers/nfc/pn7220_i2cms/common.h         |  2 +
+ .../drivers/nfc/pn7220_i2cms/i2c_drv.c        |  5 +++
+ .../devicetree/qcom/khaje-idp.dtsi            |  6 +++
+ .../devicetree/qcom/khaje-pinctrl.dtsi        | 28 +++++++++++++
+ 5 files changed, 74 insertions(+), 9 deletions(-)
+
+diff --git a/kernel_platform/msm-kernel/drivers/nfc/pn7220_i2cms/common.c b/kernel_platform/msm-kernel/drivers/nfc/pn7220_i2cms/common.c
+index b75231162ea..cd3d8df04f7 100644
+--- a/kernel_platform/msm-kernel/drivers/nfc/pn7220_i2cms/common.c
++++ b/kernel_platform/msm-kernel/drivers/nfc/pn7220_i2cms/common.c
+@@ -57,6 +57,11 @@ int nfc_parse_dt(struct device *dev, struct platform_configs *nfc_configs,
+ 		return -EINVAL;
+ 	}
+ 
++	nfc_gpio->ven2 = of_get_named_gpio(np, DTS_VEN2_STR, 0);
++	if ((!gpio_is_valid(nfc_gpio->ven2)))
++		pr_info("%s: optional ven2 not configured %d\n", __func__,
++			nfc_gpio->ven2);
++
+ 	nfc_gpio->i2c_sw = of_get_named_gpio(np, DTS_I2C_SW_STR, 0);
+ 	if ((!gpio_is_valid(nfc_gpio->i2c_sw)))
+ 		pr_warn("%s: i2c_sw gpio invalid %d\n", __func__,
+@@ -93,8 +98,8 @@ int nfc_parse_dt(struct device *dev, struct platform_configs *nfc_configs,
+ 		pr_warn("%s: wakeup gpio invalid %d\n", __func__,
+ 			nfc_gpio->wakeup);
+ 
+-	pr_info("%s: %d, %d, %d, %d, %d, %d, %d, %d, %d\n", __func__, nfc_gpio->irq,
+-		nfc_gpio->ven, nfc_gpio->i2c_sw, nfc_gpio->mode_sw_nfcc,
++	pr_info("%s: %d, %d, %d, %d, %d, %d, %d, %d, %d, %d\n", __func__, nfc_gpio->irq,
++		nfc_gpio->ven, nfc_gpio->ven2, nfc_gpio->i2c_sw, nfc_gpio->mode_sw_nfcc,
+ 		nfc_gpio->mode_sw_smcu, nfc_gpio->mode_sw_smcu_done,
+ 		nfc_gpio->led_red, nfc_gpio->led_green, nfc_gpio->wakeup);
+ 
+@@ -133,14 +138,22 @@ void gpio_set_ven(struct nfc_dev *nfc_dev, int value)
+ {
+ 	struct platform_gpio *nfc_gpio = &nfc_dev->configs.gpio;
+ 
+-	if (gpio_get_value(nfc_gpio->ven) != value) {
+-		pr_debug("%s: value %d\n", __func__, value);
++	/*
++	 * Drive platform TLMM VEN (ven2) first: it does not depend on I2C.
++	 * Expander VEN may hang if NFC has stalled the shared I2C bus; do not
++	 * gpio_get_value() on expander before setting ven2.
++	 */
++	pr_debug("%s: value %d\n", __func__, value);
++
++	if (gpio_is_valid(nfc_gpio->ven2))
++		gpio_set_value(nfc_gpio->ven2, value);
+ 
++	if (gpio_is_valid(nfc_gpio->ven))
+ 		gpio_set_value(nfc_gpio->ven, value);
+-		/* hardware dependent delay */
+-		usleep_range(NFC_GPIO_SET_WAIT_TIME_US,
+-			     NFC_GPIO_SET_WAIT_TIME_US + 100);
+-	}
++
++	/* hardware dependent delay */
++	usleep_range(NFC_GPIO_SET_WAIT_TIME_US,
++		     NFC_GPIO_SET_WAIT_TIME_US + 100);
+ }
+ 
+ int nfc_vdd_enable(struct nfc_dev *nfc_dev)
+@@ -560,10 +573,21 @@ int validate_nfc_state_nci(struct nfc_dev *nfc_dev)
+ {
+ 	struct platform_gpio *nfc_gpio = &nfc_dev->configs.gpio;
+ 
+-	if (!gpio_get_value(nfc_gpio->ven)) {
++	/*
++	 * Prefer platform ven2 for power state: reading expander VEN can
++	 * block when the shared I2C bus is hung by NFC.
++	 */
++	if (gpio_is_valid(nfc_gpio->ven2)) {
++		if (!gpio_get_value(nfc_gpio->ven2)) {
++			pr_err("%s: ven low - nfcc powered off\n", __func__);
++			return -ENODEV;
++		}
++	} else if (!gpio_is_valid(nfc_gpio->ven) ||
++		   !gpio_get_value(nfc_gpio->ven)) {
+ 		pr_err("%s: ven low - nfcc powered off\n", __func__);
+ 		return -ENODEV;
+ 	}
++
+ 	if (nfc_dev->nfc_state != NFC_STATE_NCI) {
+ 		pr_err("%s: fw download state\n", __func__);
+ 		return -EBUSY;
+diff --git a/kernel_platform/msm-kernel/drivers/nfc/pn7220_i2cms/common.h b/kernel_platform/msm-kernel/drivers/nfc/pn7220_i2cms/common.h
+index 41a116ddd44..fd316eed628 100644
+--- a/kernel_platform/msm-kernel/drivers/nfc/pn7220_i2cms/common.h
++++ b/kernel_platform/msm-kernel/drivers/nfc/pn7220_i2cms/common.h
+@@ -95,6 +95,7 @@ typedef struct {
+ 
+ #define DTS_IRQ_GPIO_STR		"nxp,nxpnfc-irq"
+ #define DTS_VEN_GPIO_STR		"nxp,nxpnfc-ven"
++#define DTS_VEN2_STR		"nxp,nxpnfc-ven2"
+ #define DTS_I2C_SW_STR          "nxp,nxpnfc-i2c_sw"
+ #define DTS_MODE_SW_STR         "nxp,nxpnfc-mode_sw"
+ #define DTS_MODE_SW_SP_STR      "nxp,nxpnfc-mode_sw_sp"
+@@ -157,6 +158,7 @@ enum gpio_values {
+ struct platform_gpio {
+ 	unsigned int irq;
+ 	unsigned int ven;
++	unsigned int ven2;
+ 	unsigned int i2c_sw;
+ 	unsigned int mode_sw_nfcc;
+ 	unsigned int mode_sw_smcu;
+diff --git a/kernel_platform/msm-kernel/drivers/nfc/pn7220_i2cms/i2c_drv.c b/kernel_platform/msm-kernel/drivers/nfc/pn7220_i2cms/i2c_drv.c
+index 20bc1823ca4..3da2652ac84 100644
+--- a/kernel_platform/msm-kernel/drivers/nfc/pn7220_i2cms/i2c_drv.c
++++ b/kernel_platform/msm-kernel/drivers/nfc/pn7220_i2cms/i2c_drv.c
+@@ -562,6 +562,11 @@ int nfc_i2c_dev_probe(struct i2c_client *client, const struct i2c_device_id *id)
+ 		   nfc_gpio->ven);
+ 		goto err_free_write_kbuf;
+ 	}
++	ret = configure_gpio(nfc_gpio->ven2, GPIO_OUTPUT, "nfc_ven2");
++	if (ret) {
++		pr_info("%s: optional ven2 not available [%d]\n", __func__,
++			nfc_gpio->ven2);
++	}
+ 	ret = configure_gpio(nfc_gpio->irq, GPIO_IRQ, "nfc_irq");
+ 	if (ret <= 0) {
+ 		pr_err("%s: unable to request nfc irq gpio [%d]\n", __func__,
+diff --git a/kernel_platform/qcom/proprietary/devicetree/qcom/khaje-idp.dtsi b/kernel_platform/qcom/proprietary/devicetree/qcom/khaje-idp.dtsi
+index 639c9f8c390..5528bc5c730 100755
+--- a/kernel_platform/qcom/proprietary/devicetree/qcom/khaje-idp.dtsi
++++ b/kernel_platform/qcom/proprietary/devicetree/qcom/khaje-idp.dtsi
+@@ -289,9 +289,15 @@
+         compatible = "nxp,nxpnfc_m";
+         reg = <0x38>; /* Set according to hardware: common values are 0x28 or 0x29 */
+ 
++        pinctrl-names = "default";
++        pinctrl-0 = <&nfc_ven_gpio51_active>;
++
+         /* Required: IRQ + VEN (enable) */
+         nxp,nxpnfc-irq = <&tlmm 70 0>;
++        /* Primary VEN: IO expander (legacy BOM, R4710=0R) */
+         nxp,nxpnfc-ven = <&et6416_21 3 0>;
++        /* Secondary VEN: platform GPIO51/AL5 CTLS_nPWDN (payment BOM, R4710=NC) */
++        nxp,nxpnfc-ven2 = <&tlmm 51 0>;
+ 
+         /*
+          * The following are also required: although parse_dt only gives a warning,
+diff --git a/kernel_platform/qcom/proprietary/devicetree/qcom/khaje-pinctrl.dtsi b/kernel_platform/qcom/proprietary/devicetree/qcom/khaje-pinctrl.dtsi
+index 4eea1a57725..9b7017c9731 100755
+--- a/kernel_platform/qcom/proprietary/devicetree/qcom/khaje-pinctrl.dtsi
++++ b/kernel_platform/qcom/proprietary/devicetree/qcom/khaje-pinctrl.dtsi
+@@ -92,6 +92,34 @@
+ 				bias-pull-up;
+ 			};
+ 		};
++
++		nfc_ven_gpio51_active: nfc_ven_gpio51_active {
++			mux {
++				pins = "gpio51";
++				function = "gpio";
++			};
++
++			config {
++				pins = "gpio51";
++				drive-strength = <2>;
++				bias-disable;
++				output-high;
++			};
++		};
++
++		nfc_ven_gpio51_suspend: nfc_ven_gpio51_suspend {
++			mux {
++				pins = "gpio51";
++				function = "gpio";
++			};
++
++			config {
++				pins = "gpio51";
++				drive-strength = <2>;
++				bias-pull-down;
++				output-low;
++			};
++		};
+ 	};
+ 
+ 		pmx_ts_reset_active {
+-- 
+2.34.1
+```
+
+## 引用文件索引
+
+### common.c
+路径：`kernel_platform/msm-kernel/drivers/nfc/pn7220_i2cms/common.c`
+关键修改：`nfc_parse_dt()` 解析 ven2；`gpio_set_ven()` ven2-first 双路拉 VEN；`validate_nfc_state_nci()` 优先读 ven2 判断电源状态。
+
+### common.h
+路径：`kernel_platform/msm-kernel/drivers/nfc/pn7220_i2cms/common.h`
+关键修改：新增 `DTS_VEN2_STR "nxp,nxpnfc-ven2"` 宏；`struct platform_gpio` 新增 `unsigned int ven2`。
+
+### i2c_drv.c
+路径：`kernel_platform/msm-kernel/drivers/nfc/pn7220_i2cms/i2c_drv.c`
+关键修改：`nfc_i2c_dev_probe()` 中 `configure_gpio(ven2, GPIO_OUTPUT, "nfc_ven2")`，可选失败仅 pr_info。
+
+### khaje-idp.dtsi
+路径：`kernel_platform/qcom/proprietary/devicetree/qcom/khaje-idp.dtsi`
+关键修改：nfc 节点加 pinctrl；`nxp,nxpnfc-ven2 = <&tlmm 51 0>`，保留 `ven = <&et6416_21 3 0>`。
+
+### khaje-pinctrl.dtsi
+路径：`kernel_platform/qcom/proprietary/devicetree/qcom/khaje-pinctrl.dtsi`
+关键修改：新增 `nfc_ven_gpio51_active` / `nfc_ven_gpio51_suspend` pinctrl 状态。
+
+_Author: 艾达_

@@ -50,7 +50,7 @@ version: "1.0"
 
 ### 4. 0xA7 的定义（文档来源）
 在以下文档中有明确定义：
-- `Obsidian/小王的技术站/01.驱动文档/10.NFC/01.NXP PN7221/02.Doc/UM11810.pdf`
+- `Obsidian/小王的技术站/01.驱动文档/NFC/01.NXP PN7221/02.Doc/UM11810.pdf`
 - Section `7.3.8`, Table 24 (`Proprietary reason codes in CORE_RESET_NTF`)
 
 定义摘要：
