@@ -1,0 +1,49 @@
+Subject: [PATCH] [MT5205][TaskID]118727[Description] fix unused PmicGpioProtocol breaking other UEFI builds[Owner]lixianghui
+
+---
+
+diff --git a/BOOT.XF.4.1/boot_images/QcomPkg/SocPkg/AgattiPkg/LAA/Core.fdf b/BOOT.XF.4.1/boot_images/QcomPkg/SocPkg/AgattiPkg/LAA/Core.fdf
+index bc4c4cb..ccb088e 100755
+--- a/BOOT.XF.4.1/boot_images/QcomPkg/SocPkg/AgattiPkg/LAA/Core.fdf
++++ b/BOOT.XF.4.1/boot_images/QcomPkg/SocPkg/AgattiPkg/LAA/Core.fdf
+@@ -471,7 +471,7 @@
+    SECTION RAW = QcomPkg/Settings/Panel/Panel_jd9365da_720p_vid.xml
+   }
+ #endif
+-FILE FREEFORM = 9bae75d9-a217-4b31-9dcd-00d2609b6784 {
++  FILE FREEFORM = 9bae75d9-a217-4b31-9dcd-00d2609b6784 {
+     SECTION UI = "Panel_truly_nt36525_hd_plus_vid.xml"
+     SECTION RAW = QcomPkg/Settings/Panel/Panel_truly_nt36525_hd_plus_vid.xml
+   }
+diff --git a/BOOT.XF.4.1/boot_images/QcomPkg/SocPkg/AgattiPkg/Library/MDPPlatformLib/MDPPlatformLib.c b/BOOT.XF.4.1/boot_images/QcomPkg/SocPkg/AgattiPkg/Library/MDPPlatformLib/MDPPlatformLib.c
+index 1735198..c9e2773 100755
+--- a/BOOT.XF.4.1/boot_images/QcomPkg/SocPkg/AgattiPkg/Library/MDPPlatformLib/MDPPlatformLib.c
++++ b/BOOT.XF.4.1/boot_images/QcomPkg/SocPkg/AgattiPkg/Library/MDPPlatformLib/MDPPlatformLib.c
+@@ -385,8 +385,10 @@
+   PANEL_CREATE_ENTRY("st7703_720p_video",          MDPPLATFORM_PANEL_ST7703_720P_VIDEO,           "qcom,mdss_dsi_st7703_720p_video:",     DISP_INTF_DSI, DISP_TOPOLOGY_CONFIG_NONE, DISP_TIMING_CONFIG_NONE, PLL_OVERRIDE_NONE, DISP_MODE_SINGLE_DSI,                              DISP_MODE_SINGLE_DSI,                                 DISP_MODE_SINGLE_DSI),
+     PANEL_CREATE_ENTRY("jd9165ba_600p_video",    MDPPLATFORM_PANEL_CPT_JD9165BA_600P_VIDEO,     "qcom,mdss_dsi_cpt_claa053wd41_3xb_jd9165ba_600p_video:",   DISP_INTF_DSI, DISP_TOPOLOGY_CONFIG_NONE, DISP_TIMING_CONFIG_NONE, PLL_OVERRIDE_NONE, DISP_MODE_SINGLE_DSI,                                                   DISP_MODE_SINGLE_DSI,                                 DISP_MODE_SINGLE_DSI),
+   PANEL_CREATE_ENTRY("truly_nt36525_hdplus_vid",   MDPPLATFORM_PANEL_NT36525_TRULY_HDPLUS_VIDEO,  "qcom,mdss_dsi_nt36525_truly_video:",   DISP_INTF_DSI, DISP_TOPOLOGY_CONFIG_NONE,  DISP_TIMING_CONFIG_NONE,PLL_OVERRIDE_NONE, DISP_MODE_SINGLE_DSI, 							   DISP_MODE_SINGLE_DSI,							     DISP_MODE_SINGLE_DSI),
++#if defined(ODM_PROJECT_MT5205)
+   PANEL_CREATE_ENTRY("dsi_st7701s_boe397_480p_video", MDPPLATFORM_PANEL_ST7701S_BOE397_480P_VIDEO, "qcom,mdss_dsi_st7701s_boe397_video:", DISP_INTF_DSI, DISP_TOPOLOGY_CONFIG_NONE, DISP_TIMING_CONFIG_NONE, PLL_OVERRIDE_NONE, DISP_MODE_SINGLE_DSI, DISP_MODE_SINGLE_DSI, DISP_MODE_SINGLE_DSI),
+   PANEL_CREATE_ENTRY("dsi_jd9365da_720p_video", MDPPLATFORM_PANEL_JD9365DA_720P_VIDEO, "qcom,mdss_dsi_jd9365da_video:", DISP_INTF_DSI, DISP_TOPOLOGY_CONFIG_NONE, DISP_TIMING_CONFIG_NONE, PLL_OVERRIDE_NONE, DISP_MODE_SINGLE_DSI, DISP_MODE_SINGLE_DSI, DISP_MODE_SINGLE_DSI),
++#endif
+   PANEL_CREATE_ENTRY("ili9881p_cpt_tianbo_video",     MDPPLATFORM_PANEL_ILI9881C_800P_VIDEO,     "qcom,mdss_dsi_cpt_claa053wd41_3xb_ili9881p_720p_video:",         	 DISP_INTF_DSI, DISP_TOPOLOGY_CONFIG_NONE, DISP_TIMING_CONFIG_NONE, PLL_OVERRIDE_NONE, DISP_MODE_SINGLE_DSI,                              DISP_MODE_SINGLE_DSI,                                 DISP_MODE_SINGLE_DSI),
+   PANEL_CREATE_ENTRY("st7703_3p5_640x480_video",    MDPPLATFORM_PANEL_ST7703_3P5_640x480_VIDEO,     "qcom,mdss_dsi_st7703_3p5_640x480_video:",                       DISP_INTF_DSI, DISP_TOPOLOGY_CONFIG_NONE, DISP_TIMING_CONFIG_NONE, PLL_OVERRIDE_NONE, DISP_MODE_SINGLE_DSI,                              DISP_MODE_SINGLE_DSI,                                 DISP_MODE_SINGLE_DSI),
+   PANEL_CREATE_ENTRY("tsd5p5_ili9881c_720p_video",    MDPPLATFORM_PANEL_TSD5P5_ILI9881C_720P_VIDEO,     "qcom,mdss_dsi_tsd5p5_ili9881c_720p_video:",                       DISP_INTF_DSI, DISP_TOPOLOGY_CONFIG_NONE, DISP_TIMING_CONFIG_NONE, PLL_OVERRIDE_NONE, DISP_MODE_SINGLE_DSI,                              DISP_MODE_SINGLE_DSI,                                 DISP_MODE_SINGLE_DSI),
+diff --git a/BOOT.XF.4.1/boot_images/QcomPkg/SocPkg/AgattiPkg/Library/MDPPlatformLib/MDPPlatformLibPanelCommon.c b/BOOT.XF.4.1/boot_images/QcomPkg/SocPkg/AgattiPkg/Library/MDPPlatformLib/MDPPlatformLibPanelCommon.c
+index 1f214fd..83f684e 100755
+--- a/BOOT.XF.4.1/boot_images/QcomPkg/SocPkg/AgattiPkg/Library/MDPPlatformLib/MDPPlatformLibPanelCommon.c
++++ b/BOOT.XF.4.1/boot_images/QcomPkg/SocPkg/AgattiPkg/Library/MDPPlatformLib/MDPPlatformLibPanelCommon.c
+@@ -538,10 +538,10 @@
+ {
+   MDP_Status                   Status           = MDP_STATUS_OK;
+   EFI_QCOM_PMIC_PWM_PROTOCOL  *PMICPWMProtocol  = NULL;
+-  EFI_QCOM_PMIC_GPIO_PROTOCOL *PmicGpioProtocol = NULL;
+-    EFI_STATUS                   eLocalStatus     = EFI_SUCCESS;
++  EFI_STATUS                   eLocalStatus     = EFI_SUCCESS;
+ 
+ #if defined(ODM_PROJECT_MT5205)
++  EFI_QCOM_PMIC_GPIO_PROTOCOL *PmicGpioProtocol = NULL;
+   /* MT5205: mux PM4125 GPIO2 -> PWM SPECIAL_FUNCTION1 (not PMI632 GPIO6 WLED) */
+   if (EFI_SUCCESS != gBS->LocateProtocol(&gQcomPmicGpioProtocolGuid, NULL, (VOID **)&PmicGpioProtocol))
+   {

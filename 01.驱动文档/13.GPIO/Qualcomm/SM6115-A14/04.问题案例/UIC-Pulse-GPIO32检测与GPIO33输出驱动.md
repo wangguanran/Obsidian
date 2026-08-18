@@ -1,0 +1,1499 @@
+# UIC Pulse GPIO32 检测与 GPIO33 输出驱动
+
+> **模块**: 13.GPIO | **厂商**: Qualcomm | **芯片**: SM6115 (scuba)
+> **平台**: SM6115-A14 (LA.VENDOR.13.2.1) | **类型**: Bug
+> **Change**: #195883 | **作者**: wangguanran | **状态**: MERGED
+
+---
+
+## 基本信息
+
+| Change | 项目 | 分支 | 作者 | 类型 | 芯片 | 平台 | 模块 |
+|--------|------|------|------|------|------|------|------|
+| #195883 | LA.VENDOR.13.2.1 | MT5205 | wangguanran | Bug | SM6115 (scuba) | SM6115-A14 | 13.GPIO |
+
+## 现象
+
+IO 接口板 Pulse 接口-1（GPIO32 检测）与 MDB 小板 Pulse 接口-2（GPIO33 输出）直连场景下，原有脉冲检测驱动存在以下问题：
+
+- 输入极性配置错误：MT5205 直连走线为同相（空闲低、检高脉冲），驱动默认按 ACTIVE_LOW（空闲高、检低脉冲）处理导致检测不到脉冲；
+- 批量上报（batch）定时器未在脉冲到达时正确重置，导致一批脉冲被拆散或漏报；
+- 默认 debounce 过大，短脉冲被滤掉；
+- sysfs / ioctl 接口与 binding 文档、设备树 overlay 不一致。
+
+## 环境
+
+- 芯片：SM6115 (scuba)
+- 平台：SM6115-A14（LA.VENDOR.13.2.1，MT5205 分支）
+- 设备：Scuba IOT IDP（实机 model 为 `Qualcomm Technologies, Inc. Scuba IOT IDP`，overlay 为 `scuba-iot-idp-overlay.dts`，注意不是 Bengal）
+- 内核：kernel_platform/msm-kernel
+
+## 根因分析
+
+1. **输入极性**：MT5205 POS MB 上 GPIO32/GPIO33 为直连同相（J1001.36/35），空闲时物理低电平，脉冲为物理高电平。原驱动按 ACTIVE_LOW（空闲高、检低脉冲）处理，导致空闲即触发、脉冲漏检。
+2. **批量定时器**：`batch_timer` 用于将 `batch_gap_ms` 间隔内的多个脉冲合并为一批上报；脉冲到达时应取消未到期的 batch_timer 重新计时，原实现未取消，造成批次边界错误。
+3. **debounce 默认值**：默认 debounce 2ms（`UIC_PULSE_DEBOUNCE_DEF_MS`），DT 未配置时按 2ms 生效，避免滤掉正常宽度脉冲。
+4. **接口不一致**：binding 文档（meig,gpio-pulse.txt）、overlay 的 in-gpios/out-gpios 极性标记、驱动默认配置三者需保持一致。
+
+## 处理方案
+
+- 新驱动 `meig_gpio_pulse.c`（+987 行），注册 `/dev/uic_pulse` misc 字符设备（`/sys/class/misc/uic_pulse`）；
+- GPIO32 IN：IRQ + hrtimer 实现脉冲检测。默认 ACTIVE_HIGH（空闲低、检高脉冲），可配 rising/falling/both edge、debounce_ms（默认 2）、min/max_valid_ms、batch_gap_ms（一批脉冲合并上报）、stuck_timeout_ms（持续有效超时判定无效）；
+- GPIO33 OUT：默认 ACTIVE_HIGH（空闲低、发高脉冲），pulse_width_ms 25~500、interval_ms 可配；
+- ioctl 接口：`UIC_PULSE_IOC_SET_CONFIG/GET_CONFIG`（struct uic_pulse_config）、`START/STOP/RESET`、`FLUSH_EVENT`、`OUTPUT`（struct uic_pulse_simulate）；`read()` 返回 `struct uic_pulse_event`；`poll()` 支持 POLLIN；
+- 新增 UAPI 头 `include/uapi/linux/uic_pulse.h`（+88 行）、binding 文档 `meig,gpio-pulse.txt`（+85 行）；
+- overlay：`in-gpios=<&tlmm 32>` + `out-gpios=<&tlmm 33>`，pinctrl `mt5205_pulse_default`（GPIO32 输入 bias-pull-up、GPIO33 输出 drive-strength 8）；
+- `CONFIG_MEIG_GPIO_PULSE=m` 写入 `bengal_GKI.config`，Kconfig/Makefile 增加模块构建项。
+
+## 修改文件清单
+
+| # | 文件 | 改动 | 说明 |
+|---|------|------|------|
+| 1 | [[01.驱动文档/13.GPIO/Qualcomm/SM6115-A14/91.源码与补丁索引/kernel_driver/bengal_GKI.config|bengal_GKI.config]] | +1/-0 | 增加 `CONFIG_MEIG_GPIO_PULSE=m` |
+| 2 | [[01.驱动文档/13.GPIO/Qualcomm/SM6115-A14/91.源码与补丁索引/kernel_driver/Kconfig|Kconfig]] | +11/-0 | 新增 `MEIG_GPIO_PULSE` tristate 配置项 |
+| 3 | [[01.驱动文档/13.GPIO/Qualcomm/SM6115-A14/91.源码与补丁索引/kernel_driver/Makefile|Makefile]] | +1/-0 | 增加 `meig_gpio_pulse.o` 构建目标 |
+| 4 | [[01.驱动文档/13.GPIO/Qualcomm/SM6115-A14/91.源码与补丁索引/kernel_driver/meig_gpio_pulse.c|meig_gpio_pulse.c]] | +987/-0 | 新驱动（/dev/uic_pulse 字符设备） |
+| 5 | [[01.驱动文档/13.GPIO/Qualcomm/SM6115-A14/91.源码与补丁索引/kernel_driver/uic_pulse.h|uic_pulse.h]] | +88/-0 | UAPI 头（config/simulate/event 结构体 + ioctl 定义） |
+| 6 | [[01.驱动文档/13.GPIO/Qualcomm/SM6115-A14/91.源码与补丁索引/dt_config/meig,gpio-pulse.txt|meig,gpio-pulse.txt]] | +85/-0 | binding 文档 |
+| 7 | [[01.驱动文档/13.GPIO/Qualcomm/SM6115-A14/91.源码与补丁索引/dt_config/scuba-iot-idp-overlay.dts|scuba-iot-idp-overlay.dts]] | +46/-0 | overlay 增加 pulse pinctrl 与 meig_pulse 节点 |
+
+## 配置方式
+
+### 1. 内核配置
+
+```bash
+# bengal_GKI.config
+CONFIG_MEIG_GPIO_PULSE=m
+```
+
+### 2. 设备树 overlay（scuba-iot-idp-overlay.dts）
+
+```dts
+&tlmm {
+    mt5205_pulse_default: mt5205_pulse_default {
+        mux_in {
+            pins = "gpio32";
+            function = "gpio";
+        };
+        cfg_in {
+            pins = "gpio32";
+            drive-strength = <2>;
+            bias-pull-up;
+            input-enable;
+        };
+        mux_out {
+            pins = "gpio33";
+            function = "gpio";
+        };
+        cfg_out {
+            pins = "gpio33";
+            drive-strength = <8>;
+            bias-disable;
+            output-low;
+        };
+    };
+};
+
+&soc {
+    meig_pulse: meig_pulse {
+        compatible = "meig,gpio-pulse";
+        pinctrl-names = "default";
+        pinctrl-0 = <&mt5205_pulse_default>;
+        status = "okay";
+        pulse0: pulse@0 {
+            reg = <0>;
+            label = "pulse";
+            in-gpios = <&tlmm 32 GPIO_ACTIVE_HIGH>;
+            meig,in-active-high;
+            out-gpios = <&tlmm 33 GPIO_ACTIVE_HIGH>;
+            debounce-us = <2000>;
+            min-width-us = <10000>;
+            max-width-us = <500000>;
+            default-emit-us = <50000>;
+        };
+    };
+};
+```
+
+### 3. 驱动默认运行时参数
+
+| 参数 | 默认值 | 说明 |
+|------|--------|------|
+| active_level | ACTIVE_HIGH | IN 脉冲极性（直连同相；光耦反向板用 ACTIVE_LOW） |
+| min_valid_ms / max_valid_ms | 10 / 500 | IN 脉冲宽度有效窗口 |
+| batch_gap_ms | 200 | 空闲间隔后合并上报一批（0 = 每脉冲单独上报） |
+| stuck_timeout_ms | 1000 | IN 持续有效超时判定为无效（0 = 关闭） |
+| debounce_ms | 2 | 边沿去抖 |
+| irq_edge | both | 1=rising 2=falling 3=both |
+| out_active_level | ACTIVE_HIGH | OUT 脉冲极性 |
+| pulse_width_ms | 50 | OUT 脉冲宽度（25~500） |
+| interval_ms | 100 | OUT 两次有效电平间隔 |
+
+## 验证方式
+
+### 1. 内核编译
+
+- 内核编译 Stage1 1/3 PASS（exit 0，约 39 min）；
+- userdebug 使用 `prepare_vendor.sh bengal consolidate`，user 使用 `bengal gki`。
+
+### 2. 设备端加载验证
+
+```bash
+insmod meig_gpio_pulse.ko
+# 预期：
+ls /dev/meig_pulse0 /dev/uic_pulse   # /dev/uic_pulse 存在（misc 字符设备）
+ls /sys/class/misc/uic_pulse/        # config/start/stop/reset/flush_event/output/event/started/in_raw 等属性
+cat /sys/class/misc/uic_pulse/in_raw # 空闲应为 0
+```
+
+### 3. 输出脉冲（旧接口 sysfs / 新接口 ioctl）
+
+```bash
+# 旧接口：echo <us> > /dev/meig_pulse0 发脉冲
+echo 50000 > /dev/meig_pulse0
+
+# 新接口：ioctl UIC_PULSE_IOC_OUTPUT（struct uic_pulse_simulate）
+# 用户态示例：count=1, pulse_width_ms=50, interval_ms=0, out_active_level=UIC_PULSE_OUT_LEVEL_CFG
+```
+
+回环验证：OUT 发出高脉冲期间，IN 侧应读到 in_raw=1（GPIO32/33 直连同相）。
+
+## 结论
+
+新驱动统一了 GPIO32 检测 / GPIO33 输出的极性、去抖、批次上报与超时判定逻辑，提供 ioctl + sysfs 双接口，MT5205 直连（ACTIVE_HIGH 同相）与光耦反向（ACTIVE_LOW）两种硬件形态均可通过 DT/runtime 配置覆盖。内核编译与设备端加载验证通过。
+
+## 补丁内容
+
+```diff
+Subject: [PATCH] [MT5205][TaskID]118743[Description]fix UIC pulse GPIO32/33 direct-wire detect and sysfs[Solution]ACTIVE_HIGH IN, batch_timer cancel, debounce default 2ms, update binding and DT overlay[Owner]wangguanran
+
+---
+
+diff --git a/kernel_platform/msm-kernel/arch/arm64/configs/vendor/bengal_GKI.config b/kernel_platform/msm-kernel/arch/arm64/configs/vendor/bengal_GKI.config
+index 58392cb..77bb378 100644
+--- a/kernel_platform/msm-kernel/arch/arm64/configs/vendor/bengal_GKI.config
++++ b/kernel_platform/msm-kernel/arch/arm64/configs/vendor/bengal_GKI.config
+@@ -105,6 +105,7 @@
+ # CONFIG_POWER_RESET_QCOM_DOWNLOAD_MODE_DEFAULT is not set
+ CONFIG_POWER_RESET_QCOM_PON=m
+ CONFIG_PWM_QTI_LPG=m
++CONFIG_MEIG_GPIO_PULSE=m
+ CONFIG_GPIO_USERSPACE=m
+ CONFIG_QCOM_APCS_IPC=m
+ CONFIG_QCOM_BALANCE_ANON_FILE_RECLAIM=y
+diff --git a/kernel_platform/msm-kernel/drivers/misc/Kconfig b/kernel_platform/msm-kernel/drivers/misc/Kconfig
+index 6ee9c50..2495a7f 100644
+--- a/kernel_platform/msm-kernel/drivers/misc/Kconfig
++++ b/kernel_platform/msm-kernel/drivers/misc/Kconfig
+@@ -527,6 +527,17 @@
+ 
+ 	  If unsure, say N.
+ 
++config MEIG_GPIO_PULSE
++	tristate "UIC GPIO pulse character device"
++	depends on OF && GPIOLIB
++	help
++	  POS Pulse on GPIO32 (IN) / GPIO33 (OUT) as /dev/uic_pulse.
++	  IN uses IRQ + hrtimer (debounce / stuck / batch). OUT emits
++	  configurable coin pulses via ioctl.
++
++	  To compile this driver as a module, choose M here: the
++	  module will be called meig_gpio_pulse.
++
+ config GPIO_USERSPACE
+ 	tristate "gpio user space,export gpio for userspace"
+ 	depends on OF && GPIOLIB
+diff --git a/kernel_platform/msm-kernel/drivers/misc/Makefile b/kernel_platform/msm-kernel/drivers/misc/Makefile
+index 99f7f67..8adcd69 100644
+--- a/kernel_platform/msm-kernel/drivers/misc/Makefile
++++ b/kernel_platform/msm-kernel/drivers/misc/Makefile
+@@ -66,4 +66,5 @@
+ obj-$(CONFIG_PROFILER)		+= profiler.o
+ obj-$(CONFIG_QRC)		+= qrc/
+ obj-$(CONFIG_HDMI_INPUT_MUX)	+= hdmi_input_mux.o
++obj-$(CONFIG_MEIG_GPIO_PULSE)	+= meig_gpio_pulse.o
+ obj-$(CONFIG_GPIO_USERSPACE)	+= gpio-userspace.o
+diff --git a/kernel_platform/msm-kernel/drivers/misc/meig_gpio_pulse.c b/kernel_platform/msm-kernel/drivers/misc/meig_gpio_pulse.c
+new file mode 100644
+index 0000000..68fefe9
+--- /dev/null
++++ b/kernel_platform/msm-kernel/drivers/misc/meig_gpio_pulse.c
+@@ -0,0 +1,987 @@
++// SPDX-License-Identifier: GPL-2.0-only
++/*
++ * UIC GPIO pulse: /dev/uic_pulse and /sys/class/misc/uic_pulse
++ *
++ * MT5205: GPIO32 IN (detect) / GPIO33 OUT (emit).
++ * Default: IN/OUT ACTIVE_HIGH (MT5205 direct wire); optocoupler boards use ACTIVE_LOW IN.
++ */
++
++#include <linux/delay.h>
++#include <linux/device.h>
++#include <linux/fs.h>
++#include <linux/gpio/consumer.h>
++#include <linux/hrtimer.h>
++#include <linux/interrupt.h>
++#include <linux/kernel.h>
++#include <linux/math64.h>
++#include <linux/irq.h>
++#include <linux/kfifo.h>
++#include <linux/ktime.h>
++#include <linux/miscdevice.h>
++#include <linux/module.h>
++#include <linux/mutex.h>
++#include <linux/of.h>
++#include <linux/platform_device.h>
++#include <linux/poll.h>
++#include <linux/slab.h>
++#include <linux/spinlock.h>
++#include <linux/uaccess.h>
++#include <uapi/linux/uic_pulse.h>
++
++#define UIC_PULSE_FIFO_LEN		32
++#define UIC_PULSE_SIM_MAX		256
++#define UIC_PULSE_BUSYWAIT_US		2000
++
++/* Wait until monotonic deadline (compensates usleep overshoot). */
++static void uic_pulse_wait_until(ktime_t deadline)
++{
++	while (ktime_before(ktime_get(), deadline)) {
++		s64 left_us = ktime_us_delta(deadline, ktime_get());
++
++		if (left_us <= 0)
++			break;
++		if (left_us < UIC_PULSE_BUSYWAIT_US)
++			udelay((unsigned int)left_us);
++		else
++			usleep_range((unsigned int)(left_us / 2),
++				     (unsigned int)left_us);
++	}
++}
++
++struct uic_pulse_dev {
++	struct device *dev;
++	struct gpio_desc *in;
++	struct gpio_desc *out;
++	int irq;
++	bool started;
++	bool in_active;
++	bool pulse_valid;
++	bool stuck;
++	ktime_t t_active;
++	ktime_t t_last_edge;
++	u32 batch_count;
++	u32 last_width_ms;
++	struct uic_pulse_config cfg;
++	spinlock_t lock;
++	struct mutex io_lock;
++	wait_queue_head_t wq;
++	struct hrtimer debounce_timer;
++	struct hrtimer stuck_timer;
++	struct hrtimer batch_timer;
++	DECLARE_KFIFO(fifo, struct uic_pulse_event, UIC_PULSE_FIFO_LEN);
++	struct miscdevice misc;
++};
++
++static unsigned long uic_pulse_irq_flags(u32 edge)
++{
++	unsigned long flags = 0;
++
++	switch (edge) {
++	case UIC_PULSE_EDGE_RISING:
++		flags |= IRQF_TRIGGER_RISING;
++		break;
++	case UIC_PULSE_EDGE_FALLING:
++		flags |= IRQF_TRIGGER_FALLING;
++		break;
++	case UIC_PULSE_EDGE_BOTH:
++	default:
++		flags |= IRQF_TRIGGER_RISING | IRQF_TRIGGER_FALLING;
++		break;
++	}
++	return flags;
++}
++
++static unsigned int uic_pulse_irq_type(u32 edge)
++{
++	switch (edge) {
++	case UIC_PULSE_EDGE_RISING:
++		return IRQ_TYPE_EDGE_RISING;
++	case UIC_PULSE_EDGE_FALLING:
++		return IRQ_TYPE_EDGE_FALLING;
++	case UIC_PULSE_EDGE_BOTH:
++	default:
++		return IRQ_TYPE_EDGE_BOTH;
++	}
++}
++
++static int uic_pulse_in_raw(struct uic_pulse_dev *d)
++{
++	if (!d->in)
++		return -ENODEV;
++	return gpiod_get_raw_value(d->in);
++}
++
++static bool uic_pulse_raw_is_active(const struct uic_pulse_config *cfg, int raw)
++{
++	if (cfg->active_level == UIC_PULSE_ACTIVE_LOW)
++		return raw == 0;
++	return raw != 0;
++}
++
++static void uic_pulse_set_out_raw(struct uic_pulse_dev *d, int raw)
++{
++	if (!d->out)
++		return;
++	if (gpiod_cansleep(d->out))
++		gpiod_set_raw_value_cansleep(d->out, raw);
++	else
++		gpiod_set_raw_value(d->out, raw);
++}
++
++static int uic_pulse_out_active_raw(u32 level)
++{
++	return level == UIC_PULSE_ACTIVE_LOW ? 0 : 1;
++}
++
++static int uic_pulse_out_idle_raw(u32 level)
++{
++	return uic_pulse_out_active_raw(level) ? 0 : 1;
++}
++
++static void uic_pulse_push_event(struct uic_pulse_dev *d, u32 count, u32 width_ms)
++{
++	struct uic_pulse_event ev = {
++		.pulse_count = count,
++		.last_width_ms = width_ms,
++		.timestamp_ns = ktime_get_ns(),
++	};
++
++	if (!count)
++		return;
++	kfifo_in(&d->fifo, &ev, 1);
++	wake_up_interruptible(&d->wq);
++}
++
++static void uic_pulse_reset_state_locked(struct uic_pulse_dev *d)
++{
++	d->in_active = false;
++	d->pulse_valid = false;
++	d->stuck = false;
++	d->batch_count = 0;
++	d->last_width_ms = 0;
++}
++
++static enum hrtimer_restart uic_pulse_debounce_fn(struct hrtimer *t)
++{
++	struct uic_pulse_dev *d = container_of(t, struct uic_pulse_dev,
++					       debounce_timer);
++	unsigned long flags;
++	int raw;
++	bool active;
++	bool need_cancel_stuck = false;
++	bool need_cancel_batch = false;
++	bool need_start_batch = false;
++
++	raw = uic_pulse_in_raw(d);
++	if (raw < 0)
++		return HRTIMER_NORESTART;
++
++	spin_lock_irqsave(&d->lock, flags);
++	if (!d->started) {
++		spin_unlock_irqrestore(&d->lock, flags);
++		return HRTIMER_NORESTART;
++	}
++
++	active = uic_pulse_raw_is_active(&d->cfg, raw);
++	if (active == d->in_active) {
++		spin_unlock_irqrestore(&d->lock, flags);
++		return HRTIMER_NORESTART;
++	}
++
++	d->in_active = active;
++	if (active) {
++		d->t_active = ktime_get();
++		d->pulse_valid = true;
++		d->stuck = false;
++		/* New pulse: idle gap not reached yet, postpone batch. */
++		if (d->cfg.batch_gap_ms && d->batch_count)
++			need_cancel_batch = true;
++		if (d->cfg.stuck_timeout_ms)
++			hrtimer_start(&d->stuck_timer,
++				      ms_to_ktime(d->cfg.stuck_timeout_ms),
++				      HRTIMER_MODE_REL);
++	} else {
++		u32 width_ms;
++		u64 width_us;
++
++		need_cancel_stuck = true;
++		width_us = (u64)ktime_us_delta(ktime_get(), d->t_active);
++		width_ms = (u32)div_u64(width_us + 500, 1000);
++		if (d->stuck || !d->pulse_valid) {
++			d->pulse_valid = false;
++			d->stuck = false;
++		} else if (width_ms < d->cfg.min_valid_ms ||
++			   width_ms > d->cfg.max_valid_ms) {
++			d->pulse_valid = false;
++		} else {
++			d->last_width_ms = width_ms;
++			d->batch_count++;
++			d->pulse_valid = false;
++			if (!d->cfg.batch_gap_ms)
++				uic_pulse_push_event(d, 1, width_ms);
++			else
++				need_start_batch = true;
++		}
++	}
++	spin_unlock_irqrestore(&d->lock, flags);
++	if (need_cancel_stuck)
++		hrtimer_cancel(&d->stuck_timer);
++	if (need_cancel_batch)
++		hrtimer_cancel(&d->batch_timer);
++	if (need_start_batch)
++		hrtimer_start(&d->batch_timer,
++			      ms_to_ktime(d->cfg.batch_gap_ms),
++			      HRTIMER_MODE_REL);
++	return HRTIMER_NORESTART;
++}
++
++static enum hrtimer_restart uic_pulse_stuck_fn(struct hrtimer *t)
++{
++	struct uic_pulse_dev *d = container_of(t, struct uic_pulse_dev,
++					       stuck_timer);
++	unsigned long flags;
++
++	spin_lock_irqsave(&d->lock, flags);
++	if (d->started && d->in_active) {
++		d->stuck = true;
++		d->pulse_valid = false;
++	}
++	spin_unlock_irqrestore(&d->lock, flags);
++	return HRTIMER_NORESTART;
++}
++
++static enum hrtimer_restart uic_pulse_batch_fn(struct hrtimer *t)
++{
++	struct uic_pulse_dev *d = container_of(t, struct uic_pulse_dev,
++					       batch_timer);
++	unsigned long flags;
++	u32 count, width;
++
++	spin_lock_irqsave(&d->lock, flags);
++	count = d->batch_count;
++	width = d->last_width_ms;
++	d->batch_count = 0;
++	if (count)
++		uic_pulse_push_event(d, count, width);
++	spin_unlock_irqrestore(&d->lock, flags);
++	return HRTIMER_NORESTART;
++}
++
++static irqreturn_t uic_pulse_isr(int irq, void *data)
++{
++	struct uic_pulse_dev *d = data;
++	unsigned long flags;
++	ktime_t now;
++	u64 delta_us;
++
++	now = ktime_get();
++	spin_lock_irqsave(&d->lock, flags);
++	if (!d->started) {
++		spin_unlock_irqrestore(&d->lock, flags);
++		return IRQ_HANDLED;
++	}
++
++	delta_us = (u64)ktime_us_delta(now, d->t_last_edge);
++	d->t_last_edge = now;
++	if (d->cfg.debounce_ms &&
++	    delta_us < (u64)d->cfg.debounce_ms * 1000) {
++		spin_unlock_irqrestore(&d->lock, flags);
++		return IRQ_HANDLED;
++	}
++
++	if (d->cfg.debounce_ms) {
++		hrtimer_start(&d->debounce_timer,
++			      ms_to_ktime(d->cfg.debounce_ms),
++			      HRTIMER_MODE_REL);
++		spin_unlock_irqrestore(&d->lock, flags);
++		return IRQ_HANDLED;
++	}
++
++	spin_unlock_irqrestore(&d->lock, flags);
++	hrtimer_start(&d->debounce_timer, 0, HRTIMER_MODE_REL);
++	return IRQ_HANDLED;
++}
++
++static void uic_pulse_cancel_timers(struct uic_pulse_dev *d)
++{
++	hrtimer_cancel(&d->debounce_timer);
++	hrtimer_cancel(&d->stuck_timer);
++	hrtimer_cancel(&d->batch_timer);
++}
++
++static int uic_pulse_validate_config(struct uic_pulse_config *c)
++{
++	if (c->active_level != UIC_PULSE_ACTIVE_HIGH &&
++	    c->active_level != UIC_PULSE_ACTIVE_LOW)
++		return -EINVAL;
++	if (c->out_active_level != UIC_PULSE_ACTIVE_HIGH &&
++	    c->out_active_level != UIC_PULSE_ACTIVE_LOW)
++		return -EINVAL;
++	if (c->irq_edge != UIC_PULSE_EDGE_RISING &&
++	    c->irq_edge != UIC_PULSE_EDGE_FALLING &&
++	    c->irq_edge != UIC_PULSE_EDGE_BOTH)
++		return -EINVAL;
++	if (c->min_valid_ms > c->max_valid_ms)
++		return -EINVAL;
++	if (c->max_valid_ms > 10000 || c->batch_gap_ms > 10000 ||
++	    c->stuck_timeout_ms > 60000 || c->debounce_ms > 100)
++		return -EINVAL;
++	if (c->pulse_width_ms < UIC_PULSE_WIDTH_MIN_MS ||
++	    c->pulse_width_ms > UIC_PULSE_WIDTH_MAX_MS)
++		return -EINVAL;
++	if (c->interval_ms > 10000)
++		return -EINVAL;
++	return 0;
++}
++
++static void uic_pulse_default_config(struct uic_pulse_config *c)
++{
++	c->active_level = UIC_PULSE_ACTIVE_HIGH;
++	c->min_valid_ms = 10;
++	c->max_valid_ms = 500;
++	c->batch_gap_ms = 200;
++	c->stuck_timeout_ms = 1000;
++	c->debounce_ms = UIC_PULSE_DEBOUNCE_DEF_MS;
++	c->irq_edge = UIC_PULSE_EDGE_BOTH;
++	c->out_active_level = UIC_PULSE_ACTIVE_HIGH;
++	c->pulse_width_ms = 50;
++	c->interval_ms = UIC_PULSE_INTERVAL_DEF_MS;
++}
++
++static int uic_pulse_emit(struct uic_pulse_dev *d, struct uic_pulse_simulate *s)
++{
++	u32 width_ms, interval_ms, level, i;
++	int active, idle;
++
++	if (!d->out)
++		return -ENODEV;
++	if (!s->count || s->count > UIC_PULSE_SIM_MAX)
++		return -EINVAL;
++
++	width_ms = s->pulse_width_ms ? s->pulse_width_ms : d->cfg.pulse_width_ms;
++	interval_ms = s->interval_ms ? s->interval_ms : d->cfg.interval_ms;
++	level = (s->out_active_level == UIC_PULSE_OUT_LEVEL_CFG) ?
++		d->cfg.out_active_level : s->out_active_level;
++
++	if (width_ms < UIC_PULSE_WIDTH_MIN_MS ||
++	    width_ms > UIC_PULSE_WIDTH_MAX_MS)
++		return -EINVAL;
++	if (level != UIC_PULSE_ACTIVE_HIGH && level != UIC_PULSE_ACTIVE_LOW)
++		return -EINVAL;
++	if (interval_ms > 10000)
++		return -EINVAL;
++
++	active = uic_pulse_out_active_raw(level);
++	idle = uic_pulse_out_idle_raw(level);
++
++	mutex_lock(&d->io_lock);
++	for (i = 0; i < s->count; i++) {
++		ktime_t deadline;
++
++		uic_pulse_set_out_raw(d, active);
++		deadline = ktime_add_ns(ktime_get(),
++					(u64)width_ms * NSEC_PER_MSEC);
++		uic_pulse_wait_until(deadline);
++		uic_pulse_set_out_raw(d, idle);
++		if (i + 1 < s->count && interval_ms) {
++			deadline = ktime_add_ns(ktime_get(),
++						 (u64)interval_ms * NSEC_PER_MSEC);
++			uic_pulse_wait_until(deadline);
++		}
++	}
++	mutex_unlock(&d->io_lock);
++	return 0;
++}
++
++static int uic_pulse_open(struct inode *inode, struct file *file)
++{
++	struct miscdevice *misc = file->private_data;
++	struct uic_pulse_dev *d = container_of(misc, struct uic_pulse_dev, misc);
++
++	file->private_data = d;
++	return 0;
++}
++
++static ssize_t uic_pulse_read(struct file *file, char __user *buf,
++			      size_t count, loff_t *ppos)
++{
++	struct uic_pulse_dev *d = file->private_data;
++	struct uic_pulse_event ev;
++	unsigned long flags;
++	int n;
++
++	if (count < sizeof(ev))
++		return -EINVAL;
++
++	if (file->f_flags & O_NONBLOCK) {
++		spin_lock_irqsave(&d->lock, flags);
++		n = kfifo_out(&d->fifo, &ev, 1);
++		spin_unlock_irqrestore(&d->lock, flags);
++		if (!n)
++			return -EAGAIN;
++	} else {
++		n = wait_event_interruptible(d->wq, ({
++			int ready;
++
++			spin_lock_irqsave(&d->lock, flags);
++			ready = kfifo_out(&d->fifo, &ev, 1);
++			spin_unlock_irqrestore(&d->lock, flags);
++			ready;
++		}));
++		if (n)
++			return n;
++	}
++
++	if (copy_to_user(buf, &ev, sizeof(ev)))
++		return -EFAULT;
++	return sizeof(ev);
++}
++
++static __poll_t uic_pulse_poll(struct file *file, poll_table *wait)
++{
++	struct uic_pulse_dev *d = file->private_data;
++	unsigned long flags;
++	__poll_t mask = 0;
++
++	poll_wait(file, &d->wq, wait);
++	spin_lock_irqsave(&d->lock, flags);
++	if (!kfifo_is_empty(&d->fifo))
++		mask |= EPOLLIN | EPOLLRDNORM;
++	spin_unlock_irqrestore(&d->lock, flags);
++	if (d->out)
++		mask |= EPOLLOUT | EPOLLWRNORM;
++	return mask;
++}
++
++static int uic_pulse_apply_config(struct uic_pulse_dev *d,
++				  struct uic_pulse_config *cfg)
++{
++	unsigned long flags;
++	int ret;
++
++	ret = uic_pulse_validate_config(cfg);
++	if (ret)
++		return ret;
++
++	mutex_lock(&d->io_lock);
++	if (d->irq > 0) {
++		disable_irq(d->irq);
++		ret = irq_set_irq_type(d->irq, uic_pulse_irq_type(cfg->irq_edge));
++		if (ret) {
++			enable_irq(d->irq);
++			mutex_unlock(&d->io_lock);
++			return ret;
++		}
++		d->cfg.irq_edge = cfg->irq_edge;
++	}
++	uic_pulse_cancel_timers(d);
++	spin_lock_irqsave(&d->lock, flags);
++	d->cfg = *cfg;
++	uic_pulse_reset_state_locked(d);
++	spin_unlock_irqrestore(&d->lock, flags);
++	uic_pulse_set_out_raw(d, uic_pulse_out_idle_raw(cfg->out_active_level));
++	if (d->irq > 0)
++		enable_irq(d->irq);
++	mutex_unlock(&d->io_lock);
++	return 0;
++}
++
++static void uic_pulse_get_config(struct uic_pulse_dev *d,
++				 struct uic_pulse_config *cfg)
++{
++	unsigned long flags;
++
++	spin_lock_irqsave(&d->lock, flags);
++	*cfg = d->cfg;
++	spin_unlock_irqrestore(&d->lock, flags);
++}
++
++static int uic_pulse_start(struct uic_pulse_dev *d)
++{
++	unsigned long flags;
++	int raw;
++
++	if (!d->in)
++		return -ENODEV;
++
++	mutex_lock(&d->io_lock);
++	spin_lock_irqsave(&d->lock, flags);
++	d->started = true;
++	uic_pulse_reset_state_locked(d);
++	/* Allow the first edge right after start (output often follows immediately). */
++	d->t_last_edge = ktime_set(0, 0);
++	raw = uic_pulse_in_raw(d);
++	if (raw >= 0)
++		d->in_active = uic_pulse_raw_is_active(&d->cfg, raw);
++	spin_unlock_irqrestore(&d->lock, flags);
++	mutex_unlock(&d->io_lock);
++	return 0;
++}
++
++static void uic_pulse_stop(struct uic_pulse_dev *d)
++{
++	unsigned long flags;
++
++	mutex_lock(&d->io_lock);
++	spin_lock_irqsave(&d->lock, flags);
++	d->started = false;
++	uic_pulse_reset_state_locked(d);
++	spin_unlock_irqrestore(&d->lock, flags);
++	uic_pulse_cancel_timers(d);
++	mutex_unlock(&d->io_lock);
++}
++
++static void uic_pulse_reset(struct uic_pulse_dev *d)
++{
++	unsigned long flags;
++
++	mutex_lock(&d->io_lock);
++	uic_pulse_cancel_timers(d);
++	spin_lock_irqsave(&d->lock, flags);
++	uic_pulse_reset_state_locked(d);
++	spin_unlock_irqrestore(&d->lock, flags);
++	mutex_unlock(&d->io_lock);
++}
++
++static void uic_pulse_flush(struct uic_pulse_dev *d)
++{
++	unsigned long flags;
++
++	spin_lock_irqsave(&d->lock, flags);
++	kfifo_reset(&d->fifo);
++	spin_unlock_irqrestore(&d->lock, flags);
++}
++
++static long uic_pulse_ioctl(struct file *file, unsigned int cmd,
++			    unsigned long arg)
++{
++	struct uic_pulse_dev *d = file->private_data;
++	struct uic_pulse_config cfg;
++	struct uic_pulse_simulate sim;
++
++	switch (cmd) {
++	case UIC_PULSE_IOC_SET_CONFIG:
++		if (copy_from_user(&cfg, (void __user *)arg, sizeof(cfg)))
++			return -EFAULT;
++		return uic_pulse_apply_config(d, &cfg);
++
++	case UIC_PULSE_IOC_GET_CONFIG:
++		uic_pulse_get_config(d, &cfg);
++		if (copy_to_user((void __user *)arg, &cfg, sizeof(cfg)))
++			return -EFAULT;
++		return 0;
++
++	case UIC_PULSE_IOC_START:
++		return uic_pulse_start(d);
++
++	case UIC_PULSE_IOC_STOP:
++		uic_pulse_stop(d);
++		return 0;
++
++	case UIC_PULSE_IOC_RESET:
++		uic_pulse_reset(d);
++		return 0;
++
++	case UIC_PULSE_IOC_FLUSH_EVENT:
++		uic_pulse_flush(d);
++		return 0;
++
++	case UIC_PULSE_IOC_OUTPUT:
++		if (copy_from_user(&sim, (void __user *)arg, sizeof(sim)))
++			return -EFAULT;
++		return uic_pulse_emit(d, &sim);
++
++	default:
++		return -ENOTTY;
++	}
++}
++
++static const struct file_operations uic_pulse_fops = {
++	.owner		= THIS_MODULE,
++	.open		= uic_pulse_open,
++	.read		= uic_pulse_read,
++	.poll		= uic_pulse_poll,
++	.unlocked_ioctl	= uic_pulse_ioctl,
++	.compat_ioctl	= uic_pulse_ioctl,
++	.llseek		= no_llseek,
++};
++
++static struct uic_pulse_dev *uic_pulse_from_misc_dev(struct device *dev)
++{
++	struct miscdevice *misc = dev_get_drvdata(dev);
++
++	return container_of(misc, struct uic_pulse_dev, misc);
++}
++
++static ssize_t config_show(struct device *dev, struct device_attribute *attr,
++			   char *buf)
++{
++	struct uic_pulse_dev *d = uic_pulse_from_misc_dev(dev);
++	struct uic_pulse_config cfg;
++
++	uic_pulse_get_config(d, &cfg);
++	return sysfs_emit(buf,
++		"active_level=%u\nmin_valid_ms=%u\nmax_valid_ms=%u\n"
++		"batch_gap_ms=%u\nstuck_timeout_ms=%u\ndebounce_ms=%u\n"
++		"irq_edge=%u\nout_active_level=%u\npulse_width_ms=%u\n"
++		"interval_ms=%u\n",
++		cfg.active_level, cfg.min_valid_ms, cfg.max_valid_ms,
++		cfg.batch_gap_ms, cfg.stuck_timeout_ms, cfg.debounce_ms,
++		cfg.irq_edge, cfg.out_active_level, cfg.pulse_width_ms,
++		cfg.interval_ms);
++}
++
++static ssize_t config_store(struct device *dev, struct device_attribute *attr,
++			    const char *buf, size_t count)
++{
++	struct uic_pulse_dev *d = uic_pulse_from_misc_dev(dev);
++	struct uic_pulse_config cfg;
++	int n, ret;
++
++	n = sscanf(buf, "%u %u %u %u %u %u %u %u %u %u",
++		   &cfg.active_level, &cfg.min_valid_ms, &cfg.max_valid_ms,
++		   &cfg.batch_gap_ms, &cfg.stuck_timeout_ms, &cfg.debounce_ms,
++		   &cfg.irq_edge, &cfg.out_active_level, &cfg.pulse_width_ms,
++		   &cfg.interval_ms);
++	if (n != 10)
++		return -EINVAL;
++	ret = uic_pulse_apply_config(d, &cfg);
++	return ret ? ret : count;
++}
++static DEVICE_ATTR_RW(config);
++
++#define UIC_PULSE_CFG_ATTR(_field) \
++static ssize_t _field##_show(struct device *dev, \
++			     struct device_attribute *attr, char *buf) \
++{ \
++	struct uic_pulse_dev *d = uic_pulse_from_misc_dev(dev); \
++	struct uic_pulse_config cfg; \
++	uic_pulse_get_config(d, &cfg); \
++	return sysfs_emit(buf, "%u\n", cfg._field); \
++} \
++static ssize_t _field##_store(struct device *dev, \
++			      struct device_attribute *attr, \
++			      const char *buf, size_t count) \
++{ \
++	struct uic_pulse_dev *d = uic_pulse_from_misc_dev(dev); \
++	struct uic_pulse_config cfg; \
++	u32 val; \
++	int ret; \
++	ret = kstrtou32(buf, 0, &val); \
++	if (ret) \
++		return ret; \
++	uic_pulse_get_config(d, &cfg); \
++	cfg._field = val; \
++	ret = uic_pulse_apply_config(d, &cfg); \
++	return ret ? ret : count; \
++} \
++static DEVICE_ATTR_RW(_field)
++
++UIC_PULSE_CFG_ATTR(active_level);
++UIC_PULSE_CFG_ATTR(min_valid_ms);
++UIC_PULSE_CFG_ATTR(max_valid_ms);
++UIC_PULSE_CFG_ATTR(batch_gap_ms);
++UIC_PULSE_CFG_ATTR(stuck_timeout_ms);
++UIC_PULSE_CFG_ATTR(debounce_ms);
++UIC_PULSE_CFG_ATTR(irq_edge);
++UIC_PULSE_CFG_ATTR(out_active_level);
++UIC_PULSE_CFG_ATTR(pulse_width_ms);
++UIC_PULSE_CFG_ATTR(interval_ms);
++
++static ssize_t start_store(struct device *dev, struct device_attribute *attr,
++			   const char *buf, size_t count)
++{
++	struct uic_pulse_dev *d = uic_pulse_from_misc_dev(dev);
++	int ret = uic_pulse_start(d);
++
++	return ret ? ret : count;
++}
++static DEVICE_ATTR_WO(start);
++
++static ssize_t stop_store(struct device *dev, struct device_attribute *attr,
++			  const char *buf, size_t count)
++{
++	uic_pulse_stop(uic_pulse_from_misc_dev(dev));
++	return count;
++}
++static DEVICE_ATTR_WO(stop);
++
++static ssize_t reset_store(struct device *dev, struct device_attribute *attr,
++			   const char *buf, size_t count)
++{
++	uic_pulse_reset(uic_pulse_from_misc_dev(dev));
++	return count;
++}
++static DEVICE_ATTR_WO(reset);
++
++static ssize_t flush_event_store(struct device *dev,
++				 struct device_attribute *attr,
++				 const char *buf, size_t count)
++{
++	uic_pulse_flush(uic_pulse_from_misc_dev(dev));
++	return count;
++}
++static DEVICE_ATTR_WO(flush_event);
++
++static ssize_t output_store(struct device *dev, struct device_attribute *attr,
++			    const char *buf, size_t count)
++{
++	struct uic_pulse_dev *d = uic_pulse_from_misc_dev(dev);
++	struct uic_pulse_simulate sim = {
++		.count = 1,
++		.pulse_width_ms = 0,
++		.interval_ms = 0,
++		.out_active_level = UIC_PULSE_OUT_LEVEL_CFG,
++	};
++	unsigned int v[4];
++	int n, ret;
++
++	n = sscanf(buf, "%u %u %u %u", &v[0], &v[1], &v[2], &v[3]);
++	if (n < 1)
++		return -EINVAL;
++	sim.count = v[0];
++	if (n >= 2)
++		sim.pulse_width_ms = v[1];
++	if (n >= 3)
++		sim.interval_ms = v[2];
++	if (n >= 4)
++		sim.out_active_level = v[3];
++	ret = uic_pulse_emit(d, &sim);
++	return ret ? ret : count;
++}
++static DEVICE_ATTR_WO(output);
++
++static ssize_t event_show(struct device *dev, struct device_attribute *attr,
++			  char *buf)
++{
++	struct uic_pulse_dev *d = uic_pulse_from_misc_dev(dev);
++	struct uic_pulse_event ev;
++	unsigned long flags;
++	int n;
++
++	spin_lock_irqsave(&d->lock, flags);
++	n = kfifo_out(&d->fifo, &ev, 1);
++	spin_unlock_irqrestore(&d->lock, flags);
++	if (!n)
++		return sysfs_emit(buf, "empty\n");
++	return sysfs_emit(buf, "%u %u %llu\n",
++			  ev.pulse_count, ev.last_width_ms, ev.timestamp_ns);
++}
++static DEVICE_ATTR_RO(event);
++
++static ssize_t started_show(struct device *dev, struct device_attribute *attr,
++			    char *buf)
++{
++	struct uic_pulse_dev *d = uic_pulse_from_misc_dev(dev);
++
++	return sysfs_emit(buf, "%u\n", d->started ? 1 : 0);
++}
++static DEVICE_ATTR_RO(started);
++
++static ssize_t in_raw_show(struct device *dev, struct device_attribute *attr,
++			   char *buf)
++{
++	struct uic_pulse_dev *d = uic_pulse_from_misc_dev(dev);
++	int raw;
++
++	raw = uic_pulse_in_raw(d);
++	if (raw < 0)
++		return raw;
++	return sysfs_emit(buf, "%d\n", raw);
++}
++static DEVICE_ATTR_RO(in_raw);
++
++static struct attribute *uic_pulse_class_attrs[] = {
++	&dev_attr_config.attr,
++	&dev_attr_active_level.attr,
++	&dev_attr_min_valid_ms.attr,
++	&dev_attr_max_valid_ms.attr,
++	&dev_attr_batch_gap_ms.attr,
++	&dev_attr_stuck_timeout_ms.attr,
++	&dev_attr_debounce_ms.attr,
++	&dev_attr_irq_edge.attr,
++	&dev_attr_out_active_level.attr,
++	&dev_attr_pulse_width_ms.attr,
++	&dev_attr_interval_ms.attr,
++	&dev_attr_start.attr,
++	&dev_attr_stop.attr,
++	&dev_attr_reset.attr,
++	&dev_attr_flush_event.attr,
++	&dev_attr_output.attr,
++	&dev_attr_event.attr,
++	&dev_attr_started.attr,
++	&dev_attr_in_raw.attr,
++	NULL,
++};
++
++static const struct attribute_group uic_pulse_group = {
++	.attrs = uic_pulse_class_attrs,
++};
++
++static const struct attribute_group *uic_pulse_groups[] = {
++	&uic_pulse_group,
++	NULL,
++};
++
++static void uic_pulse_misc_unregister(void *data)
++{
++	misc_deregister(data);
++}
++
++static int uic_pulse_parse_dt(struct device *dev, struct device_node *np,
++			      struct uic_pulse_dev *d)
++{
++	u32 val;
++
++	uic_pulse_default_config(&d->cfg);
++	if (!of_property_read_u32(np, "min-width-us", &val))
++		d->cfg.min_valid_ms = max(1u, val / 1000);
++	if (!of_property_read_u32(np, "max-width-us", &val))
++		d->cfg.max_valid_ms = max(1u, val / 1000);
++	if (!of_property_read_u32(np, "debounce-us", &val))
++		d->cfg.debounce_ms = val / 1000; /* 0 allowed; omit uses DEF 2ms */
++	if (!of_property_read_u32(np, "default-emit-us", &val)) {
++		d->cfg.pulse_width_ms = val / 1000;
++		if (d->cfg.pulse_width_ms < UIC_PULSE_WIDTH_MIN_MS)
++			d->cfg.pulse_width_ms = UIC_PULSE_WIDTH_MIN_MS;
++		if (d->cfg.pulse_width_ms > UIC_PULSE_WIDTH_MAX_MS)
++			d->cfg.pulse_width_ms = UIC_PULSE_WIDTH_MAX_MS;
++	}
++	if (of_property_read_bool(np, "meig,in-active-high"))
++		d->cfg.active_level = UIC_PULSE_ACTIVE_HIGH;
++	return 0;
++}
++
++static int uic_pulse_probe(struct platform_device *pdev)
++{
++	struct device *dev = &pdev->dev;
++	struct device_node *np = dev->of_node;
++	struct device_node *child;
++	struct uic_pulse_dev *d;
++	int ret;
++
++	if (!np)
++		return -ENODEV;
++
++	child = of_get_next_available_child(np, NULL);
++	if (child)
++		np = child;
++
++	d = devm_kzalloc(dev, sizeof(*d), GFP_KERNEL);
++	if (!d) {
++		of_node_put(child);
++		return -ENOMEM;
++	}
++	d->dev = dev;
++	d->irq = -1;
++	spin_lock_init(&d->lock);
++	mutex_init(&d->io_lock);
++	init_waitqueue_head(&d->wq);
++	INIT_KFIFO(d->fifo);
++	hrtimer_init(&d->debounce_timer, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
++	hrtimer_init(&d->stuck_timer, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
++	hrtimer_init(&d->batch_timer, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
++	d->debounce_timer.function = uic_pulse_debounce_fn;
++	d->stuck_timer.function = uic_pulse_stuck_fn;
++	d->batch_timer.function = uic_pulse_batch_fn;
++	uic_pulse_parse_dt(dev, np, d);
++
++	d->in = devm_fwnode_gpiod_get_index(dev, of_fwnode_handle(np), "in",
++					    0, GPIOD_IN, UIC_PULSE_DEV_NAME);
++	if (IS_ERR(d->in)) {
++		ret = PTR_ERR(d->in);
++		if (ret != -ENOENT) {
++			of_node_put(child);
++			return ret;
++		}
++		d->in = NULL;
++	}
++
++	d->out = devm_fwnode_gpiod_get_index(dev, of_fwnode_handle(np), "out",
++					     0, GPIOD_OUT_LOW,
++					     UIC_PULSE_DEV_NAME);
++	if (IS_ERR(d->out)) {
++		ret = PTR_ERR(d->out);
++		if (ret != -ENOENT) {
++			of_node_put(child);
++			return ret;
++		}
++		d->out = NULL;
++	}
++	of_node_put(child);
++
++	if (!d->in && !d->out) {
++		dev_err(dev, "need in-gpios and/or out-gpios\n");
++		return -EINVAL;
++	}
++
++	if (d->in) {
++		if (gpiod_cansleep(d->in)) {
++			dev_err(dev, "input GPIO must be MMIO\n");
++			return -EINVAL;
++		}
++			d->irq = gpiod_to_irq(d->in);
++		if (d->irq < 0)
++			return d->irq;
++		ret = devm_request_irq(dev, d->irq, uic_pulse_isr,
++					 uic_pulse_irq_flags(d->cfg.irq_edge),
++					 UIC_PULSE_DEV_NAME, d);
++		if (ret)
++			return ret;
++	}
++
++	if (d->out)
++		uic_pulse_set_out_raw(d,
++				      uic_pulse_out_idle_raw(d->cfg.out_active_level));
++
++	d->misc.minor = MISC_DYNAMIC_MINOR;
++	d->misc.name = UIC_PULSE_DEV_NAME;
++	d->misc.fops = &uic_pulse_fops;
++	d->misc.parent = dev;
++	d->misc.groups = uic_pulse_groups;
++	ret = misc_register(&d->misc);
++	if (ret)
++		return ret;
++	ret = devm_add_action_or_reset(dev, uic_pulse_misc_unregister, &d->misc);
++	if (ret)
++		return ret;
++
++	platform_set_drvdata(pdev, d);
++	dev_info(dev,
++		 "/dev/%s in=%d out=%d irq=%d in_al=%u out_al=%u debounce=%ums\n",
++		 UIC_PULSE_DEV_NAME,
++		 d->in ? desc_to_gpio(d->in) : -1,
++		 d->out ? desc_to_gpio(d->out) : -1,
++		 d->irq, d->cfg.active_level, d->cfg.out_active_level,
++		 d->cfg.debounce_ms);
++	return 0;
++}
++
++static int uic_pulse_remove(struct platform_device *pdev)
++{
++	struct uic_pulse_dev *d = platform_get_drvdata(pdev);
++
++	d->started = false;
++	uic_pulse_cancel_timers(d);
++	return 0;
++}
++
++static const struct of_device_id uic_pulse_of_match[] = {
++	{ .compatible = "meig,gpio-pulse" },
++	{ }
++};
++MODULE_DEVICE_TABLE(of, uic_pulse_of_match);
++
++static struct platform_driver uic_pulse_driver = {
++	.probe = uic_pulse_probe,
++	.remove = uic_pulse_remove,
++	.driver = {
++		.name = "meig_gpio_pulse",
++		.of_match_table = uic_pulse_of_match,
++	},
++};
++module_platform_driver(uic_pulse_driver);
++
++MODULE_DESCRIPTION("UIC GPIO pulse character device");
++MODULE_LICENSE("GPL");
++MODULE_AUTHOR("wangguanran");
+diff --git a/kernel_platform/msm-kernel/include/uapi/linux/uic_pulse.h b/kernel_platform/msm-kernel/include/uapi/linux/uic_pulse.h
+new file mode 100644
+index 0000000..05988cf
+--- /dev/null
++++ b/kernel_platform/msm-kernel/include/uapi/linux/uic_pulse.h
+@@ -0,0 +1,88 @@
++/* SPDX-License-Identifier: GPL-2.0-only WITH Linux-syscall-note */
++#ifndef _UAPI_LINUX_UIC_PULSE_H
++#define _UAPI_LINUX_UIC_PULSE_H
++
++#include <linux/ioctl.h>
++#include <linux/types.h>
++
++#define UIC_PULSE_DEV_NAME		"uic_pulse"
++
++#define UIC_PULSE_ACTIVE_HIGH		0
++#define UIC_PULSE_ACTIVE_LOW		1
++
++#define UIC_PULSE_EDGE_RISING		1
++#define UIC_PULSE_EDGE_FALLING		2
++#define UIC_PULSE_EDGE_BOTH		3
++
++#define UIC_PULSE_WIDTH_MIN_MS		25
++#define UIC_PULSE_WIDTH_MAX_MS		500
++#define UIC_PULSE_INTERVAL_DEF_MS	100
++#define UIC_PULSE_DEBOUNCE_DEF_MS	2
++#define UIC_PULSE_OUT_LEVEL_CFG		0xffffffffu
++
++/**
++ * struct uic_pulse_config - runtime pulse configuration
++ * @active_level: IN pulse polarity (ACTIVE_HIGH / ACTIVE_LOW)
++ * @min_valid_ms: min accepted IN pulse width
++ * @max_valid_ms: max accepted IN pulse width
++ * @batch_gap_ms: idle gap before reporting one batch (0 = each pulse)
++ * @stuck_timeout_ms: IN active longer than this is invalid (0 = off)
++ * @debounce_ms: edge debounce (default 2)
++ * @irq_edge: rising / falling / both
++ * @out_active_level: GPIO33 pulse polarity
++ * @pulse_width_ms: default OUT pulse width (25..500)
++ * @interval_ms: gap between two OUT actives (default 100)
++ */
++struct uic_pulse_config {
++	__u32 active_level;
++	__u32 min_valid_ms;
++	__u32 max_valid_ms;
++	__u32 batch_gap_ms;
++	__u32 stuck_timeout_ms;
++	__u32 debounce_ms;
++	__u32 irq_edge;
++	__u32 out_active_level;
++	__u32 pulse_width_ms;
++	__u32 interval_ms;
++};
++
++/**
++ * struct uic_pulse_simulate - GPIO33 coin-pulse emit
++ * @count: number of pulses
++ * @pulse_width_ms: 0 = use config
++ * @interval_ms: 0 = use config
++ * @out_active_level: UIC_PULSE_OUT_LEVEL_CFG = use config
++ */
++struct uic_pulse_simulate {
++	__u32 count;
++	__u32 pulse_width_ms;
++	__u32 interval_ms;
++	__u32 out_active_level;
++};
++
++/**
++ * struct uic_pulse_event - one reported IN batch
++ * @pulse_count: pulses in this batch
++ * @last_width_ms: width of the last pulse in the batch
++ * @timestamp_ns: monotonic timestamp of report
++ */
++struct uic_pulse_event {
++	__u32 pulse_count;
++	__u32 last_width_ms;
++	__u64 timestamp_ns;
++};
++
++#define UIC_PULSE_IOC_MAGIC		'U'
++
++#define UIC_PULSE_IOC_SET_CONFIG	_IOW(UIC_PULSE_IOC_MAGIC, 0x01, \
++					     struct uic_pulse_config)
++#define UIC_PULSE_IOC_GET_CONFIG	_IOR(UIC_PULSE_IOC_MAGIC, 0x02, \
++					     struct uic_pulse_config)
++#define UIC_PULSE_IOC_START		_IO(UIC_PULSE_IOC_MAGIC, 0x03)
++#define UIC_PULSE_IOC_STOP		_IO(UIC_PULSE_IOC_MAGIC, 0x04)
++#define UIC_PULSE_IOC_RESET		_IO(UIC_PULSE_IOC_MAGIC, 0x05)
++#define UIC_PULSE_IOC_FLUSH_EVENT	_IO(UIC_PULSE_IOC_MAGIC, 0x06)
++#define UIC_PULSE_IOC_OUTPUT		_IOW(UIC_PULSE_IOC_MAGIC, 0x07, \
++					     struct uic_pulse_simulate)
++
++#endif /* _UAPI_LINUX_UIC_PULSE_H */
+diff --git a/kernel_platform/qcom/proprietary/devicetree/bindings/misc/meig,gpio-pulse.txt b/kernel_platform/qcom/proprietary/devicetree/bindings/misc/meig,gpio-pulse.txt
+new file mode 100644
+index 0000000..a1d2e6b
+--- /dev/null
++++ b/kernel_platform/qcom/proprietary/devicetree/bindings/misc/meig,gpio-pulse.txt
+@@ -0,0 +1,85 @@
++Meig GPIO pulse detect and emit (UIC /dev/uic_pulse)
++
++Required properties:
++- compatible: "meig,gpio-pulse"
++
++Each channel is a child node (or the node itself if there is no child).
++
++Channel properties:
++- label: optional string, e.g. "pulse"
++- in-gpios: optional input GPIO for pulse detect (MMIO / hardirq only)
++- out-gpios: optional output GPIO for pulse emit (idle = inactive level)
++- debounce-us: optional; maps to runtime debounce_ms (us/1000, 0 allowed).
++  Omit to use driver default debounce_ms=2 (pulse.txt / UIC_PULSE_DEBOUNCE_DEF_MS).
++- min-width-us: minimum accepted IN pulse width (default 10000 -> 10 ms)
++- max-width-us: maximum accepted IN pulse width (default 1000000 -> 1000 ms)
++- default-emit-us: default OUT pulse width when OUTPUT omits width (default 50000)
++- meig,in-active-high: optional; force IN active_level ACTIVE_HIGH (same-phase
++  wiring). Without this property the driver defaults to ACTIVE_HIGH as well;
++  use GPIO_ACTIVE_LOW + omit this for optocoupler-inverted IN paths.
++- meig,mask-irq-on-emit: optional; mask IN IRQ while emitting on OUT
++- pinctrl-names / pinctrl-0: optional pinmux for the GPIOs
++
++At least one of in-gpios / out-gpios is required per channel.
++
++Runtime configuration (ioctl/sysfs, see include/uapi/linux/uic_pulse.h):
++- active_level: IN pulse polarity (ACTIVE_HIGH / ACTIVE_LOW)
++- min_valid_ms / max_valid_ms: accepted IN width window (default 10..500 ms)
++- batch_gap_ms: idle gap before batching pulses (default 200 ms; 0 = each pulse)
++- stuck_timeout_ms: IN active longer than this is invalid (default 1000 ms)
++- debounce_ms: edge debounce (default 2 ms)
++- irq_edge: 1=rising 2=falling 3=both (default both)
++- out_active_level: OUT pulse polarity (default ACTIVE_HIGH)
++- pulse_width_ms: OUT width 25..500 ms (default 50 ms)
++- interval_ms: gap between two OUT actives (default 100 ms)
++
++IOCTL (struct uic_pulse_config / uic_pulse_simulate / uic_pulse_event):
++  UIC_PULSE_IOC_SET_CONFIG / GET_CONFIG
++  UIC_PULSE_IOC_START / STOP / RESET / FLUSH_EVENT
++  UIC_PULSE_IOC_OUTPUT
++  read() -> one IN batch event
++
++Userspace nodes:
++  /dev/uic_pulse
++  /sys/class/misc/uic_pulse/
++
++Sysfs (1:1 with ioctl, plus helpers):
++  config, start, stop, reset, flush_event, output, event, started, in_raw
++  per-field shortcuts: pulse_width_ms, interval_ms, debounce_ms, ...
++
++MT5205 example (POS MB: GPIO32 IN <-> GPIO33 OUT direct same-phase;
++J1001.36/35, bias-pull-up on GPIO32):
++
++&soc {
++	meig_pulse {
++		compatible = "meig,gpio-pulse";
++		pinctrl-names = "default";
++		pinctrl-0 = <&mt5205_pulse_default>;
++		status = "okay";
++
++		pulse@0 {
++			reg = <0>;
++			label = "pulse";
++			in-gpios = <&tlmm 32 GPIO_ACTIVE_HIGH>;
++			meig,in-active-high;
++			out-gpios = <&tlmm 33 GPIO_ACTIVE_HIGH>;
++			debounce-us = <2000>;
++			min-width-us = <10000>;
++			max-width-us = <500000>;
++			default-emit-us = <50000>;
++		};
++	};
++};
++
++MT5205 direct-wire polarity (default runtime, no ioctl override):
++- IN:  ACTIVE_HIGH; idle physical low; counts physical high pulse width
++- OUT: ACTIVE_HIGH; idle physical low; emit drives physical high pulse
++
++At idle expect: in_raw=0, out_level=0.
++During OUT emit: out_level=1; loopback IN sees in_raw=1 while OUT high.
++
++Optocoupler / inverted IN (other boards):
++- in-gpios = <&tlmm N GPIO_ACTIVE_LOW>; omit meig,in-active-high
++- active_level defaults to ACTIVE_LOW in driver when GPIO flag is ACTIVE_LOW
++- At idle: in_raw=1; pulse is physical low width on IN
++
+diff --git a/kernel_platform/qcom/proprietary/devicetree/qcom/scuba-iot-idp-overlay.dts b/kernel_platform/qcom/proprietary/devicetree/qcom/scuba-iot-idp-overlay.dts
+index 4b0d987..3d1654f 100755
+--- a/kernel_platform/qcom/proprietary/devicetree/qcom/scuba-iot-idp-overlay.dts
++++ b/kernel_platform/qcom/proprietary/devicetree/qcom/scuba-iot-idp-overlay.dts
+@@ -23,8 +23,35 @@
+  * Assert nRST: echo 0 > value
+  *
+  * MT5205 MDB-DB detect: GPIO14 gpio-keys KEY_F1
++ * MT5205 Pulse: GPIO32 IN / GPIO33 OUT (direct same-phase, ACTIVE_HIGH)
+  */
+ &tlmm {
++	mt5205_pulse_default: mt5205_pulse_default {
++		mux_in {
++			pins = "gpio32";
++			function = "gpio";
++		};
++
++		cfg_in {
++			pins = "gpio32";
++			drive-strength = <2>;
++			bias-pull-up;
++			input-enable;
++		};
++
++		mux_out {
++			pins = "gpio33";
++			function = "gpio";
++		};
++
++		cfg_out {
++			pins = "gpio33";
++			drive-strength = <8>;
++			bias-disable;
++			output-low;
++		};
++	};
++
+ 	mt5205_se_reset: mt5205_se_reset {
+ 		mux {
+ 			pins = "gpio102";
+@@ -70,6 +97,25 @@
+ };
+ 
+ &soc {
++	meig_pulse: meig_pulse {
++		compatible = "meig,gpio-pulse";
++		pinctrl-names = "default";
++		pinctrl-0 = <&mt5205_pulse_default>;
++		status = "okay";
++
++		pulse0: pulse@0 {
++			reg = <0>;
++			label = "pulse";
++			in-gpios = <&tlmm 32 GPIO_ACTIVE_HIGH>;
++			meig,in-active-high;
++			out-gpios = <&tlmm 33 GPIO_ACTIVE_HIGH>;
++			debounce-us = <2000>;
++			min-width-us = <10000>;
++			max-width-us = <500000>;
++			default-emit-us = <50000>;
++		};
++	};
++
+ 	gpio-userspace {
+ 		compatible = "gpio-userspace";
+ 		status = "okay";
+
+```
+
+## 补丁验证
+
+✅ 可干净应用（134 源码树父提交重建验证，新文件由补丁创建）。
+
+## 源码归档
+
+| 归档目录 | 文件 | 说明 |
+|----------|------|------|
+| kernel_driver/ | meig_gpio_pulse.c | 驱动主文件（合并后版本） |
+| kernel_driver/ | uic_pulse.h | UAPI 头 |
+| kernel_driver/ | Kconfig | misc Kconfig（含 MEIG_GPIO_PULSE） |
+| kernel_driver/ | Makefile | misc Makefile |
+| kernel_driver/ | bengal_GKI.config | 内核配置 |
+| kernel_driver/ | pinctrl-scuba.c | scuba pinctrl（Change #195886 归档，含本变更上下文） |
+| dt_config/ | meig,gpio-pulse.txt | binding 文档 |
+| dt_config/ | scuba-iot-idp-overlay.dts | overlay（合并后最终版本） |
+| dt_config/ | scuba-iot-idp-overlay-195886.dts | overlay（Change #195886 归档版本） |
+| patches/ | 195883.patch | 本变更补丁 |
+
+## 引用文件索引
+
+| 文件 | 路径 | 说明 |
+|------|------|------|
+| [[01.驱动文档/13.GPIO/Qualcomm/SM6115-A14/91.源码与补丁索引/kernel_driver/meig_gpio_pulse.c|meig_gpio_pulse.c]] | `kernel_platform/msm-kernel/drivers/misc/meig_gpio_pulse.c` | 驱动主文件（+987 行） |
+| [[01.驱动文档/13.GPIO/Qualcomm/SM6115-A14/91.源码与补丁索引/kernel_driver/uic_pulse.h|uic_pulse.h]] | `kernel_platform/msm-kernel/include/uapi/linux/uic_pulse.h` | UAPI 头（+88 行） |
+| [[01.驱动文档/13.GPIO/Qualcomm/SM6115-A14/91.源码与补丁索引/kernel_driver/Kconfig|Kconfig]] | `kernel_platform/msm-kernel/drivers/misc/Kconfig` | 新增 MEIG_GPIO_PULSE 配置项 |
+| [[01.驱动文档/13.GPIO/Qualcomm/SM6115-A14/91.源码与补丁索引/kernel_driver/Makefile|Makefile]] | `kernel_platform/msm-kernel/drivers/misc/Makefile` | 新增 meig_gpio_pulse.o |
+| [[01.驱动文档/13.GPIO/Qualcomm/SM6115-A14/91.源码与补丁索引/kernel_driver/bengal_GKI.config|bengal_GKI.config]] | `kernel_platform/msm-kernel/arch/arm64/configs/vendor/bengal_GKI.config` | CONFIG_MEIG_GPIO_PULSE=m |
+| [[01.驱动文档/13.GPIO/Qualcomm/SM6115-A14/91.源码与补丁索引/dt_config/meig,gpio-pulse.txt|meig,gpio-pulse.txt]] | `kernel_platform/qcom/proprietary/devicetree/bindings/misc/meig,gpio-pulse.txt` | binding 文档（+85 行） |
+| [[01.驱动文档/13.GPIO/Qualcomm/SM6115-A14/91.源码与补丁索引/dt_config/scuba-iot-idp-overlay.dts|scuba-iot-idp-overlay.dts]] | `kernel_platform/qcom/proprietary/devicetree/qcom/scuba-iot-idp-overlay.dts` | overlay 最终版（含 pulse + MDB 改动） |
+| [[01.驱动文档/13.GPIO/Qualcomm/SM6115-A14/91.源码与补丁索引/dt_config/scuba-iot-idp-overlay-195886.dts|scuba-iot-idp-overlay-195886.dts]] | `kernel_platform/qcom/proprietary/devicetree/qcom/scuba-iot-idp-overlay.dts` | Change #195886 归档版本 |
+| [[01.驱动文档/13.GPIO/Qualcomm/SM6115-A14/91.源码与补丁索引/kernel_driver/pinctrl-scuba.c|pinctrl-scuba.c]] | `kernel_platform/msm-kernel/drivers/pinctrl/qcom/pinctrl-scuba.c` | scuba pinctrl（#195886 归档） |
+| [[01.驱动文档/13.GPIO/Qualcomm/SM6115-A14/91.源码与补丁索引/patches/195883.patch|195883.patch]] | `patches/195883.patch` | 本变更补丁 |
+
+---
+
+_Author: wangguanran_

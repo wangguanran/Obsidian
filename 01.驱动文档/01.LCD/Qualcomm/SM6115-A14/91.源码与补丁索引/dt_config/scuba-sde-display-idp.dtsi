@@ -1,0 +1,276 @@
+#include "scuba-sde-display.dtsi"
+#include "dsi-panel-mt5205-st7701s-boe397-video.dtsi"
+#include "dsi-panel-jd9365da-video.dtsi"
+
+/* MT5205 (Scuba/Agatti) LCM — runtime model "Scuba IOT IDP", board-id 34.
+ * Power (path B): GPIO111 vddio, GPIO112 avdd, GPIO105 avee/bias,
+ * RESET 82, TE 81, BL PWM via PM2250/PM4125 (dt label pm2250_pwm3).
+ * GPIO24 size-select is driven by UEFI (4" LOW / 5" HIGH).
+ */
+/* Must use &soc so fixed regulators land in an overlay fragment. */
+&soc {
+	display_panel_vddio: display_panel_vddio {
+		compatible = "regulator-fixed";
+		regulator-name = "display_panel_vddio";
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <1800000>;
+		gpio = <&tlmm 111 0>;
+		enable-active-high;
+		/* Keep panel rails across UEFI→Kernel handoff (EBS~msm_drm probe) */
+		regulator-boot-on;
+		/* cont_splash skips panel pwr vote; always-on prevents ~31s disable */
+		regulator-always-on;
+		startup-delay-us = <50000>;
+	};
+
+	display_panel_avdd: display_panel_avdd {
+		compatible = "regulator-fixed";
+		regulator-name = "display_panel_avdd";
+		regulator-min-microvolt = <2800000>;
+		regulator-max-microvolt = <2800000>;
+		gpio = <&tlmm 112 0>;
+		enable-active-high;
+		regulator-boot-on;
+		regulator-always-on;
+		startup-delay-us = <50000>;
+	};
+
+	display_panel_avee: display_panel_avee {
+		compatible = "regulator-fixed";
+		regulator-name = "display_panel_avee";
+		regulator-min-microvolt = <2800000>;
+		regulator-max-microvolt = <2800000>;
+		gpio = <&tlmm 105 0>;
+		enable-active-high;
+		regulator-boot-on;
+		regulator-always-on;
+		startup-delay-us = <50000>;
+	};
+
+	dsi_panel_pwr_supply_mt5205: dsi_panel_pwr_supply_mt5205 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		qcom,panel-supply-entry@0 {
+			reg = <0>;
+			qcom,supply-name = "vddio";
+			qcom,supply-min-voltage = <1800000>;
+			qcom,supply-max-voltage = <1800000>;
+			qcom,supply-enable-load = <62000>;
+			qcom,supply-disable-load = <80>;
+			qcom,supply-post-on-sleep = <120>;
+		};
+
+		qcom,panel-supply-entry@1 {
+			reg = <1>;
+			qcom,supply-name = "avdd";
+			qcom,supply-min-voltage = <2800000>;
+			qcom,supply-max-voltage = <2800000>;
+			qcom,supply-enable-load = <100000>;
+			qcom,supply-disable-load = <100>;
+			qcom,supply-post-on-sleep = <120>;
+		};
+
+		qcom,panel-supply-entry@2 {
+			reg = <2>;
+			qcom,supply-name = "avee";
+			qcom,supply-min-voltage = <2800000>;
+			qcom,supply-max-voltage = <2800000>;
+			qcom,supply-enable-load = <100000>;
+			qcom,supply-disable-load = <100>;
+			qcom,supply-post-on-sleep = <120>;
+		};
+	};
+
+	/* MT5205 Touch power (Task #118726 / CF7252):
+	 *   GPIO28 -> U1102 AW3703 -> TP_VDD_2V8 (J1101.30)
+	 *   GPIO27 -> U1106 AW3703 -> TP_SW_POWER (U1105 V+)
+	 *   BUS_SW default GND -> AP path (GPIO6/7/71/80)
+	 */
+	mt5205_touch_vdd: mt5205_touch_vdd {
+		compatible = "regulator-fixed";
+		regulator-name = "mt5205_touch_vdd";
+		regulator-min-microvolt = <2800000>;
+		regulator-max-microvolt = <2800000>;
+		gpio = <&tlmm 28 0>;
+		enable-active-high;
+		startup-delay-us = <10000>;
+	};
+
+	mt5205_touch_sw_vdd: mt5205_touch_sw_vdd {
+		compatible = "regulator-fixed";
+		regulator-name = "mt5205_touch_sw_vdd";
+		regulator-min-microvolt = <2800000>;
+		regulator-max-microvolt = <2800000>;
+		gpio = <&tlmm 27 0>;
+		enable-active-high;
+		startup-delay-us = <5000>;
+	};
+};
+
+&dsi_st7701s_boe397_video {
+	qcom,panel-supply-entries = <&dsi_panel_pwr_supply_mt5205>;
+	qcom,mdss-dsi-bl-pmic-control-type = "bl_ctrl_pwm";
+	pwms = <&pm2250_pwm3 0 0>;
+	qcom,bl-pmic-pwm-period-usecs = <50>;
+	qcom,mdss-dsi-bl-min-level = <1>;
+	qcom,mdss-dsi-bl-max-level = <4095>;
+	qcom,platform-te-gpio = <&tlmm 81 0>;
+	qcom,platform-reset-gpio = <&tlmm 82 0>;
+	qcom,platform-reset-gpio-always-on;
+	/* Do NOT set platform-en-gpio: GPIO105 is already display_panel_avee
+	 * regulator-fixed; dual request -> disp_en_gpio EBUSY (-16).
+	 */
+	qcom,mdss-dsi-t-clk-post = <0x0a>;
+	qcom,mdss-dsi-t-clk-pre = <0x21>;
+	qcom,dsi-select-clocks = "pll_byte_clk0", "pll_dsi_clk0";
+	qcom,mdss-dsi-display-timings {
+		timing@0 {
+			qcom,display-topology = <1 0 1>;
+			qcom,default-topology-index = <0>;
+		};
+	};
+};
+
+&dsi_jd9365da_video {
+	qcom,panel-supply-entries = <&dsi_panel_pwr_supply_mt5205>;
+	qcom,mdss-dsi-bl-pmic-control-type = "bl_ctrl_pwm";
+	pwms = <&pm2250_pwm3 0 0>;
+	qcom,bl-pmic-pwm-period-usecs = <50>;
+	qcom,mdss-dsi-bl-min-level = <1>;
+	qcom,mdss-dsi-bl-max-level = <4095>;
+	qcom,platform-te-gpio = <&tlmm 81 0>;
+	qcom,platform-reset-gpio = <&tlmm 82 0>;
+	/* Allow reset toggle on kernel re-init; always-on blocks ESD recovery */
+	/* Same pattern as scuba-sde-display-common NT36525: force topology into timing@0 */
+	qcom,mdss-dsi-t-clk-post = <0x0a>;
+	qcom,mdss-dsi-t-clk-pre = <0x21>;
+	qcom,dsi-select-clocks = "pll_byte_clk0", "pll_dsi_clk0";
+	qcom,mdss-dsi-display-timings {
+		timing@0 {
+			qcom,display-topology = <1 0 1>;
+			qcom,default-topology-index = <0>;
+		};
+	};
+};
+
+&dsi_nt36525_truly_video {
+	qcom,panel-supply-entries = <&dsi_panel_pwr_supply_no_labibb>;
+	qcom,mdss-dsi-bl-pmic-control-type = "bl_ctrl_pwm";
+	pwms = <&pm2250_pwm3 0 0>;
+	qcom,bl-pmic-pwm-period-usecs = <100>;
+	qcom,mdss-dsi-bl-min-level = <1>;
+	qcom,mdss-dsi-bl-max-level = <4095>;
+	qcom,platform-reset-gpio = <&tlmm 82 0>;
+	qcom,platform-reset-gpio-always-on;
+};
+
+&dsi_td4330_truly_v2_video {
+	qcom,panel-supply-entries = <&dsi_panel_pwr_supply_no_labibb>;
+	qcom,mdss-dsi-bl-pmic-control-type = "bl_ctrl_pwm";
+	pwms = <&pm2250_pwm3 0 0>;
+	qcom,bl-pmic-pwm-period-usecs = <100>;
+	qcom,mdss-dsi-bl-min-level = <1>;
+	qcom,mdss-dsi-bl-max-level = <4095>;
+	qcom,platform-reset-gpio = <&tlmm 82 0>;
+};
+
+&dsi_td4330_truly_v2_cmd {
+	qcom,panel-supply-entries = <&dsi_panel_pwr_supply_no_labibb>;
+	qcom,mdss-dsi-bl-pmic-control-type = "bl_ctrl_pwm";
+	pwms = <&pm2250_pwm3 0 0>;
+	qcom,bl-pmic-pwm-period-usecs = <100>;
+	qcom,mdss-dsi-bl-min-level = <1>;
+	qcom,mdss-dsi-bl-max-level = <4095>;
+	qcom,platform-te-gpio = <&tlmm 81 0>;
+	qcom,platform-reset-gpio = <&tlmm 82 0>;
+};
+
+&sde_dsi {
+	/* dsi-display probe holds panel rails; eliminates dummy avdd/avee */
+	vddio-supply = <&display_panel_vddio>;
+	avdd-supply = <&display_panel_avdd>;
+	avee-supply = <&display_panel_avee>;
+	/* UEFI selects jd9365 or st7701 via cmdline; default keep 一供 */
+	qcom,dsi-default-panel = <&dsi_st7701s_boe397_video>;
+	/*
+	 * Do NOT put lcd_bl_pwm_default here: pm2250_pwm3 already owns gpio2.
+	 * Dual claim → "pin gpio2 already requested by ...pwms@be00" (-22)
+	 * → panel prepare/power_on fail → full black ~100s (seen in serial).
+	 * Keep only TLMM gpio24 (5" BL path) on sde_dsi pinctrl.
+	 */
+	pinctrl-names = "panel_active", "panel_suspend";
+	pinctrl-0 = <&sde_dsi_active &sde_te_active &mt5205_bl_fb_5inch_default>;
+	pinctrl-1 = <&sde_dsi_suspend &sde_te_suspend &mt5205_bl_fb_5inch_default>;
+};
+
+/* MT5205 backlight: UEFI does PM4125/PM2250 GPIO2 -> SPECIAL_FUNCTION1 + PWM_3.
+ * Kernel must mux the same pad to func1, otherwise LPG PWM3 has no pin → AP black
+ * while BP (UEFI) still lights.
+ */
+&pm2250_gpios {
+	lcd_bl_pwm {
+		lcd_bl_pwm_default: lcd_bl_pwm_default {
+			pins = "gpio2";
+			function = "func1";
+			output-enable;
+			qcom,drive-strength = <2>;
+			power-source = <0>;
+			bias-disable;
+		};
+	};
+};
+
+&pm2250_pwm3 {
+	status = "ok";
+	pinctrl-names = "default";
+	pinctrl-0 = <&lcd_bl_pwm_default>;
+};
+
+/* 5" JD9365 BL current path: GPIO24 HIGH (4" ST7701 needs LOW — swap when testing 一供) */
+&tlmm {
+	mt5205_bl_fb {
+		mt5205_bl_fb_5inch_default: mt5205_bl_fb_5inch_default {
+			pins = "gpio24";
+			function = "gpio";
+			output-high;
+			bias-disable;
+			drive-strength = <2>;
+		};
+	};
+};
+
+&qupv3_se2_i2c {
+	status = "ok";
+	/* MT5205 CF7252 — Task #118726; GPIO from netlist (not QRD copy) */
+	qcom,i2c-touch-active = "sitronix,cf7252";
+
+	novatek@62 {
+		compatible = "novatek,NVT-ts";
+		reg = <0x62>;
+		status = "disabled";
+	};
+
+	synaptics_tcm@20 {
+		compatible = "synaptics,tcm-i2c";
+		reg = <0x20>;
+		status = "disabled";
+	};
+
+	sitronix_ts@55 {
+		compatible = "sitronix,cf7252";
+		reg = <0x55>;
+		interrupt-parent = <&tlmm>;
+		interrupts = <80 0x2008>;
+		sitronix,reset-gpios = <&tlmm 71 0x00>;
+		sitronix,interrupt-gpios = <&tlmm 80 0x2008>;
+		vdd_ana-supply = <&mt5205_touch_vdd>;
+		vcc_i2c-supply = <&mt5205_touch_sw_vdd>;
+		pinctrl-names = "pmx_ts_active","pmx_ts_suspend",
+			"pmx_ts_release";
+		pinctrl-0 = <&ts_int_active &ts_reset_active>;
+		pinctrl-1 = <&ts_int_suspend &ts_reset_suspend>;
+		pinctrl-2 = <&ts_release>;
+		panel = <&dsi_st7701s_boe397_video &dsi_jd9365da_video>;
+	};
+};

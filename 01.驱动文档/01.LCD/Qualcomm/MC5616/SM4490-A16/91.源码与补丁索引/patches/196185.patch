@@ -1,0 +1,22 @@
+Subject: [PATCH] [MC5616][96455][Display]Disable ESD check for r66451 AMOLED video panel [Owner]zhourulei
+
+[Root Cause]
+	&dsi_r66451_amoled_video 面板节点默认使能 qcom,esd-check-enabled，驱动会按 panel-status-command 周期性读取 status 寄存器并可能触发 panel recovery。
+[Solution  ]
+	注释掉该节点中的 qcom,esd-check-enabled，保留 status 相关属性便于后续复开。
+
+---
+
+diff --git a/vendor/qcom/proprietary/display-devicetree/display/parrot-sde-display-common.dtsi b/vendor/qcom/proprietary/display-devicetree/display/parrot-sde-display-common.dtsi
+index 44a8651..16c8f07 100755
+--- a/vendor/qcom/proprietary/display-devicetree/display/parrot-sde-display-common.dtsi
++++ b/vendor/qcom/proprietary/display-devicetree/display/parrot-sde-display-common.dtsi
+@@ -377,7 +377,7 @@
+ &dsi_r66451_amoled_video {
+ 	qcom,dsi-select-clocks = "pll_byte_clk0", "pll_dsi_clk0";
+ 
+-	qcom,esd-check-enabled;
++	/* qcom,esd-check-enabled; */
+ 	qcom,mdss-dsi-panel-status-check-mode = "reg_read";
+ 	qcom,mdss-dsi-panel-status-command = [06 01 00 01 00 00 01 0a];
+ 	qcom,mdss-dsi-panel-status-command-state = "dsi_lp_mode";

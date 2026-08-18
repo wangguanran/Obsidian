@@ -1,0 +1,99 @@
+Subject: [PATCH] [MT5205][TaskID]120572[Description]MDB nRST output-high and GPIO14 DB detect key[Solution]idle mdb_reset output-high, unreserve GPIO14, gpio-keys KEY_F1[Owner]wangguanran
+
+---
+
+diff --git a/kernel_platform/msm-kernel/drivers/pinctrl/qcom/pinctrl-scuba.c b/kernel_platform/msm-kernel/drivers/pinctrl/qcom/pinctrl-scuba.c
+index 0e24381..1d4a3e5 100644
+--- a/kernel_platform/msm-kernel/drivers/pinctrl/qcom/pinctrl-scuba.c
++++ b/kernel_platform/msm-kernel/drivers/pinctrl/qcom/pinctrl-scuba.c
+@@ -1586,8 +1586,8 @@
+ };
+ 
+ static const int scuba_reserved_gpios[] = {
+-		/* MT5205: release 16/17 for MDB SE5 UART (gpio14/15 stay reserved) */
+-		0, 1, 2, 3, 14, 15, -1
++		/* MT5205: 16/17 for MDB UART; 14 released for MDB DET; 15 stays reserved */
++		0, 1, 2, 3, 15, -1
+ };
+ 
+ static const struct msm_gpio_wakeirq_map scuba_mpm_map[] = {
+diff --git a/kernel_platform/qcom/proprietary/devicetree/qcom/scuba-iot-idp-overlay.dts b/kernel_platform/qcom/proprietary/devicetree/qcom/scuba-iot-idp-overlay.dts
+index 6c52b71..4b0d987 100755
+--- a/kernel_platform/qcom/proprietary/devicetree/qcom/scuba-iot-idp-overlay.dts
++++ b/kernel_platform/qcom/proprietary/devicetree/qcom/scuba-iot-idp-overlay.dts
+@@ -3,6 +3,7 @@
+ 
+ #include <dt-bindings/interrupt-controller/arm-gic.h>
+ #include <dt-bindings/gpio/gpio.h>
++#include <dt-bindings/input/input.h>
+ #include "scuba-iot-idp.dtsi"
+ 
+ / {
+@@ -15,10 +16,13 @@
+ /*
+  * MT5205 gpio-userspace exports
+  *   GPIO102 SE_RESET -> Secure Element (SE) NRST (active-low), default high
+- *   GPIO36  MDB_RESET  -> STM32F103 NRST (active-low), default high
++ *   GPIO36  MDB_RESET -> STM32F103 NRST (active-low), idle output-high
+  *
+  * Sysfs: /sys/class/gpio_userspace/<label>/value
+- * default-state: 0-low, 1-high, 2-input
++ * default-state: 0-low, 1-high, 2-input(high-Z)
++ * Assert nRST: echo 0 > value
++ *
++ * MT5205 MDB-DB detect: GPIO14 gpio-keys KEY_F1
+  */
+ &tlmm {
+ 	mt5205_se_reset: mt5205_se_reset {
+@@ -35,6 +39,7 @@
+ 		};
+ 	};
+ 
++	/* MDB STM32F103 nRST: idle output-high (no board pull-up on MB) */
+ 	mt5205_mdb_reset: mt5205_mdb_reset {
+ 		mux {
+ 			pins = "gpio36";
+@@ -48,6 +53,20 @@
+ 			output-high;
+ 		};
+ 	};
++
++	mt5205_mdb_db_detect: mt5205_mdb_db_detect {
++		mux {
++			pins = "gpio14";
++			function = "gpio";
++		};
++
++		config {
++			pins = "gpio14";
++			drive-strength = <2>;
++			bias-pull-up;
++			input-enable;
++		};
++	};
+ };
+ 
+ &soc {
+@@ -69,4 +88,22 @@
+ 			default-state = <1>;
+ 		};
+ 	};
++
++	/* Separate node: scuba.dtsi gpio_keys has no phandle */
++	mdb_db_keys {
++		compatible = "gpio-keys";
++		label = "mdb-db-keys";
++		pinctrl-names = "default";
++		pinctrl-0 = <&mt5205_mdb_db_detect>;
++		status = "okay";
++
++		mdb_db {
++			label = "mdb_db_detect";
++			gpios = <&tlmm 14 GPIO_ACTIVE_LOW>;
++			linux,input-type = <1>;
++			linux,code = <KEY_F1>;
++			debounce-interval = <15>;
++			gpio-key,wakeup;
++		};
++	};
+ };

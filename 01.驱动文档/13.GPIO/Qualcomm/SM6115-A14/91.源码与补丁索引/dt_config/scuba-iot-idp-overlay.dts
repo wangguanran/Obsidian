@@ -1,0 +1,155 @@
+/dts-v1/;
+/plugin/;
+
+#include <dt-bindings/interrupt-controller/arm-gic.h>
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include "scuba-iot-idp.dtsi"
+
+/ {
+	model = "Qualcomm Technologies, Inc. Scuba IOT IDP";
+	compatible = "qcom,scuba-idp", "qcom,scuba-iot", "qcom,idp";
+	qcom,msm-id = <473 0x10000>, <474 0x10000>;
+	qcom,board-id = <34 0>;
+};
+
+/*
+ * MT5205 gpio-userspace exports
+ *   GPIO102 SE_RESET -> Secure Element (SE) NRST (active-low), default high
+ *   GPIO36  MDB_RESET -> STM32F103 NRST (active-low), idle output-high
+ *
+ * Sysfs: /sys/class/gpio_userspace/<label>/value
+ * default-state: 0-low, 1-high, 2-input(high-Z)
+ * Assert nRST: echo 0 > value
+ *
+ * MT5205 MDB-DB detect: GPIO14 gpio-keys KEY_F1
+ * MT5205 Pulse: GPIO32 IN / GPIO33 OUT (direct same-phase, ACTIVE_HIGH)
+ */
+&tlmm {
+	mt5205_pulse_default: mt5205_pulse_default {
+		mux_in {
+			pins = "gpio32";
+			function = "gpio";
+		};
+
+		cfg_in {
+			pins = "gpio32";
+			drive-strength = <2>;
+			bias-pull-up;
+			input-enable;
+		};
+
+		mux_out {
+			pins = "gpio33";
+			function = "gpio";
+		};
+
+		cfg_out {
+			pins = "gpio33";
+			drive-strength = <8>;
+			bias-disable;
+			output-low;
+		};
+	};
+
+	mt5205_se_reset: mt5205_se_reset {
+		mux {
+			pins = "gpio102";
+			function = "gpio";
+		};
+
+		config {
+			pins = "gpio102";
+			drive-strength = <2>;
+			bias-disable;
+			output-high;
+		};
+	};
+
+	/* MDB STM32F103 nRST: idle output-high (no board pull-up on MB) */
+	mt5205_mdb_reset: mt5205_mdb_reset {
+		mux {
+			pins = "gpio36";
+			function = "gpio";
+		};
+
+		config {
+			pins = "gpio36";
+			drive-strength = <2>;
+			bias-disable;
+			output-high;
+		};
+	};
+
+	mt5205_mdb_db_detect: mt5205_mdb_db_detect {
+		mux {
+			pins = "gpio14";
+			function = "gpio";
+		};
+
+		config {
+			pins = "gpio14";
+			drive-strength = <2>;
+			bias-pull-up;
+			input-enable;
+		};
+	};
+};
+
+&soc {
+	meig_pulse: meig_pulse {
+		compatible = "meig,gpio-pulse";
+		pinctrl-names = "default";
+		pinctrl-0 = <&mt5205_pulse_default>;
+		status = "okay";
+
+		pulse0: pulse@0 {
+			reg = <0>;
+			label = "pulse";
+			in-gpios = <&tlmm 32 GPIO_ACTIVE_HIGH>;
+			meig,in-active-high;
+			out-gpios = <&tlmm 33 GPIO_ACTIVE_HIGH>;
+			debounce-us = <2000>;
+			min-width-us = <10000>;
+			max-width-us = <500000>;
+			default-emit-us = <50000>;
+		};
+	};
+
+	gpio-userspace {
+		compatible = "gpio-userspace";
+		status = "okay";
+		pinctrl-names = "default";
+		pinctrl-0 = <&mt5205_se_reset &mt5205_mdb_reset>;
+
+		se-reset {
+			label = "se_reset";
+			gpios = <&tlmm 102 GPIO_ACTIVE_HIGH>;
+			default-state = <1>;
+		};
+
+		mdb-reset {
+			label = "mdb_reset";
+			gpios = <&tlmm 36 GPIO_ACTIVE_HIGH>;
+			default-state = <1>;
+		};
+	};
+
+	/* Separate node: scuba.dtsi gpio_keys has no phandle */
+	mdb_db_keys {
+		compatible = "gpio-keys";
+		label = "mdb-db-keys";
+		pinctrl-names = "default";
+		pinctrl-0 = <&mt5205_mdb_db_detect>;
+		status = "okay";
+
+		mdb_db {
+			label = "mdb_db_detect";
+			gpios = <&tlmm 14 GPIO_ACTIVE_LOW>;
+			linux,input-type = <1>;
+			linux,code = <KEY_F1>;
+			debounce-interval = <15>;
+			gpio-key,wakeup;
+		};
+	};
+};

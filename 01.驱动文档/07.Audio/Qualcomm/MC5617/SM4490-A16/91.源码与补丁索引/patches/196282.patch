@@ -1,0 +1,90 @@
+Subject: [PATCH] [MC5617][TaskID]118650[Description]Add a feature that speaker and handset can play at the same time.[owner]weirong
+
+---
+
+diff --git a/vendor/qcom/opensource/audio-hal/primary-hal/configs/parrot/parrot.mk b/vendor/qcom/opensource/audio-hal/primary-hal/configs/parrot/parrot.mk
+index be4ee6b..97f9496 100755
+--- a/vendor/qcom/opensource/audio-hal/primary-hal/configs/parrot/parrot.mk
++++ b/vendor/qcom/opensource/audio-hal/primary-hal/configs/parrot/parrot.mk
+@@ -442,6 +442,11 @@
+ PRODUCT_PROPERTY_OVERRIDES += \
+ audio.deep_buffer.media=true
+ 
++
++#Simultaneous audio output 
++PRODUCT_PROPERTY_OVERRIDES += \
++persist.vendor.audio.media.spk_rcv_dual=false
++
+ #enable voice path for PCM VoIP by default
+ PRODUCT_PROPERTY_OVERRIDES += \
+ vendor.voice.path.for.pcm.voip=true
+diff --git a/vendor/qcom/opensource/audio-hal/primary-hal/hal/core/platform/Platform.cpp b/vendor/qcom/opensource/audio-hal/primary-hal/hal/core/platform/Platform.cpp
+index 9e19321..921fb63 100644
+--- a/vendor/qcom/opensource/audio-hal/primary-hal/hal/core/platform/Platform.cpp
++++ b/vendor/qcom/opensource/audio-hal/primary-hal/hal/core/platform/Platform.cpp
+@@ -264,6 +264,56 @@
+     }
+ }
+ 
++namespace {
++
++constexpr const char* kMediaSpkRcvDualProp = "vendor.audio.media.spk_rcv_dual";
++
++bool isMediaPlaybackUsecaseForSpkRcvDual(const Usecase tag) {
++    switch (tag) {
++        case Usecase::PRIMARY_PLAYBACK:
++        case Usecase::LOW_LATENCY_PLAYBACK:
++        case Usecase::DEEP_BUFFER_PLAYBACK:
++        case Usecase::ULL_PLAYBACK:
++        case Usecase::MMAP_PLAYBACK:
++        case Usecase::COMPRESS_OFFLOAD_PLAYBACK:
++        case Usecase::PCM_OFFLOAD_PLAYBACK:
++        case Usecase::SPATIAL_PLAYBACK:
++            return true;
++        default:
++            return false;
++    }
++}
++
++/*
++ * Option A: APM still selects SPEAKER only; HAL appends HANDSET so media
++ * plays on both MI2S backends when vendor.audio.media.spk_rcv_dual=1.
++ * Does not apply to VOIP / telephony.
++ */
++void maybeAppendHandsetForMediaSpkRcvDual(const Usecase tag,
++                                          std::vector<pal_device>& palDevices) {
++    const bool dualEnabled =
++            ::android::base::GetBoolProperty(kMediaSpkRcvDualProp, false) ||
++            ::android::base::GetBoolProperty("persist.vendor.audio.media.spk_rcv_dual", false);
++    if (!dualEnabled) {
++        return;
++    }
++    if (!isMediaPlaybackUsecaseForSpkRcvDual(tag)) {
++        return;
++    }
++    if (palDevices.size() != 1 || palDevices[0].id != PAL_DEVICE_OUT_SPEAKER) {
++        return;
++    }
++
++    pal_device handset = palDevices[0];
++    handset.id = PAL_DEVICE_OUT_HANDSET;
++    handset.custom_config.custom_key[0] = '\0';
++    palDevices.push_back(handset);
++    LOG(INFO) << __func__ << ": media dual path SPEAKER+HANDSET (" << kMediaSpkRcvDualProp
++              << "=1)";
++}
++
++}  // namespace
++
+ void Platform::customizePalDevices(const AudioPortConfig& mixPortConfig, const Usecase& tag,
+                                    std::vector<pal_device>& palDevices) const noexcept {
+     const auto& sampleRate = getSampleRate(mixPortConfig);
+@@ -277,6 +327,8 @@
+         });
+         setPalDeviceCustomKey(*itr, "HAC");
+     }
++
++    maybeAppendHandsetForMediaSpkRcvDual(tag, palDevices);
+ }
+ 
+ std::vector<pal_device> Platform::convertToPalDevices(

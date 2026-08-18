@@ -1,0 +1,26 @@
+Subject: [PATCH]  [MT5205][TaskID]120699[Description]Increase the display PWM frequency[Owner]lixianghui
+
+---
+
+diff --git a/vendor/qcom/proprietary/display-devicetree/display/scuba-sde-display-idp.dtsi b/vendor/qcom/proprietary/display-devicetree/display/scuba-sde-display-idp.dtsi
+index 627d415..124a383 100755
+--- a/vendor/qcom/proprietary/display-devicetree/display/scuba-sde-display-idp.dtsi
++++ b/vendor/qcom/proprietary/display-devicetree/display/scuba-sde-display-idp.dtsi
+@@ -112,7 +112,7 @@
+ 	qcom,panel-supply-entries = <&dsi_panel_pwr_supply_mt5205>;
+ 	qcom,mdss-dsi-bl-pmic-control-type = "bl_ctrl_pwm";
+ 	pwms = <&pm2250_pwm3 0 0>;
+-	qcom,bl-pmic-pwm-period-usecs = <100>;
++	qcom,bl-pmic-pwm-period-usecs = <50>;
+ 	qcom,mdss-dsi-bl-min-level = <1>;
+ 	qcom,mdss-dsi-bl-max-level = <4095>;
+ 	qcom,platform-te-gpio = <&tlmm 81 0>;
+@@ -136,7 +136,7 @@
+ 	qcom,panel-supply-entries = <&dsi_panel_pwr_supply_mt5205>;
+ 	qcom,mdss-dsi-bl-pmic-control-type = "bl_ctrl_pwm";
+ 	pwms = <&pm2250_pwm3 0 0>;
+-	qcom,bl-pmic-pwm-period-usecs = <100>;
++	qcom,bl-pmic-pwm-period-usecs = <50>;
+ 	qcom,mdss-dsi-bl-min-level = <1>;
+ 	qcom,mdss-dsi-bl-max-level = <4095>;
+ 	qcom,platform-te-gpio = <&tlmm 81 0>;

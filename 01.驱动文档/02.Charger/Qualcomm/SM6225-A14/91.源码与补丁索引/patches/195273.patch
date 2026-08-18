@@ -1,0 +1,66 @@
+Subject: [PATCH] [MT5825][TaskID]119595[Description]When the dock is connected to the host, the charging function will be affected[owner]qianyiping
+
+---
+
+diff --git a/kernel_platform/msm-kernel/drivers/power/supply/qcom/smb5-lib.c b/kernel_platform/msm-kernel/drivers/power/supply/qcom/smb5-lib.c
+index 518be0b..eb46a97 100644
+--- a/kernel_platform/msm-kernel/drivers/power/supply/qcom/smb5-lib.c
++++ b/kernel_platform/msm-kernel/drivers/power/supply/qcom/smb5-lib.c
+@@ -8880,6 +8880,22 @@
+     }
+ }
+ 
++/*
++ * Dock USB host role only: notify USB controller via extcon, do NOT enable
++ * charger OTG_EN. Hub VBUS is supplied by pogo_en_hub_vcc_gpio (EN4), so DCIN
++ * charging can work at the same time. Do not call smblib_notify_usb_host() here.
++ */
++static void smblib_pogo_notify_usb_host_role(struct smb_charger *chg, bool enable)
++{
++	if (enable)
++		smblib_notify_extcon_props(chg, EXTCON_USB_HOST);
++
++	pr_info("[POGO_USB]%s: EXTCON_USB_HOST=%d (no OTG_EN, hub via EN4)\n",
++		__func__, enable);
++
++	extcon_set_state_sync(chg->extcon, EXTCON_USB_HOST, enable);
++}
++
+ void smblib_pogo_irq_back_det_delayed_work(struct work_struct *work)
+ {
+     struct smb_charger *chg = container_of(work, struct smb_charger,
+@@ -8908,6 +8924,13 @@
+             pr_info("[POGO_USB]%s:%d set pogo_sw_uart_usb_gpio=1\n",
+                      __func__, __LINE__);
+         }
++
++		/* Enable EN2 (pogo_en_typea_5v_gpio) */
++        if (gpio_is_valid(chg->pogo_en_typea_5v_gpio)) {
++            gpio_direction_output(chg->pogo_en_typea_5v_gpio, 1);
++            pr_info("[POGO_USB]%s:%d set pogo_en_typea_5v_gpio=1 (EN2 on)\n",
++                     __func__, __LINE__);
++        }
+         
+         /* Enable EN4 (pogo_en_hub_vcc_gpio) */
+         if (gpio_is_valid(chg->pogo_en_hub_vcc_gpio)) {
+@@ -8916,8 +8939,8 @@
+                      __func__, __LINE__);
+         }
+ 
+-        /* Switch usb mode to host - notify USB driver via extcon */
+-        smblib_notify_usb_host(chg, true);
++        /* USB2.0 host via hub; keep OTG_EN off for DCIN charge */
++        smblib_pogo_notify_usb_host_role(chg, true);
+         pr_info("[POGO_USB]%s:%d switched USB to host mode (dock inserted)\n",
+                  __func__, __LINE__);
+     } else {
+@@ -8957,8 +8980,7 @@
+             pr_info("[POGO_USB]%s:%d set pogo_en_hub_vcc_gpio=0 (EN4 off)\n", __func__, __LINE__);
+         }
+ 
+-        /* Switch USB mode back to device mode - notify USB driver */
+-        smblib_notify_usb_host(chg, false);
++        smblib_pogo_notify_usb_host_role(chg, false);
+         pr_info("[POGO_USB]%s:%d switched USB back to device mode (dock removed)\n",
+                  __func__, __LINE__);
+     }

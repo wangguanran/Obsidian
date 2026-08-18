@@ -1,0 +1,85 @@
+Meig GPIO pulse detect and emit (UIC /dev/uic_pulse)
+
+Required properties:
+- compatible: "meig,gpio-pulse"
+
+Each channel is a child node (or the node itself if there is no child).
+
+Channel properties:
+- label: optional string, e.g. "pulse"
+- in-gpios: optional input GPIO for pulse detect (MMIO / hardirq only)
+- out-gpios: optional output GPIO for pulse emit (idle = inactive level)
+- debounce-us: optional; maps to runtime debounce_ms (us/1000, 0 allowed).
+  Omit to use driver default debounce_ms=2 (pulse.txt / UIC_PULSE_DEBOUNCE_DEF_MS).
+- min-width-us: minimum accepted IN pulse width (default 10000 -> 10 ms)
+- max-width-us: maximum accepted IN pulse width (default 1000000 -> 1000 ms)
+- default-emit-us: default OUT pulse width when OUTPUT omits width (default 50000)
+- meig,in-active-high: optional; force IN active_level ACTIVE_HIGH (same-phase
+  wiring). Without this property the driver defaults to ACTIVE_HIGH as well;
+  use GPIO_ACTIVE_LOW + omit this for optocoupler-inverted IN paths.
+- meig,mask-irq-on-emit: optional; mask IN IRQ while emitting on OUT
+- pinctrl-names / pinctrl-0: optional pinmux for the GPIOs
+
+At least one of in-gpios / out-gpios is required per channel.
+
+Runtime configuration (ioctl/sysfs, see include/uapi/linux/uic_pulse.h):
+- active_level: IN pulse polarity (ACTIVE_HIGH / ACTIVE_LOW)
+- min_valid_ms / max_valid_ms: accepted IN width window (default 10..500 ms)
+- batch_gap_ms: idle gap before batching pulses (default 200 ms; 0 = each pulse)
+- stuck_timeout_ms: IN active longer than this is invalid (default 1000 ms)
+- debounce_ms: edge debounce (default 2 ms)
+- irq_edge: 1=rising 2=falling 3=both (default both)
+- out_active_level: OUT pulse polarity (default ACTIVE_HIGH)
+- pulse_width_ms: OUT width 25..500 ms (default 50 ms)
+- interval_ms: gap between two OUT actives (default 100 ms)
+
+IOCTL (struct uic_pulse_config / uic_pulse_simulate / uic_pulse_event):
+  UIC_PULSE_IOC_SET_CONFIG / GET_CONFIG
+  UIC_PULSE_IOC_START / STOP / RESET / FLUSH_EVENT
+  UIC_PULSE_IOC_OUTPUT
+  read() -> one IN batch event
+
+Userspace nodes:
+  /dev/uic_pulse
+  /sys/class/misc/uic_pulse/
+
+Sysfs (1:1 with ioctl, plus helpers):
+  config, start, stop, reset, flush_event, output, event, started, in_raw
+  per-field shortcuts: pulse_width_ms, interval_ms, debounce_ms, ...
+
+MT5205 example (POS MB: GPIO32 IN <-> GPIO33 OUT direct same-phase;
+J1001.36/35, bias-pull-up on GPIO32):
+
+&soc {
+	meig_pulse {
+		compatible = "meig,gpio-pulse";
+		pinctrl-names = "default";
+		pinctrl-0 = <&mt5205_pulse_default>;
+		status = "okay";
+
+		pulse@0 {
+			reg = <0>;
+			label = "pulse";
+			in-gpios = <&tlmm 32 GPIO_ACTIVE_HIGH>;
+			meig,in-active-high;
+			out-gpios = <&tlmm 33 GPIO_ACTIVE_HIGH>;
+			debounce-us = <2000>;
+			min-width-us = <10000>;
+			max-width-us = <500000>;
+			default-emit-us = <50000>;
+		};
+	};
+};
+
+MT5205 direct-wire polarity (default runtime, no ioctl override):
+- IN:  ACTIVE_HIGH; idle physical low; counts physical high pulse width
+- OUT: ACTIVE_HIGH; idle physical low; emit drives physical high pulse
+
+At idle expect: in_raw=0, out_level=0.
+During OUT emit: out_level=1; loopback IN sees in_raw=1 while OUT high.
+
+Optocoupler / inverted IN (other boards):
+- in-gpios = <&tlmm N GPIO_ACTIVE_LOW>; omit meig,in-active-high
+- active_level defaults to ACTIVE_LOW in driver when GPIO flag is ACTIVE_LOW
+- At idle: in_raw=1; pulse is physical low width on IN
+

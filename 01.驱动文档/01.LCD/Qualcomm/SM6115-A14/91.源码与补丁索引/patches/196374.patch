@@ -1,0 +1,48 @@
+Subject: [PATCH] [MT5205][TaskID]118727[Description]fix JD9365DA UEFI init data for display error in BP[Owner]lixianghui
+
+---
+
+diff --git a/BOOT.XF.4.1/boot_images/QcomPkg/Settings/Panel/Panel_jd9365da_720p_vid.xml b/BOOT.XF.4.1/boot_images/QcomPkg/Settings/Panel/Panel_jd9365da_720p_vid.xml
+index ca73638..bccd116 100755
+--- a/BOOT.XF.4.1/boot_images/QcomPkg/Settings/Panel/Panel_jd9365da_720p_vid.xml
++++ b/BOOT.XF.4.1/boot_images/QcomPkg/Settings/Panel/Panel_jd9365da_720p_vid.xml
+@@ -131,8 +131,8 @@
+ 15 0D 5F
+ 15 0E 5F
+ 15 0F 5F
+-05 10 00
+-05 11 00
++15 10 5F
++15 11 5F
+ 15 12 5F
+ 15 13 40
+ 15 14 5F
+@@ -155,8 +155,8 @@
+ 15 25 5F
+ 15 26 5F
+ 15 27 5F
+-05 28 00
+-05 29 00
++15 28 5F
++15 29 41
+ 15 2A 5F
+ 15 2B 5F
+ 15 2C 57
+@@ -168,7 +168,7 @@
+ 15 32 47
+ 15 33 45
+ 15 34 41
+-05 35 00
++15 35 5F
+ 15 36 53
+ 15 37 5F
+ 15 38 5F
+@@ -256,7 +256,7 @@
+ </DSIInitSequence>
+ <DSITermSequence>
+ 05 28 00
+-FF c8
++FF C8
+ 05 10 00
+ FF 78
+ </DSITermSequence>

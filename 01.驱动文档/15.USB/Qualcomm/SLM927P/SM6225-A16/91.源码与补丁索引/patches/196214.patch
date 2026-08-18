@@ -1,0 +1,80 @@
+Subject: [PATCH] [SLM927P_A16][BugID]95891[Description] typec otg test failed[Solution]add fusb302 extcon [Owner]zhangjinwei
+
+---
+
+diff --git a/kernel_platform/qcom/proprietary/devicetree/qcom/khaje-idp-nopmi.dtsi b/kernel_platform/qcom/proprietary/devicetree/qcom/khaje-idp-nopmi.dtsi
+index c2f9a63..608481d 100755
+--- a/kernel_platform/qcom/proprietary/devicetree/qcom/khaje-idp-nopmi.dtsi
++++ b/kernel_platform/qcom/proprietary/devicetree/qcom/khaje-idp-nopmi.dtsi
+@@ -11,8 +11,13 @@
+ };
+ 
+ &usb0 {
+-	/delete-property/ extcon;
++	usb-role-switch;
++	///delete-property/ extcon;
++	/* nopmi: use GPIO boost for OTG VBUS (same as bengal-usb.dtsi) */
++	qcom,otg-vbus-gpio = <&tlmm 108 0>;
++	extcon = <&fusb302>;
+ 	dwc3@4e00000 {
+-		dr_mode = "peripheral";
++		usb-role-switch;
++		dr_mode = "otg";
+ 	};
+ };
+diff --git a/kernel_platform/qcom/proprietary/devicetree/qcom/khaje-idp.dtsi b/kernel_platform/qcom/proprietary/devicetree/qcom/khaje-idp.dtsi
+index 678f7ea..fe3536e 100755
+--- a/kernel_platform/qcom/proprietary/devicetree/qcom/khaje-idp.dtsi
++++ b/kernel_platform/qcom/proprietary/devicetree/qcom/khaje-idp.dtsi
+@@ -147,6 +147,21 @@
+ };
+ 
+ &qupv3_se1_i2c {
++	fusb302: typec-portc@22 {
++		 compatible = "fairchild,fusb302";
++		 reg = <0x22>;
++		 vdda18-supply = <&pm6125_l9>;
++		 vdda33-supply = <&pm6125_l15>;
++		 //aux_switch_vdda33-supply = <&pm7325_l2>;
++		 //aux-en-gpio = <&tlmm 59 0x00>;
++		 //aux-sel-gpio= <&tlmm 56 0x00>;
++		 pinctrl-names = "default";
++		 pinctrl-0 = <&fusb302_default>;
++		 int-n-gpios = <&tlmm 36 0x00>;
++		 //vbus-5v-gpios = <&tlmm 118 0x00>;
++		 status = "okay";
++	 };
++
+ 	awinic@64 {
+ 		compatible = "awinic,aw2016_led";
+ 		reg = <0x64>;
+@@ -309,3 +324,15 @@
+ 	};
+ 
+ };
++
++&usb0 {
++	usb-role-switch;
++	///delete-property/ extcon;
++	/* nopmi: use GPIO boost for OTG VBUS (same as bengal-usb.dtsi) */
++	qcom,otg-vbus-gpio = <&tlmm 108 0>;
++	extcon = <&fusb302>;
++	dwc3@4e00000 {
++		usb-role-switch;
++		dr_mode = "otg";
++	};
++};
+\ No newline at end of file
+diff --git a/kernel_platform/qcom/proprietary/devicetree/qcom/khaje-usb.dtsi b/kernel_platform/qcom/proprietary/devicetree/qcom/khaje-usb.dtsi
+index e658b75..44edbfd 100755
+--- a/kernel_platform/qcom/proprietary/devicetree/qcom/khaje-usb.dtsi
++++ b/kernel_platform/qcom/proprietary/devicetree/qcom/khaje-usb.dtsi
+@@ -60,6 +60,8 @@
+ 				<0 2400>,
+ 				<0 40000>;
+ 
++		extcon = <&eud>;
++
+ 		dwc3@4e00000 {
+ 			compatible = "snps,dwc3";
+ 			reg = <0x4e00000 0xe000>;
