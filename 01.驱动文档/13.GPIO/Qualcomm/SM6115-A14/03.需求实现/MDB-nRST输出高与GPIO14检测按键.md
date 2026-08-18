@@ -1,7 +1,7 @@
 # MDB nRST 输出高与 GPIO14 检测按键
 
 > **模块**: 13.GPIO | **厂商**: Qualcomm | **芯片**: SM6115 (scuba)
-> **平台**: SM6115-A14 (LA.VENDOR.13.2.1) | **类型**: Bug
+> **平台**: SM6115-A14 (LA.VENDOR.13.2.1) | **类型**: 需求
 > **Change**: #195886 | **作者**: wangguanran | **状态**: MERGED
 
 ---
@@ -10,9 +10,9 @@
 
 | Change | 项目 | 分支 | 作者 | 类型 | 芯片 | 平台 | 模块 |
 |--------|------|------|------|------|------|------|------|
-| #195886 | LA.VENDOR.13.2.1 | MT5205 | wangguanran | Bug | SM6115 (scuba) | SM6115-A14 | 13.GPIO |
+| #195886 | LA.VENDOR.13.2.1 | MT5205 | wangguanran | 需求 | SM6115 (scuba) | SM6115-A14 | 13.GPIO |
 
-## 现象
+## 需求描述
 
 MDB 小板（STM32F103）nRST 复位脚在空闲状态下没有稳定输出高电平，导致 MDB 主控可能处于复位/不稳定状态；同时 GPIO14 原本被 pinctrl 保留（reserved），无法用作 DB 检测按键输入。
 
@@ -24,13 +24,13 @@ MDB 小板（STM32F103）nRST 复位脚在空闲状态下没有稳定输出高�
 - 相关任务：Task 120572
 - 关联改动：#195883（UIC Pulse，同一 overlay 后续变更）、#195883 之前的 gpio-userspace 驱动（#195832 前后，SE_RESET/MDB_RESET default-high）
 
-## 根因分析
+## 背景与设计
 
 1. **MDB nRST 空闲电平**：MDB 小板上的 STM32F103 nRST 为低有效复位。主板上没有上拉电阻（no board pull-up on MB），若 pinctrl 不显式输出高电平，nRST 会浮空或处于不确定状态，MDB 主控可能反复复位。需要在 pinctrl 中将 GPIO36（mdb_reset）配置为 `output-high`，空闲时钳位为高电平。
 2. **GPIO14 被保留**：`pinctrl-scuba.c` 的 `scuba_reserved_gpios[]` 中 GPIO14/15 与 0~3 一起被标记为 reserved（此前为 MDB SE5 UART 预留 16/17 时把 14/15 一并保留）。GPIO14 需要用于 DB 检测按键，必须从保留列表中解除。
 3. **按键节点缺失**：DB 检测需要 gpio-keys 节点上报按键事件（KEY_F1）；scuba.dtsi 中已有的 gpio_keys 节点没有 phandle，无法直接引用，需要在 overlay 中单独新增 `mdb_db_keys` 节点。
 
-## 处理方案
+## 方案
 
 1. **pinctrl-scuba.c**（+2/-2）：`scuba_reserved_gpios[]` 从 `0, 1, 2, 3, 14, 15, -1` 改为 `0, 1, 2, 3, 15, -1`，解除 GPIO14 保留（GPIO15 保持保留）。
 2. **scuba-iot-idp-overlay.dts**（+39/-2）：

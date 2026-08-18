@@ -1,7 +1,7 @@
 # UIC Pulse GPIO32 检测与 GPIO33 输出驱动
 
 > **模块**: 13.GPIO | **厂商**: Qualcomm | **芯片**: SM6115 (scuba)
-> **平台**: SM6115-A14 (LA.VENDOR.13.2.1) | **类型**: Bug
+> **平台**: SM6115-A14 (LA.VENDOR.13.2.1) | **类型**: 需求
 > **Change**: #195883 | **作者**: wangguanran | **状态**: MERGED
 
 ---
@@ -10,9 +10,9 @@
 
 | Change | 项目 | 分支 | 作者 | 类型 | 芯片 | 平台 | 模块 |
 |--------|------|------|------|------|------|------|------|
-| #195883 | LA.VENDOR.13.2.1 | MT5205 | wangguanran | Bug | SM6115 (scuba) | SM6115-A14 | 13.GPIO |
+| #195883 | LA.VENDOR.13.2.1 | MT5205 | wangguanran | 需求 | SM6115 (scuba) | SM6115-A14 | 13.GPIO |
 
-## 现象
+## 需求描述
 
 IO 接口板 Pulse 接口-1（GPIO32 检测）与 MDB 小板 Pulse 接口-2（GPIO33 输出）直连场景下，原有脉冲检测驱动存在以下问题：
 
@@ -28,14 +28,14 @@ IO 接口板 Pulse 接口-1（GPIO32 检测）与 MDB 小板 Pulse 接口-2（GP
 - 设备：Scuba IOT IDP（实机 model 为 `Qualcomm Technologies, Inc. Scuba IOT IDP`，overlay 为 `scuba-iot-idp-overlay.dts`，注意不是 Bengal）
 - 内核：kernel_platform/msm-kernel
 
-## 根因分析
+## 背景与设计
 
 1. **输入极性**：MT5205 POS MB 上 GPIO32/GPIO33 为直连同相（J1001.36/35），空闲时物理低电平，脉冲为物理高电平。原驱动按 ACTIVE_LOW（空闲高、检低脉冲）处理，导致空闲即触发、脉冲漏检。
 2. **批量定时器**：`batch_timer` 用于将 `batch_gap_ms` 间隔内的多个脉冲合并为一批上报；脉冲到达时应取消未到期的 batch_timer 重新计时，原实现未取消，造成批次边界错误。
 3. **debounce 默认值**：默认 debounce 2ms（`UIC_PULSE_DEBOUNCE_DEF_MS`），DT 未配置时按 2ms 生效，避免滤掉正常宽度脉冲。
 4. **接口不一致**：binding 文档（meig,gpio-pulse.txt）、overlay 的 in-gpios/out-gpios 极性标记、驱动默认配置三者需保持一致。
 
-## 处理方案
+## 方案
 
 - 新驱动 `meig_gpio_pulse.c`（+987 行），注册 `/dev/uic_pulse` misc 字符设备（`/sys/class/misc/uic_pulse`）；
 - GPIO32 IN：IRQ + hrtimer 实现脉冲检测。默认 ACTIVE_HIGH（空闲低、检高脉冲），可配 rising/falling/both edge、debounce_ms（默认 2）、min/max_valid_ms、batch_gap_ms（一批脉冲合并上报）、stuck_timeout_ms（持续有效超时判定无效）；

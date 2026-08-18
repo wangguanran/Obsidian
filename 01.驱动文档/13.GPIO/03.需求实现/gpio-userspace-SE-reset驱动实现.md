@@ -6,13 +6,13 @@
 
 | 字段 | 值 |
 |:---|:---|
-| 问题类型 | 功能实现 / Secure Element GPIO 控制 |
+| 文档类型 | 需求实现 |
 | 项目 | ProjectC（bengal_515_32go） |
 | 驱动模块 | `kernel_platform/msm-kernel/drivers/misc/gpio-userspace.c` |
 | 芯片 | Qualcomm bengal（scuba-iot） |
 | 报告日期 | 2026-08-12 |
 
-## 现象与需求
+## 需求描述
 
 Secure Element（SE）和 MDB 通信需要系统开机后保持固定的 GPIO 复位状态：
 

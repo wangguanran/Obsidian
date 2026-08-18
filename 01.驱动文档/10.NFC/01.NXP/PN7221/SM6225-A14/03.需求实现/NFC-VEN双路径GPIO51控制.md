@@ -8,14 +8,14 @@
 |:---|:---|
 | 问题编号 | ISSUE-2026-0812-002 |
 | 芯片 | Qualcomm bengal（khaje） |
-| 问题类型 | 功能异常 / 硬件兼容 |
+| 文档类型 | 需求实现 |
 | 严重程度 | High |
 | 报告日期 | 2026-08-12 |
 | 涉及模块 | Kernel NFC（pn7220）/ DTS（khaje-idp）/ GPIO（tlmm 51 + et6416 扩展 IO） |
 | 指派专家 | 底驱匠（android-hal-bsp-expert） |
 | 协同专家 | 通联达（android-connectivity-expert），仅当需动 NFC HAL/libnfc 时 |
 
-## 现象
+## 需求描述
 
 现网 NFC VEN（使能脚）由扩展 IO `EX2_P0_3_NFC_ENABLE`（`et6416_21` 扩展芯片 P0.3）控制。扩展 IO 依赖 I2C 总线；NFC 读写可能把 I2C 总线打挂，导致系统无法操作扩展 IO、无法复位 NFC。
 

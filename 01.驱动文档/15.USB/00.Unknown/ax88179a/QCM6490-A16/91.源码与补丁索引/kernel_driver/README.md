@@ -65,7 +65,7 @@ git fetch <gerrit_remote> refs/changes/24/196024/1 && git checkout FETCH_HEAD
 
 ## 相关文档
 
-- [[01.驱动文档/15.USB/00.Unknown/ax88179a/QCM6490-A16/04.问题案例/ax88179a-USB-Ethernet驱动移植.md|主文档：ax88179a USB Ethernet 驱动移植]]
+- [[01.驱动文档/15.USB/00.Unknown/ax88179a/QCM6490-A16/03.需求实现/ax88179a-USB-Ethernet驱动移植.md|主文档：ax88179a USB Ethernet 驱动移植]]
 - [[01.驱动文档/15.USB/00.Unknown/ax88179a/QCM6490-A16/04.问题案例/分析/ax88179a-USB-Ethernet驱动移植-分析.md|分析文档：ax88179a USB Ethernet 驱动移植分析]]
 
 ---

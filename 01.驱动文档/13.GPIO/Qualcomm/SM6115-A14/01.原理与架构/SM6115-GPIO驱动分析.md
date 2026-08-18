@@ -74,8 +74,8 @@ GPIO32 脉冲 → IRQ → debounce(2ms) → 宽度在 [10,500]ms 且未 stuck �
 
 ## 参考
 
-- [[01.驱动文档/13.GPIO/Qualcomm/SM6115-A14/04.问题案例/UIC-Pulse-GPIO32检测与GPIO33输出驱动.md|UIC-Pulse-GPIO32检测与GPIO33输出驱动]]
-- [[01.驱动文档/13.GPIO/Qualcomm/SM6115-A14/04.问题案例/MDB-nRST输出高与GPIO14检测按键.md|MDB-nRST输出高与GPIO14检测按键]]
+- [[01.驱动文档/13.GPIO/Qualcomm/SM6115-A14/03.需求实现/UIC-Pulse-GPIO32检测与GPIO33输出驱动.md|UIC-Pulse-GPIO32检测与GPIO33输出驱动]]
+- [[01.驱动文档/13.GPIO/Qualcomm/SM6115-A14/03.需求实现/MDB-nRST输出高与GPIO14检测按键.md|MDB-nRST输出高与GPIO14检测按键]]
 - 源码：[[01.驱动文档/13.GPIO/Qualcomm/SM6115-A14/91.源码与补丁索引/kernel_driver/meig_gpio_pulse.c|meig_gpio_pulse.c]] | [[01.驱动文档/13.GPIO/Qualcomm/SM6115-A14/91.源码与补丁索引/kernel_driver/pinctrl-scuba.c|pinctrl-scuba.c]] | [[01.驱动文档/13.GPIO/Qualcomm/SM6115-A14/91.源码与补丁索引/kernel_driver/uic_pulse.h|uic_pulse.h]]
 
 ---

@@ -130,7 +130,7 @@ rx-tx-dec;  // 无效路由配置
 
 ## 参考文档
 
-- 主文档：[[01.驱动文档/07.Audio/Qualcomm/MC5616/SM4490-A16/04.问题案例/MC5616-Audio禁用RX-macro-SWR通路|MC5616 Audio 禁用 RX macro/SWR 通路降低功耗]]
+- 主文档：[[01.驱动文档/07.Audio/Qualcomm/MC5616/SM4490-A16/03.需求实现/MC5616-Audio禁用RX-macro-SWR通路|MC5616 Audio 禁用 RX macro/SWR 通路降低功耗]]
 - 关联模块：[[01.驱动文档/07.Audio/Qualcomm/|Qualcomm Audio 驱动文档]]
 
 ---

@@ -58,7 +58,7 @@ BP 侧（UEFI XBL）
 ## 参考
 
 - [[01.驱动文档/01.LCD/Qualcomm/SM6115-A14/04.问题案例/JD9365DA显示初始化数据修复.md|JD9365DA显示初始化数据修复]]
-- [[01.驱动文档/01.LCD/Qualcomm/SM6115-A14/04.问题案例/提高显示PWM频率.md|提高显示PWM频率]]
+- [[01.驱动文档/01.LCD/Qualcomm/SM6115-A14/03.需求实现/提高显示PWM频率.md|提高显示PWM频率]]
 - 源码：[[01.驱动文档/01.LCD/Qualcomm/SM6115-A14/91.源码与补丁索引/dt_config/dsi-panel-jd9365da-video.dtsi|dsi-panel-jd9365da-video.dtsi]] | [[01.驱动文档/01.LCD/Qualcomm/SM6115-A14/91.源码与补丁索引/kernel_driver/BOOT.XF.4.1/boot_images/QcomPkg/SocPkg/AgattiPkg/Library/MDPPlatformLib/MDPPlatformLibPanelCommon.c|MDPPlatformLibPanelCommon.c]]
 
 ---

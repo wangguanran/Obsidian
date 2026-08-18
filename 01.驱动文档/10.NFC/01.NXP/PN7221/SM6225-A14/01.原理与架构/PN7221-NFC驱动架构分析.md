@@ -149,7 +149,7 @@ khaje-pinctrl.dtsi:
 
 ## 常见问题参考
 
-- **VEN 双路径控制**：见 `04.问题案例/NFC-VEN双路径GPIO51控制.md`
+- **VEN 双路径控制**：见 `03.需求实现/NFC-VEN双路径GPIO51控制.md`
 - **HAL 主动崩溃**：参考 SM6115 平台 `01.原理与架构/HAL主动崩溃触发逻辑说明.md`（NFC HAL 通用逻辑）
 
 ---

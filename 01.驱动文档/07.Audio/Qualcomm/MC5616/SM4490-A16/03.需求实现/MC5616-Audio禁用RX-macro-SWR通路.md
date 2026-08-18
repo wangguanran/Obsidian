@@ -7,6 +7,7 @@
 - **分支**: master_Snapdragon_Premium_High_2021.SPF.2.0.2_MC5616
 - **作者**: zhourulei
 - **状态**: MERGED
+- **类型**: 需求 (降功耗优化)
 - **类型**: 需求 (power optimization)
 - **芯片**: MC5616 (基于 parrot/QCM4490)
 - **SoC-Android**: SM4490-A16

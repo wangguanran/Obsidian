@@ -42,7 +42,8 @@ Each chip-model directory is an **independent git repository**. When the same ch
     00.总览.md
     01.原理与架构/                 ← 驱动分析总结
     02.Bringup与配置/              ← 移植文档、Bringup 配置
-    04.问题案例/                   ← 该平台的问题案例
+    03.需求实现/                   ← 需求/功能实现案例（需求描述→方案→验证）
+    04.问题案例/                   ← 缺陷/问题修复案例（现象→根因→方案）
     02.Bringup与配置/91.源码与补丁索引/  ← 驱动源码+HAL+配置+固件+修改历史（与移植文档同目录）
         kernel_driver/              ← 内核驱动源码 (.c/.h/Makefile/Kconfig)
         vendor_hal/                 ← Vendor HAL 层代码
