@@ -63,3 +63,5 @@ NFC HAL 的“主动崩溃”由 `phNxpNciHal_emergency_recovery()` 内部显式
 ### 7. 补充说明（避免误判）
 - `HAL abort` 与 `Framework watchdog abort` 是两条独立路径，可能先后出现，不能混为一个根因。
 - 本文只确认“触发崩溃的确切代码逻辑”，不等于已完成“驱动通信失败根因”闭环。
+
+_Author: wangguanran_

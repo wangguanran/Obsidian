@@ -20,3 +20,4 @@
 **修改概要：** 彻底删除所有 gpiotest 相关的 DTS 文件及引用，修复因 gpiotest overlay 与产品硬件冲突导致的启动失败问题。
 
 **补丁文件：** `patches/195900-remove-gpiotest-dts.patch`（393KB，15,146 行）
+_Author: wangguanran_

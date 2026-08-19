@@ -74,3 +74,5 @@ version: "1.0"
 - 收紧关断窗口：NFC `power off/closing` 置位后，HAL/驱动立即阻断新I/O。
 - 串行化开关与读写：禁止 `disable` 窗口残留读写穿透到NFCC。
 - 避免POR后早期错误包进入芯片，降低 `0xA7` 触发概率。
+
+_Author: wangguanran_

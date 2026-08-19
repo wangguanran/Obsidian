@@ -29,3 +29,4 @@
 2. GPIO 466 从 `gpio_single_input` 移到 `gpio_num1`
 3. GPIO 466 的测试逻辑从单 pin 输入测试改为普通 GPIO 测试
 4. 移除了 `gpio_single_input1`（466）的独立测试循环
+_Author: wangguanran_

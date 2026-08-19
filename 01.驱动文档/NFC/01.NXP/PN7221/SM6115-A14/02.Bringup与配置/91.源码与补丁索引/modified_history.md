@@ -17,3 +17,5 @@
 - **PN560 NFC 驱动 bring up**：添加 PN560 NFC 驱动
 - **新增设备树配置**：添加平台 DTS 配置
 - **新增 DTSI/XBL 配置**：添加多平台 DTSI 与 XBL 配置
+
+_Author: wangguanran_

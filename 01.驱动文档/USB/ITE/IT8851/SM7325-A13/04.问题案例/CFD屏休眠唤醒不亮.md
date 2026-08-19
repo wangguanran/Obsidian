@@ -66,7 +66,7 @@ Date:   [日期]
 
     [RIG5EM-3701][120301]Addressing the issue of the CFD screen occasionally not lighting up after suspend/resume[owner]zhaoqian
 
-    Change-Id: Icdb08bdb07d9494045a80786c2845c4971b42f2c
+    Change-Id: [已脱敏]
 
 diff --git a/kernel/msm-5.4/drivers/meig-tools/it8851.c b/kernel/msm-5.4/drivers/meig-tools/it8851.c
 index 0000000..0000000

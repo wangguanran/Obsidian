@@ -7,3 +7,4 @@
 ## 补丁索引
 
 - `[[02.Bringup与配置/91.源码与补丁索引/patches/195832-gpio-full-pin-test-fix.patch|#195832 - GPIO full pin test fix]]`
+_Author: wangguanran_

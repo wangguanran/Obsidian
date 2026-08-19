@@ -16,3 +16,4 @@
 - 设备树配置：`[[02.Bringup与配置/91.源码与补丁索引/dt_config/khaje.dtsi]]`
 - 补丁历史：`[[02.Bringup与配置/91.源码与补丁索引/patches/]]`
 - 问题案例：`[[04.问题案例/SLM927P-GPIO全引脚测试失败修复]]`
+_Author: wangguanran_
