@@ -73,8 +73,6 @@ Date:   [日期]
 
     [HXB_SLM927_YunZhuoKeJi][MeigLink]0028908[Description]Fix incorrect fuel gauge type detection in XBL stage[Solution]fix it[Owner]chenminghui
 
-    Change-Id: [已脱敏]
-
 diff --git a/BOOT.XF.4.1/boot_images/QcomPkg/SocPkg/DivarPkg/Library/MDPPlatformLib/cw221X_fuel_gauge_V1.c
 b/BOOT.XF.4.1/boot_images/QcomPkg/SocPkg/DivarPkg/Library/MDPPlatformLib/cw221X_fuel_gauge_V1.c
 index 0000000..0000000
