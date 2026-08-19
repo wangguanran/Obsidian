@@ -1,0 +1,63 @@
+#include "yupik-iot-audio-overlay.dtsi"
+
+&wcd937x_tx_slave {
+    status = "disabled";
+};
+
+&wcd937x_rx_slave {
+    status = "disabled";
+};
+
+
+&wcd937x_codec {
+    status = "disabled";
+};
+
+&wcd93xx_rst_gpio {
+    status = "disabled";
+};
+
+&yupik_snd {
+	qcom,model = "lahaina-yupikidp-mc936-snd-card";
+    qcom,wcd-disabled = <1>;
+    asoc-codec  = <&stub_codec>, <&bolero>,
+                    //<&wcd937x_codec>,
+                    <&wsa883x_0221>, <&wsa883x_0222>;
+    asoc-codec-names = "msm-stub-codec.1", "bolero_codec",
+                        // "wcd937x_codec",
+                        "wsa-codec1", "wsa-codec2";
+	vcc-micbias1-gpio = <&tlmm 96 0>;
+	vcc-micbias2-gpio = <&tlmm 97 0>;
+	fsa4480-i2c-handle = <0>;
+    qcom,audio-routing =
+		/*"HAP_IN", "PCM_OUT",*/
+		"WSA SRC0_INP", "SRC0",
+		"WSA_TX DEC0_INP", "TX DEC0 MUX",
+		"WSA_TX DEC1_INP", "TX DEC1 MUX",
+		"RX_TX DEC0_INP", "TX DEC0 MUX",
+		"RX_TX DEC1_INP", "TX DEC1 MUX",
+		"RX_TX DEC2_INP", "TX DEC2 MUX",
+		"RX_TX DEC3_INP", "TX DEC3 MUX",
+		//"SpkrLeft IN", "WSA_SPK1 OUT",
+		//"SpkrRight IN", "WSA_SPK2 OUT",
+		"SpL IN", "WSA_SPK1 OUT",
+		"SpR IN", "WSA_SPK2 OUT",
+		/* Right DMIC1 @ GPIO150/151 */
+		"TX DMIC0", "Digital Mic0",
+		"TX DMIC0", "VCC MIC BIAS1",
+		"TX DMIC1", "Digital Mic1",
+		"TX DMIC1", "VCC MIC BIAS1",
+		/* Left DMIC2 @ GPIO152/153 */
+		"TX DMIC2", "Digital Mic2",
+		"TX DMIC2", "VCC MIC BIAS1",
+		"TX DMIC3", "Digital Mic3",
+		"TX DMIC3", "VCC MIC BIAS1",
+		"VA DMIC0", "Digital Mic0",
+		"VA DMIC0", "VCC MIC BIAS1",
+		"VA DMIC1", "Digital Mic1",
+		"VA DMIC1", "VCC MIC BIAS1",
+		"VA DMIC2", "Digital Mic2",
+		"VA DMIC2", "VCC MIC BIAS1",
+		"VA DMIC3", "Digital Mic3",
+		"VA DMIC3", "VCC MIC BIAS1";
+};

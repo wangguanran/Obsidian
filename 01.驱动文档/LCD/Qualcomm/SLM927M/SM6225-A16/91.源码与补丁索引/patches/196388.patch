@@ -1,0 +1,32 @@
+Subject: [PATCH] [HXB_SLM927M_TianBo][TaskID][Description]PM8008 ldo7 Output voltage abnormal[Solution]Change the order of writing registers[Owner]shenbaotao
+
+---
+
+diff --git a/BOOT.XF.4.1/boot_images/QcomPkg/SocPkg/KamortaPkg/Library/MDPPlatformLib/MDPPlatformLibPanelCommon.c b/BOOT.XF.4.1/boot_images/QcomPkg/SocPkg/KamortaPkg/Library/MDPPlatformLib/MDPPlatformLibPanelCommon.c
+index 692bfee..47c8cd4 100755
+--- a/BOOT.XF.4.1/boot_images/QcomPkg/SocPkg/KamortaPkg/Library/MDPPlatformLib/MDPPlatformLibPanelCommon.c
++++ b/BOOT.XF.4.1/boot_images/QcomPkg/SocPkg/KamortaPkg/Library/MDPPlatformLib/MDPPlatformLibPanelCommon.c
+@@ -71,16 +71,17 @@
+ 	uint8 L2I_enable[] =    {0x41, 0x46, 0x80};
+ 	uint8 L3I_enable[] =    {0x42, 0x46, 0x80};
+ 	uint8 L4I_enable[] =    {0x43, 0x46, 0x80};
+-	uint8 L5I_set_2P8_1[] = {0x44, 0x41, 0x0B};
+-	uint8 L5I_set_2P8_2[] = {0x44, 0x40, 0x28};
++	/* VSET: write LB (0x40) first, then UB (0x41). PM8008 latches 16-bit VSET on VSET_UB write. */
++	uint8 L5I_set_2P8_1[] = {0x44, 0x40, 0x28};
++	uint8 L5I_set_2P8_2[] = {0x44, 0x41, 0x0B};
+ 	uint8 L5I_set_2P8_3[] = {0x44, 0x45, 0x07};
+ 	uint8 L5I_enable[] =    {0x44, 0x46, 0x80};
+-	uint8 L6I_set_3P0_1[] = {0x45, 0x41, 0x0A};
+-	uint8 L6I_set_3P0_2[] = {0x45, 0x40, 0x90};
++	uint8 L6I_set_3P0_1[] = {0x45, 0x40, 0x90};
++	uint8 L6I_set_3P0_2[] = {0x45, 0x41, 0x0A};
+ 	uint8 L6I_set_3P0_3[] = {0x45, 0x45, 0x07};
+ 	uint8 L6I_enable[] =    {0x45, 0x46, 0x80};
+-	uint8 L7I_set_1P8_1[] = {0x46, 0x41, 0x07};
+-	uint8 L7I_set_1P8_2[] = {0x46, 0x40, 0x08};
++	uint8 L7I_set_1P8_1[] = {0x46, 0x40, 0x08};
++	uint8 L7I_set_1P8_2[] = {0x46, 0x41, 0x07};
+ 	uint8 L7I_set_1P8_3[] = {0x46, 0x45, 0x07};
+ 	uint8 L7I_enable[] =    {0x46, 0x46, 0x80};
+ 	DEBUG ((EFI_D_WARN, "pm_i2c_sid_config start\n"));

@@ -45,4 +45,4 @@ Qualcomm 平台的 fstab 文件通常分为：
 
 该修改属于 QCM6490 平台（Rigel 项目）的系统配置层面，与 USB 驱动、vold 存储管理框架配合工作。USB 驱动负责设备枚举，vold 根据 fstab 规则完成挂载。
 
-_Author: 艾达_
+_Author: wangguanran_

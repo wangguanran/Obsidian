@@ -1,0 +1,73 @@
+#include "yupik-iot-audio-overlay.dtsi"
+
+&bolero {
+	qcom,num-macros = <3>;
+};
+
+&wsa_macro {
+    status = "disabled";
+};
+
+&va_macro {
+	qcom,is-used-swr-gpio = <0>;
+	/delete-property/ qcom,va-swr-gpios;
+};
+
+&rx_macro {
+	qcom,is-used-swr-gpio = <0>;
+	/delete-property/ qcom,rx-swr-gpios;
+};
+
+&wsa883x_0221 {
+    status = "disabled";
+};
+
+&wsa883x_0222 {
+    status = "disabled";
+};
+
+&wcd937x_tx_slave {
+    status = "disabled";
+};
+
+&wcd937x_rx_slave {
+    status = "disabled";
+};
+
+
+&wcd937x_codec {
+    status = "disabled";
+};
+
+&wcd93xx_rst_gpio {
+    status = "disabled";
+};
+
+&yupik_snd {
+	qcom,model = "lahaina-yupikidp-mc934-snd-card";
+    qcom,wcd-disabled = <1>;
+    asoc-codec  = <&stub_codec>, <&bolero>;
+                    //<&wcd937x_codec>,
+                    //<&wsa883x_0221>, <&wsa883x_0222>;
+    asoc-codec-names = "msm-stub-codec.1", "bolero_codec";
+                        // "wcd937x_codec",
+                        //"wsa-codec1", "wsa-codec2";
+	vcc-micbias1-gpio = <&tlmm 96 0>;
+	fsa4480-i2c-handle = <0>;
+    qcom,audio-routing = 
+		/*"HAP_IN", "PCM_OUT",*/
+		"RX_TX DEC0_INP", "TX DEC0 MUX",
+		"RX_TX DEC1_INP", "TX DEC1 MUX",
+		"RX_TX DEC2_INP", "TX DEC2 MUX",
+		"RX_TX DEC3_INP", "TX DEC3 MUX",
+		//"SpkrLeft IN", "WSA_SPK1 OUT",
+		//"SpkrRight IN", "WSA_SPK2 OUT",
+		//"SpL IN", "WSA_SPK1 OUT",
+		//"SpR IN", "WSA_SPK2 OUT";
+		/* Single DMIC1 @ GPIO150/151 */
+		"TX DMIC0", "Digital Mic0",
+		"TX DMIC0", "VCC MIC BIAS1",
+		"TX DMIC1", "Digital Mic1",
+		"TX DMIC1", "VCC MIC BIAS1";
+	qcom,wsa-max-devs = <0>;
+};

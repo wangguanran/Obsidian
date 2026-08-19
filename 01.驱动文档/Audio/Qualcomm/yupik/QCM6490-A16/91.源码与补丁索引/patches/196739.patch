@@ -1,0 +1,392 @@
+Subject: [PATCH] [119404][rigel_A16][Audio]modify devicetree for Rigel A16
+ SKUs[Owner]weirong
+
+---
+ Kbuild                          |  4 +--
+ yupik-audio-overlay-mc933.dtsi  | 30 ++++++++++++++++++---
+ yupik-audio-overlay-mc934.dtsi  | 48 +++++++++++++++++++++++++++------
+ yupik-audio-overlay-mc936.dtsi  | 30 ++++++++++++++++++---
+ yupik-audio-overlay-mc937.dtsi  | 30 ++++++++++++++++++---
+ yupik-audio-overlay-mc938.dtsi  | 28 ++++++++++++++++---
+ yupik-audio-overlay-mc9392.dtsi | 30 ++++++++++++++++++---
+ yupik-iot-audio-overlay.dtsi    |  2 +-
+ 8 files changed, 171 insertions(+), 31 deletions(-)
+
+diff --git a/Kbuild b/Kbuild
+index ce11d2c..8136e3d 100644
+--- a/Kbuild
++++ b/Kbuild
+@@ -120,9 +120,7 @@ dtbo-y += kera-audio.dtbo \
+                 kera-audio-mtp-qmp1000.dtbo \
+                 kera-audio-qrd.dtbo \
+                 kera-audio-rcm.dtbo \
+-                kera-audio-rcm-orne.dtbo \
+-                kera-audio-mtp-wcn7750.dtbo \
+-                kera-audio-evk-wcd9378-dmic.dtbo
++                kera-audio-rcm-orne.dtbo
+ 
+ endif
+ 
+diff --git a/yupik-audio-overlay-mc933.dtsi b/yupik-audio-overlay-mc933.dtsi
+index 48bd7c7..88f4d52 100755
+--- a/yupik-audio-overlay-mc933.dtsi
++++ b/yupik-audio-overlay-mc933.dtsi
+@@ -18,6 +18,7 @@
+ };
+ 
+ &yupik_snd {
++	qcom,model = "lahaina-yupikidp-mc933-snd-card";
+     qcom,wcd-disabled = <1>;
+     asoc-codec  = <&stub_codec>, <&bolero>,
+                     //<&wcd937x_codec>,
+@@ -25,7 +26,10 @@
+     asoc-codec-names = "msm-stub-codec.1", "bolero_codec",
+                         // "wcd937x_codec",
+                         "wsa-codec1", "wsa-codec2";
+-    qcom,audio-routing = 
++	vcc-micbias1-gpio = <&tlmm 96 0>;
++	vcc-micbias2-gpio = <&tlmm 97 0>;
++	fsa4480-i2c-handle = <0>;
++    qcom,audio-routing =
+ 		/*"HAP_IN", "PCM_OUT",*/
+ 		"WSA SRC0_INP", "SRC0",
+ 		"WSA_TX DEC0_INP", "TX DEC0 MUX",
+@@ -33,9 +37,27 @@
+ 		"RX_TX DEC0_INP", "TX DEC0 MUX",
+ 		"RX_TX DEC1_INP", "TX DEC1 MUX",
+ 		"RX_TX DEC2_INP", "TX DEC2 MUX",
+-		"RX_TX DEC3_INP", "TX DEC3 MUX";
++		"RX_TX DEC3_INP", "TX DEC3 MUX",
+ 		//"SpkrLeft IN", "WSA_SPK1 OUT",
+ 		//"SpkrRight IN", "WSA_SPK2 OUT",
+-		//"SpL IN", "WSA_SPK1 OUT",
+-		//"SpR IN", "WSA_SPK2 OUT";
++		"SpL IN", "WSA_SPK1 OUT",
++		"SpR IN", "WSA_SPK2 OUT",
++		/* Right DMIC1 @ GPIO150/151 */
++		"TX DMIC0", "Digital Mic0",
++		"TX DMIC0", "VCC MIC BIAS1",
++		"TX DMIC1", "Digital Mic1",
++		"TX DMIC1", "VCC MIC BIAS1",
++		/* Left DMIC2 @ GPIO152/153 */
++		"TX DMIC2", "Digital Mic2",
++		"TX DMIC2", "VCC MIC BIAS1",
++		"TX DMIC3", "Digital Mic3",
++		"TX DMIC3", "VCC MIC BIAS1",
++		"VA DMIC0", "Digital Mic0",
++		"VA DMIC0", "VCC MIC BIAS1",
++		"VA DMIC1", "Digital Mic1",
++		"VA DMIC1", "VCC MIC BIAS1",
++		"VA DMIC2", "Digital Mic2",
++		"VA DMIC2", "VCC MIC BIAS1",
++		"VA DMIC3", "Digital Mic3",
++		"VA DMIC3", "VCC MIC BIAS1";
+ };
+diff --git a/yupik-audio-overlay-mc934.dtsi b/yupik-audio-overlay-mc934.dtsi
+index 48bd7c7..e62efcb 100755
+--- a/yupik-audio-overlay-mc934.dtsi
++++ b/yupik-audio-overlay-mc934.dtsi
+@@ -1,5 +1,31 @@
+ #include "yupik-iot-audio-overlay.dtsi"
+ 
++&bolero {
++	qcom,num-macros = <3>;
++};
++
++&wsa_macro {
++    status = "disabled";
++};
++
++&va_macro {
++	qcom,is-used-swr-gpio = <0>;
++	/delete-property/ qcom,va-swr-gpios;
++};
++
++&rx_macro {
++	qcom,is-used-swr-gpio = <0>;
++	/delete-property/ qcom,rx-swr-gpios;
++};
++
++&wsa883x_0221 {
++    status = "disabled";
++};
++
++&wsa883x_0222 {
++    status = "disabled";
++};
++
+ &wcd937x_tx_slave {
+     status = "disabled";
+ };
+@@ -18,24 +44,30 @@
+ };
+ 
+ &yupik_snd {
++	qcom,model = "lahaina-yupikidp-mc934-snd-card";
+     qcom,wcd-disabled = <1>;
+-    asoc-codec  = <&stub_codec>, <&bolero>,
++    asoc-codec  = <&stub_codec>, <&bolero>;
+                     //<&wcd937x_codec>,
+-                    <&wsa883x_0221>, <&wsa883x_0222>;
+-    asoc-codec-names = "msm-stub-codec.1", "bolero_codec",
++                    //<&wsa883x_0221>, <&wsa883x_0222>;
++    asoc-codec-names = "msm-stub-codec.1", "bolero_codec";
+                         // "wcd937x_codec",
+-                        "wsa-codec1", "wsa-codec2";
++                        //"wsa-codec1", "wsa-codec2";
++	vcc-micbias1-gpio = <&tlmm 96 0>;
++	fsa4480-i2c-handle = <0>;
+     qcom,audio-routing = 
+ 		/*"HAP_IN", "PCM_OUT",*/
+-		"WSA SRC0_INP", "SRC0",
+-		"WSA_TX DEC0_INP", "TX DEC0 MUX",
+-		"WSA_TX DEC1_INP", "TX DEC1 MUX",
+ 		"RX_TX DEC0_INP", "TX DEC0 MUX",
+ 		"RX_TX DEC1_INP", "TX DEC1 MUX",
+ 		"RX_TX DEC2_INP", "TX DEC2 MUX",
+-		"RX_TX DEC3_INP", "TX DEC3 MUX";
++		"RX_TX DEC3_INP", "TX DEC3 MUX",
+ 		//"SpkrLeft IN", "WSA_SPK1 OUT",
+ 		//"SpkrRight IN", "WSA_SPK2 OUT",
+ 		//"SpL IN", "WSA_SPK1 OUT",
+ 		//"SpR IN", "WSA_SPK2 OUT";
++		/* Single DMIC1 @ GPIO150/151 */
++		"TX DMIC0", "Digital Mic0",
++		"TX DMIC0", "VCC MIC BIAS1",
++		"TX DMIC1", "Digital Mic1",
++		"TX DMIC1", "VCC MIC BIAS1";
++	qcom,wsa-max-devs = <0>;
+ };
+diff --git a/yupik-audio-overlay-mc936.dtsi b/yupik-audio-overlay-mc936.dtsi
+index 48bd7c7..3d70c49 100755
+--- a/yupik-audio-overlay-mc936.dtsi
++++ b/yupik-audio-overlay-mc936.dtsi
+@@ -18,6 +18,7 @@
+ };
+ 
+ &yupik_snd {
++	qcom,model = "lahaina-yupikidp-mc936-snd-card";
+     qcom,wcd-disabled = <1>;
+     asoc-codec  = <&stub_codec>, <&bolero>,
+                     //<&wcd937x_codec>,
+@@ -25,7 +26,10 @@
+     asoc-codec-names = "msm-stub-codec.1", "bolero_codec",
+                         // "wcd937x_codec",
+                         "wsa-codec1", "wsa-codec2";
+-    qcom,audio-routing = 
++	vcc-micbias1-gpio = <&tlmm 96 0>;
++	vcc-micbias2-gpio = <&tlmm 97 0>;
++	fsa4480-i2c-handle = <0>;
++    qcom,audio-routing =
+ 		/*"HAP_IN", "PCM_OUT",*/
+ 		"WSA SRC0_INP", "SRC0",
+ 		"WSA_TX DEC0_INP", "TX DEC0 MUX",
+@@ -33,9 +37,27 @@
+ 		"RX_TX DEC0_INP", "TX DEC0 MUX",
+ 		"RX_TX DEC1_INP", "TX DEC1 MUX",
+ 		"RX_TX DEC2_INP", "TX DEC2 MUX",
+-		"RX_TX DEC3_INP", "TX DEC3 MUX";
++		"RX_TX DEC3_INP", "TX DEC3 MUX",
+ 		//"SpkrLeft IN", "WSA_SPK1 OUT",
+ 		//"SpkrRight IN", "WSA_SPK2 OUT",
+-		//"SpL IN", "WSA_SPK1 OUT",
+-		//"SpR IN", "WSA_SPK2 OUT";
++		"SpL IN", "WSA_SPK1 OUT",
++		"SpR IN", "WSA_SPK2 OUT",
++		/* Right DMIC1 @ GPIO150/151 */
++		"TX DMIC0", "Digital Mic0",
++		"TX DMIC0", "VCC MIC BIAS1",
++		"TX DMIC1", "Digital Mic1",
++		"TX DMIC1", "VCC MIC BIAS1",
++		/* Left DMIC2 @ GPIO152/153 */
++		"TX DMIC2", "Digital Mic2",
++		"TX DMIC2", "VCC MIC BIAS1",
++		"TX DMIC3", "Digital Mic3",
++		"TX DMIC3", "VCC MIC BIAS1",
++		"VA DMIC0", "Digital Mic0",
++		"VA DMIC0", "VCC MIC BIAS1",
++		"VA DMIC1", "Digital Mic1",
++		"VA DMIC1", "VCC MIC BIAS1",
++		"VA DMIC2", "Digital Mic2",
++		"VA DMIC2", "VCC MIC BIAS1",
++		"VA DMIC3", "Digital Mic3",
++		"VA DMIC3", "VCC MIC BIAS1";
+ };
+diff --git a/yupik-audio-overlay-mc937.dtsi b/yupik-audio-overlay-mc937.dtsi
+index 48bd7c7..fbdbb8d 100755
+--- a/yupik-audio-overlay-mc937.dtsi
++++ b/yupik-audio-overlay-mc937.dtsi
+@@ -18,6 +18,7 @@
+ };
+ 
+ &yupik_snd {
++	qcom,model = "lahaina-yupikidp-mc937-snd-card";
+     qcom,wcd-disabled = <1>;
+     asoc-codec  = <&stub_codec>, <&bolero>,
+                     //<&wcd937x_codec>,
+@@ -25,7 +26,10 @@
+     asoc-codec-names = "msm-stub-codec.1", "bolero_codec",
+                         // "wcd937x_codec",
+                         "wsa-codec1", "wsa-codec2";
+-    qcom,audio-routing = 
++	vcc-micbias1-gpio = <&tlmm 96 0>;
++	vcc-micbias2-gpio = <&tlmm 97 0>;
++	fsa4480-i2c-handle = <0>;
++    qcom,audio-routing =
+ 		/*"HAP_IN", "PCM_OUT",*/
+ 		"WSA SRC0_INP", "SRC0",
+ 		"WSA_TX DEC0_INP", "TX DEC0 MUX",
+@@ -33,9 +37,27 @@
+ 		"RX_TX DEC0_INP", "TX DEC0 MUX",
+ 		"RX_TX DEC1_INP", "TX DEC1 MUX",
+ 		"RX_TX DEC2_INP", "TX DEC2 MUX",
+-		"RX_TX DEC3_INP", "TX DEC3 MUX";
++		"RX_TX DEC3_INP", "TX DEC3 MUX",
+ 		//"SpkrLeft IN", "WSA_SPK1 OUT",
+ 		//"SpkrRight IN", "WSA_SPK2 OUT",
+-		//"SpL IN", "WSA_SPK1 OUT",
+-		//"SpR IN", "WSA_SPK2 OUT";
++		"SpL IN", "WSA_SPK1 OUT",
++		"SpR IN", "WSA_SPK2 OUT",
++		/* Right DMIC1 @ GPIO150/151 */
++		"TX DMIC0", "Digital Mic0",
++		"TX DMIC0", "VCC MIC BIAS1",
++		"TX DMIC1", "Digital Mic1",
++		"TX DMIC1", "VCC MIC BIAS1",
++		/* Left DMIC2 @ GPIO152/153 */
++		"TX DMIC2", "Digital Mic2",
++		"TX DMIC2", "VCC MIC BIAS1",
++		"TX DMIC3", "Digital Mic3",
++		"TX DMIC3", "VCC MIC BIAS1",
++		"VA DMIC0", "Digital Mic0",
++		"VA DMIC0", "VCC MIC BIAS1",
++		"VA DMIC1", "Digital Mic1",
++		"VA DMIC1", "VCC MIC BIAS1",
++		"VA DMIC2", "Digital Mic2",
++		"VA DMIC2", "VCC MIC BIAS1",
++		"VA DMIC3", "Digital Mic3",
++		"VA DMIC3", "VCC MIC BIAS1";
+ };
+diff --git a/yupik-audio-overlay-mc938.dtsi b/yupik-audio-overlay-mc938.dtsi
+index 48bd7c7..54b889e 100755
+--- a/yupik-audio-overlay-mc938.dtsi
++++ b/yupik-audio-overlay-mc938.dtsi
+@@ -18,6 +18,7 @@
+ };
+ 
+ &yupik_snd {
++	qcom,model = "lahaina-yupikidp-mc938-snd-card";
+     qcom,wcd-disabled = <1>;
+     asoc-codec  = <&stub_codec>, <&bolero>,
+                     //<&wcd937x_codec>,
+@@ -25,6 +26,9 @@
+     asoc-codec-names = "msm-stub-codec.1", "bolero_codec",
+                         // "wcd937x_codec",
+                         "wsa-codec1", "wsa-codec2";
++	vcc-micbias1-gpio = <&tlmm 96 0>;
++	vcc-micbias2-gpio = <&tlmm 97 0>;
++	fsa4480-i2c-handle = <0>;
+     qcom,audio-routing = 
+ 		/*"HAP_IN", "PCM_OUT",*/
+ 		"WSA SRC0_INP", "SRC0",
+@@ -33,9 +37,27 @@
+ 		"RX_TX DEC0_INP", "TX DEC0 MUX",
+ 		"RX_TX DEC1_INP", "TX DEC1 MUX",
+ 		"RX_TX DEC2_INP", "TX DEC2 MUX",
+-		"RX_TX DEC3_INP", "TX DEC3 MUX";
++		"RX_TX DEC3_INP", "TX DEC3 MUX",
+ 		//"SpkrLeft IN", "WSA_SPK1 OUT",
+ 		//"SpkrRight IN", "WSA_SPK2 OUT",
+-		//"SpL IN", "WSA_SPK1 OUT",
+-		//"SpR IN", "WSA_SPK2 OUT";
++		"SpL IN", "WSA_SPK1 OUT",
++		"SpR IN", "WSA_SPK2 OUT",
++		/* Right DMIC1 @ GPIO150/151 */
++		"TX DMIC0", "Digital Mic0",
++		"TX DMIC0", "VCC MIC BIAS1",
++		"TX DMIC1", "Digital Mic1",
++		"TX DMIC1", "VCC MIC BIAS1",
++		/* Left DMIC2 @ GPIO152/153 */
++		"TX DMIC2", "Digital Mic2",
++		"TX DMIC2", "VCC MIC BIAS1",
++		"TX DMIC3", "Digital Mic3",
++		"TX DMIC3", "VCC MIC BIAS1",
++		"VA DMIC0", "Digital Mic0",
++		"VA DMIC0", "VCC MIC BIAS1",
++		"VA DMIC1", "Digital Mic1",
++		"VA DMIC1", "VCC MIC BIAS1",
++		"VA DMIC2", "Digital Mic2",
++		"VA DMIC2", "VCC MIC BIAS1",
++		"VA DMIC3", "Digital Mic3",
++		"VA DMIC3", "VCC MIC BIAS1";
+ };
+diff --git a/yupik-audio-overlay-mc9392.dtsi b/yupik-audio-overlay-mc9392.dtsi
+index 48bd7c7..c3833f1 100755
+--- a/yupik-audio-overlay-mc9392.dtsi
++++ b/yupik-audio-overlay-mc9392.dtsi
+@@ -18,6 +18,7 @@
+ };
+ 
+ &yupik_snd {
++	qcom,model = "lahaina-yupikidp-mc9392-snd-card";
+     qcom,wcd-disabled = <1>;
+     asoc-codec  = <&stub_codec>, <&bolero>,
+                     //<&wcd937x_codec>,
+@@ -25,7 +26,10 @@
+     asoc-codec-names = "msm-stub-codec.1", "bolero_codec",
+                         // "wcd937x_codec",
+                         "wsa-codec1", "wsa-codec2";
+-    qcom,audio-routing = 
++	vcc-micbias1-gpio = <&tlmm 96 0>;
++	vcc-micbias2-gpio = <&tlmm 97 0>;
++	fsa4480-i2c-handle = <0>;
++    qcom,audio-routing =
+ 		/*"HAP_IN", "PCM_OUT",*/
+ 		"WSA SRC0_INP", "SRC0",
+ 		"WSA_TX DEC0_INP", "TX DEC0 MUX",
+@@ -33,9 +37,27 @@
+ 		"RX_TX DEC0_INP", "TX DEC0 MUX",
+ 		"RX_TX DEC1_INP", "TX DEC1 MUX",
+ 		"RX_TX DEC2_INP", "TX DEC2 MUX",
+-		"RX_TX DEC3_INP", "TX DEC3 MUX";
++		"RX_TX DEC3_INP", "TX DEC3 MUX",
+ 		//"SpkrLeft IN", "WSA_SPK1 OUT",
+ 		//"SpkrRight IN", "WSA_SPK2 OUT",
+-		//"SpL IN", "WSA_SPK1 OUT",
+-		//"SpR IN", "WSA_SPK2 OUT";
++		"SpL IN", "WSA_SPK1 OUT",
++		"SpR IN", "WSA_SPK2 OUT",
++		/* Right DMIC1 @ GPIO150/151 */
++		"TX DMIC0", "Digital Mic0",
++		"TX DMIC0", "VCC MIC BIAS1",
++		"TX DMIC1", "Digital Mic1",
++		"TX DMIC1", "VCC MIC BIAS1",
++		/* Left DMIC2 @ GPIO152/153 */
++		"TX DMIC2", "Digital Mic2",
++		"TX DMIC2", "VCC MIC BIAS1",
++		"TX DMIC3", "Digital Mic3",
++		"TX DMIC3", "VCC MIC BIAS1",
++		"VA DMIC0", "Digital Mic0",
++		"VA DMIC0", "VCC MIC BIAS1",
++		"VA DMIC1", "Digital Mic1",
++		"VA DMIC1", "VCC MIC BIAS1",
++		"VA DMIC2", "Digital Mic2",
++		"VA DMIC2", "VCC MIC BIAS1",
++		"VA DMIC3", "Digital Mic3",
++		"VA DMIC3", "VCC MIC BIAS1";
+ };
+diff --git a/yupik-iot-audio-overlay.dtsi b/yupik-iot-audio-overlay.dtsi
+index 352ddb1..ff07e93 100644
+--- a/yupik-iot-audio-overlay.dtsi
++++ b/yupik-iot-audio-overlay.dtsi
+@@ -340,7 +340,7 @@
+ 	qcom,va-bolero-codec = <1>;
+ 	qcom,rxtx-bolero-codec = <1>;
+ 	qcom,wcn-btfm = <0>;
+-	qcom,ext-disp-audio-rx = <1>;
++	qcom,ext-disp-audio-rx = <0>;
+ 	qcom,audio-routing =
+ 		"AMIC1", "Analog Mic1",
+ 		"Analog Mic1", "MIC BIAS1",
+-- 
+2.34.1

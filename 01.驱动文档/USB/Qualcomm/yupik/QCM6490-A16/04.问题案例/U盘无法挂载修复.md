@@ -92,4 +92,4 @@
 - `emmc/fstab_non_AB.qcom`：eMMC 非 A/B 分区挂载表，增加 USB 存储挂载节点（远程 Gerrit 仓库）
 - `recovery_non_AB.fstab`：Recovery 模式挂载表，增加 USB 存储挂载节点（远程 Gerrit 仓库）
 
-_Author: 艾达_
+_Author: wangguanran_
