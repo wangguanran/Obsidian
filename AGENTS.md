@@ -88,7 +88,7 @@ Each chip-model directory is an **independent git repository**. When the same ch
 Any file (source code, patch, config, firmware, PDF) mentioned in a document that exists in the Obsidian vault must use an **Obsidian wiki link** `[[<relative-path>|<display-name>]]` for one-click navigation.
 
 - **Relative path base**: `01.驱动文档/`
-- **Example**: `[[10.NFC/01.NXP/PN7221/SM6115-A14/91.源码与补丁索引/kernel_driver/pn7220/i2c_drv.c|i2c_drv.c]]`
+- **Example**: `[[NFC/01.NXP/PN7221/SM6115-A14/02.Bringup与配置/91.源码与补丁索引/kernel_driver/pn7220/i2c_drv.c|i2c_drv.c]]`
 - If the file is NOT yet archived, use plain text path + remote source tree note
 - Keep a `## 引用文件索引` section at the end of each document with all file references
 
