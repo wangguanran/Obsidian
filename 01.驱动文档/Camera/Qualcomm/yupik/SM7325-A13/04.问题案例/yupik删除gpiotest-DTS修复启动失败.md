@@ -122,7 +122,7 @@ dtc -I dtb -O dts dtbo.img | grep -i gpiotest
 
 ### 补丁文件
 
-已归档到 `[[02.Bringup与配置/91.源码与补丁索引/patches/195900-remove-gpiotest-dts.patch|195900-remove-gpiotest-dts.patch]]`（393KB，15,146 行）。
+已归档到 `[[01.驱动文档/Camera/Qualcomm/yupik/SM7325-A13/02.Bringup与配置/91.源码与补丁索引/patches/195900-remove-gpiotest-dts.patch|195900-remove-gpiotest-dts.patch]]`（393KB，15,146 行）。
 
 ### 补丁验证
 
