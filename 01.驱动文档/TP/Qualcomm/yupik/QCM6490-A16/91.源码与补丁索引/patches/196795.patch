@@ -1,0 +1,120 @@
+From 055af7e1108320e8e2f08742ab309c82bbd342de Mon Sep 17 00:00:00 2001
+
+---
+
+diff --git a/msm/dp/dp_panel.c b/msm/dp/dp_panel.c
+index 04e7f6e..5bdd80b 100644
+--- a/msm/dp/dp_panel.c
++++ b/msm/dp/dp_panel.c
+@@ -5,6 +5,8 @@
+  */
+ 
+ #include "dp_panel.h"
++#include <drm/drm_panel.h>
++#include <linux/of.h>
+ #include "dsi_panel.h"
+ #include <linux/unistd.h>
+ #include <linux/pwm.h>
+@@ -3312,6 +3314,36 @@
+ 
+ 	dp_panel_edid_register(panel);
+ 
++	/*
++	 * A14 logic: when DT has qcom,panel-notifier-support, register a
++	 * drm_panel for the eDP default-panel phandle and attach it to the
++	 * connector so sde_kms can fire panel_event_notifier (A16) / blank events.
++	 */
++	if (panel->parser->is_edp && panel->parser->panel_notifier_support &&
++	    !in->base_panel) {
++		struct device_node *of_node;
++
++		of_node = of_parse_phandle(in->dev->of_node,
++					 "qcom,edp-default-panel", 0);
++		if (!of_node) {
++			DP_ERR("phandle for default panel not found\n");
++		} else {
++			device_initialize(&dp_panel->panel_dev);
++			dp_panel->panel_dev.parent = in->dev;
++			dp_panel->panel_dev.of_node = of_node;
++			dev_set_name(&dp_panel->panel_dev, "edp-drm-panel");
++
++			drm_panel_init(&dp_panel->drm_panel, &dp_panel->panel_dev,
++			               NULL, DRM_MODE_CONNECTOR_eDP);
++			/* A16: drm_panel_add() returns void */
++			drm_panel_add(&dp_panel->drm_panel);
++			dp_panel->drm_panel_registered = true;
++			/* A16 drm_connector has no .panel; attach via sde_connector */
++			sde_conn->panel = &dp_panel->drm_panel;
++			DP_INFO("edp: registered drm_panel for panel notifier\n");
++		}
++	}
++
+ 	if (panel->parser->is_edp) {
+ 		rc = dp_panel_pwm_register(dp_panel);
+ 		if (rc)
+@@ -3338,6 +3370,15 @@
+ 
+ 	dp_panel_pwm_unregister(dp_panel);
+ 
++	if (dp_panel->drm_panel_registered) {
++		drm_panel_remove(&dp_panel->drm_panel);
++		if (sde_conn)
++			sde_conn->panel = NULL;
++		of_node_put(dp_panel->panel_dev.of_node);
++		dp_panel->panel_dev.of_node = NULL;
++		dp_panel->drm_panel_registered = false;
++	}
++
+ 	if (sde_conn)
+ 		sde_conn->drv_panel = NULL;
+ 
+diff --git a/msm/dp/dp_panel.h b/msm/dp/dp_panel.h
+index 624dae1..4dd7ef6 100644
+--- a/msm/dp/dp_panel.h
++++ b/msm/dp/dp_panel.h
+@@ -13,6 +13,7 @@
+ #include "dp_link.h"
+ #include "sde_edid_parser.h"
+ #include "sde_connector.h"
++#include <drm/drm_panel.h>
+ #include "msm_drv.h"
+ 
+ #define DP_RECEIVER_DSC_CAP_SIZE    15
+@@ -157,6 +158,11 @@
+ 
+ 	u32 dsc_blks_in_use;
+ 	u32 max_lm;
++	/* For eDP panel_event_notifier (A14 panel-notifier-support path) */
++	struct drm_panel drm_panel;
++	struct device panel_dev;
++	bool drm_panel_registered;
++
+ 	/* DRM connector assosiated with this panel */
+ 	struct drm_connector *connector;
+ 
+diff --git a/msm/dp/dp_parser.c b/msm/dp/dp_parser.c
+index 8abcae6..f1f50b4 100644
+--- a/msm/dp/dp_parser.c
++++ b/msm/dp/dp_parser.c
+@@ -179,6 +179,9 @@
+ 	if (!parser->display_type)
+ 		parser->display_type = "unknown";
+ 
++	parser->panel_notifier_support = of_property_read_bool(of_node,
++			"qcom,panel-notifier-support");
++	DP_DEBUG("panel-notifier-support = %d\n", parser->panel_notifier_support);
+ 
+ 	parser->no_backlight_support = of_property_read_bool(of_node,
+ 			"qcom,no-backlight-support");
+diff --git a/msm/dp/dp_parser.h b/msm/dp/dp_parser.h
+index 0a7140c..309448b 100644
+--- a/msm/dp/dp_parser.h
++++ b/msm/dp/dp_parser.h
+@@ -295,6 +295,7 @@
+ 	u32 pixel_base_off[MAX_DP_MST_STREAMS];
+ 	const char *mst_fixed_display_type[MAX_DP_MST_STREAMS];
+ 	const char *display_type;
++	bool panel_notifier_support;
+ 	u32 qos_cpu_mask;
+ 	unsigned long qos_cpu_latency;
+ 

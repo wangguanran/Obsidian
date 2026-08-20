@@ -1,0 +1,48 @@
+From e139caa6fccf8b100d6be4ee47be2d02dbd34225 Mon Sep 17 00:00:00 2001
+
+---
+
+diff --git a/ADSP.HT.5.7/adsp_proc/core/battman/pmic/platform/src/pm_peripheral_chgr.c b/ADSP.HT.5.7/adsp_proc/core/battman/pmic/platform/src/pm_peripheral_chgr.c
+index 271ea8d..f8ad21c 100755
+--- a/ADSP.HT.5.7/adsp_proc/core/battman/pmic/platform/src/pm_peripheral_chgr.c
++++ b/ADSP.HT.5.7/adsp_proc/core/battman/pmic/platform/src/pm_peripheral_chgr.c
+@@ -24,6 +24,7 @@
+ #include "pm_peripheral_chgr.h"
+ #include "pm_interface.h"
+ #include "pm_register_scpq_p_chgr.h"
++#include "odm_features.h"
+ 
+ #define SCHGCHGRFUNCPTR_PM855B 0
+ #define SCHGCHGRFUNCPTR_SMB2351 1
+@@ -1168,7 +1169,18 @@
+     {
+         return STATUS_ERROR_INVALID_ARGUMENT;
+     }
++#if defined(ODM_PROJECT_MC5617)
++    /* MC5617 low-temp boot workaround (product requirement):
++     * Must keep SCHG_CHGR JEITA_EN_CFG (0x1090) at 0x00 under all callers.
++     * BattMan later enables AFP_COLD/HOT via this API; any remaining JEITA bit
++     * can still trip HW AFP / hard-limit and block cold boot.
++     * Coerce enable=FALSE then clear the whole register (not bit-mask). */
++    enable = FALSE;
++    (void)jeita_cfg_type;
++    status = PM_OUT(gSchgChgrConfig[pmic_index].PeripheralSlaveId, SCHG_CHGR_JEITA_EN_CFG, 0x00);
++#else
+     status = PM_OUT_MASK(gSchgChgrConfig[pmic_index].PeripheralSlaveId, SCHG_CHGR_JEITA_EN_CFG, (1 << jeita_cfg_type), ((enable) ? 0xFF : 0x00));
++#endif
+ 
+     return status;
+ }
+diff --git a/BOOT.MXF.2.0/boot_images/boot/QcomPkg/Library/PmicLib/target/clarence/psi/pm_config_target_sbl_sequence.h b/BOOT.MXF.2.0/boot_images/boot/QcomPkg/Library/PmicLib/target/clarence/psi/pm_config_target_sbl_sequence.h
+index 5807d0e..26ff8c6 100755
+--- a/BOOT.MXF.2.0/boot_images/boot/QcomPkg/Library/PmicLib/target/clarence/psi/pm_config_target_sbl_sequence.h
++++ b/BOOT.MXF.2.0/boot_images/boot/QcomPkg/Library/PmicLib/target/clarence/psi/pm_config_target_sbl_sequence.h
+@@ -42,7 +42,7 @@
+ ===========================================================================*/ 
+  
+ #include "pm_target_information.h" 
+-#include "pm_config_sbl.h" 
++#include "pm_config_sbl.h"
+  
+ /*========================== PSI Sequence LUT =============================*/ 
+  

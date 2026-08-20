@@ -9,7 +9,7 @@
 源码从 134 服务器 Rigel A16 源码树检索归档：
 
 ```
-/home1/qianyiping/rigel_repo/LA.VENDOR.16.2.1/kernel_platform/soc-repo/
+[内网路径]/LA.VENDOR.16.2.1/kernel_platform/soc-repo/
 ```
 
 （2026-08-20 归档；此前该树未在 134 常规 workspace 中，故 README 曾标注"源码不在本地归档"。）
@@ -48,7 +48,7 @@
 ## 相关文档
 
 - [[01.驱动文档/USB/00.Unknown/ax88179a/QCM6490-A16/03.需求实现/ax88179a-USB-Ethernet驱动移植.md|主文档：ax88179a USB Ethernet 驱动移植]]
-- [[01.驱动文档/USB/00.Unknown/ax88179a/QCM6490-A16/04.问题案例/分析/ax88179a-USB-Ethernet驱动移植-分析.md|分析文档：ax88179a USB Ethernet 驱动移植分析]]
+- [[01.驱动文档/USB/00.Unknown/ax88179a/QCM6490-A16/03.需求实现/ax88179a-USB-Ethernet驱动移植-分析.md|分析文档：ax88179a USB Ethernet 驱动移植分析]]
 
 ---
 

@@ -18,3 +18,12 @@
 ---
 
 _Author: wangguanran_
+## 追加：change 196756 / 196543（Task 120577，同任务合并）
+
+| 提交 | 任务 | 描述 | 状态 | 补丁验证 |
+|------|------|------|------|---------|
+| fdb313f8a4 (change 196756) | Task 120577 | DIP Host/Type-C isolation and hub reset polarity | MERGED | ✅ 已在分支 HEAD（reverse-check） |
+| 8cb7b23068 (change 196543) | Task 120577 | Compilation error（dwc3 vbus-en） | MERGED | ✅ 已在分支 HEAD（reverse-check） |
+
+- 源码：`kernel_driver/drivers/usb/phy/phy-msm-qusb.c`、`kernel_driver/drivers/extcon/extcon-usb-gpio.c`、`kernel_driver/drivers/usb/dwc3/dwc3-msm-core.c`、`dt_config/scuba-iot-idp.dtsi`（134 拉取）
+- 补丁：`patches/196756.patch`、`patches/196543.patch`

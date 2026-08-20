@@ -97,7 +97,10 @@
 		id-gpio = <&pm2250_gpios 3 GPIO_ACTIVE_HIGH>;
 		/* DIP ON/D2: ID high → Type-C (none); DIP OFF/D1: ID low → host */
 		id-high-is-none;
-		/* GPIO108 HUB_RESET: ID low/host → low; ID high/type-c → high */
+		/*
+		 * GPIO108 HUB_RESET (CH334 RESET# active-low, 1.8↔3.3 shifter):
+		 * default/Type-C/ID high → low; USB-A/ID low → high (release)
+		 */
 		hub-reset-gpios = <&tlmm 108 GPIO_ACTIVE_HIGH>;
 		pinctrl-names = "default";
 		pinctrl-0 = <&usb_id_default &hub_reset_default>;
@@ -208,6 +211,11 @@
 
 &qusb_phy0 {
 	extcon = <&pm2250_charger>;
+	/*
+	 * MT5205 DIP Host/Type-C isolation: USB-A (extcon_usb_id HOST)
+	 * suppresses qusb charger role extcon; Type-C clears mute + resync.
+	 */
+	qcom,role-mute-extcon = <&extcon_usb_id>;
 };
 
 &tlmm {
@@ -249,7 +257,8 @@
 			pins = "gpio108";
 			drive-strength = <2>;
 			bias-disable;
-			output-high;
+			/* default low (Type-C / RESET# asserted until ID detect) */
+			output-low;
 		};
 	};
 };

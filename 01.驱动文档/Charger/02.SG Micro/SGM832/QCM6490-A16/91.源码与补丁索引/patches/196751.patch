@@ -1,0 +1,1610 @@
+From 2bc79eb416b62e34de00da60ee40d77f33d8b597 Mon Sep 17 00:00:00 2001
+
+---
+
+diff --git a/configs/lahaina_consolidate.bzl b/configs/lahaina_consolidate.bzl
+index d1ea01a..9fd7415 100644
+--- a/configs/lahaina_consolidate.bzl
++++ b/configs/lahaina_consolidate.bzl
+@@ -5,6 +5,9 @@
+     "CONFIG_MEIG_HWPROJ": "m",
+     "CONFIG_MSM_DBA_IT8851": "m",
+     "CONFIG_MSM_DBA_IT8855": "m",
++    "CONFIG_SGM832": "m",
++    "CONFIG_EXT_ADC_GPIO": "m",
++    "CONFIG_CASH_DRAWER_DRIVER": "m",
+     "CONFIG_ATOMIC64_SELFTEST": "m",
+     "CONFIG_CMA_DEBUGFS": "y",
+     "CONFIG_CORESIGHT_SOURCE_ETM4X": "m",
+diff --git a/configs/lahaina_perf.bzl b/configs/lahaina_perf.bzl
+index eb6ad49..fc508f9 100644
+--- a/configs/lahaina_perf.bzl
++++ b/configs/lahaina_perf.bzl
+@@ -381,8 +381,11 @@
+     "CONFIG_USB_SPEED_SHOW": "m",
+     "CONFIG_HUB_CONTROL": "m",
+     "CONFIG_MEIG_EXTIO": "m",
++    "CONFIG_EXT_ADC_GPIO": "m",
++    "CONFIG_CASH_DRAWER_DRIVER": "m",
+     "CONFIG_MSM_DBA_IT8851": "m",
+     "CONFIG_MSM_DBA_IT8855": "m",
++    "CONFIG_SGM832": "m",
+     "CONFIG_USB_UART_SW": "m",
+     "CONFIG_VIDEO_QCOM_VENUS": "n",
+     "CONFIG_VIRT_DRIVERS": "y",
+diff --git a/drivers/misc/Kconfig b/drivers/misc/Kconfig
+index 9852be9..e25b85e 100644
+--- a/drivers/misc/Kconfig
++++ b/drivers/misc/Kconfig
+@@ -110,4 +110,18 @@
+ 	  Sysfs/GPIO control of USB hub ports, PoE edge logic,
+ 	  and optional Renesas xHCI PCIe recovery.
+ 
++config EXT_ADC_GPIO
++	tristate "External ADC GPIO channel sysfs (MeiG)"
++	depends on OF && IIO
++	help
++	  Expose external ADC channels described in DT (compatible
++	  "ext,adc-driver") via sysfs. Used by MC9392.
++
++config CASH_DRAWER_DRIVER
++	tristate "Cash drawer GPIO driver (MeiG)"
++	depends on OF && GPIOLIB && INPUT
++	help
++	  Cash drawer control/detection (compatible "vendor,cash-drawer").
++	  Used by MC9392.
++
+ endmenu
+diff --git a/drivers/misc/Makefile b/drivers/misc/Makefile
+index dafe1388..7140238 100644
+--- a/drivers/misc/Makefile
++++ b/drivers/misc/Makefile
+@@ -14,3 +14,5 @@
+ 
+ 
+ obj-$(CONFIG_HUB_CONTROL) += usb-hub-control.o
++obj-$(CONFIG_EXT_ADC_GPIO) += ext-adc-gpio.o
++obj-$(CONFIG_CASH_DRAWER_DRIVER) += cash_drawer.o
+diff --git a/drivers/misc/cash_drawer.c b/drivers/misc/cash_drawer.c
+new file mode 100644
+index 0000000..6780e41
+--- /dev/null
++++ b/drivers/misc/cash_drawer.c
+@@ -0,0 +1,738 @@
++#include <linux/module.h>
++#include <linux/init.h>
++#include <linux/gpio/consumer.h>
++#include <linux/interrupt.h>
++#include <linux/delay.h>
++#include <linux/device.h>
++#include <linux/fs.h>
++#include <linux/cdev.h>
++#include <linux/uaccess.h>
++#include <linux/slab.h>
++#include <linux/of.h>
++#include <linux/platform_device.h>
++#include <linux/input.h>
++#include <linux/of_gpio.h>
++#include <linux/gpio.h>
++#define DRIVER_NAME "cash_drawer"
++#define DEVICE_NAME "cash_drawer"
++#define PULSE_WIDTH_MS 250
++struct cash_drawer_platform_data {
++	int gpio_24v_en;
++	int gpio_12v_en;
++	int gpio_rj232_en;
++	int gpio_cd1_en;
++	int gpio_cd2_en;
++	int gpio_cd_det;
++
++	int pulse_width_ms;
++};
++
++struct cash_drawer_device {
++	struct cdev cdev;
++	dev_t devno;
++	struct device *device;
++	struct cash_drawer_platform_data *pdata;
++};
++
++static struct cash_drawer_device *cash_drawer_dev;
++static int cd_det_irq;
++static struct class *cash_drawer_class;
++static struct input_dev *input_dev;
++
++static struct cash_drawer_platform_data *cash_drawer_pdata(struct device *dev)
++{
++	return dev_get_drvdata(dev);
++}
++
++static ssize_t set_cd1_en(struct device *dev,
++			  struct device_attribute *attr,
++			  const char *buf, size_t count)
++{
++	struct cash_drawer_platform_data *pdata = cash_drawer_pdata(dev);
++	unsigned long value;
++	int ret;
++
++	if (!pdata || !gpio_is_valid(pdata->gpio_cd1_en))
++		return -ENODEV;
++
++	ret = kstrtoul(buf, 10, &value);
++	if (ret)
++		return ret;
++
++	if (value) {
++		gpio_direction_output(pdata->gpio_cd1_en, 1);
++		msleep(pdata->pulse_width_ms);
++		gpio_direction_output(pdata->gpio_cd1_en, 0);
++		dev_info(dev, "CD1_EN high pulse sent (active high)\n");
++	} else {
++		gpio_direction_output(pdata->gpio_cd1_en, 0);
++	}
++	return count;
++}
++
++static DEVICE_ATTR(cd1_en, 0200, NULL, set_cd1_en);
++
++static ssize_t set_cd2_en(struct device *dev,
++			  struct device_attribute *attr,
++			  const char *buf, size_t count)
++{
++	struct cash_drawer_platform_data *pdata = cash_drawer_pdata(dev);
++	unsigned long value;
++	int ret;
++
++	if (!pdata || !gpio_is_valid(pdata->gpio_cd2_en))
++		return -ENODEV;
++
++	ret = kstrtoul(buf, 10, &value);
++	if (ret)
++		return ret;
++
++	/* Same active-high polarity as CD1: pulse high then low; 0 keeps low */
++	if (value) {
++		gpio_direction_output(pdata->gpio_cd2_en, 1);
++		msleep(pdata->pulse_width_ms);
++		gpio_direction_output(pdata->gpio_cd2_en, 0);
++		dev_info(dev, "CD2_EN high pulse sent (active high)\n");
++	} else {
++		gpio_direction_output(pdata->gpio_cd2_en, 0);
++	}
++
++	return count;
++}
++
++static DEVICE_ATTR(cd2_en, 0200, NULL, set_cd2_en);
++
++static ssize_t show_12v_en(struct device *dev,
++			   struct device_attribute *attr, char *buf)
++{
++	struct cash_drawer_platform_data *pdata = cash_drawer_pdata(dev);
++	int value = 0;
++
++	if (pdata && gpio_is_valid(pdata->gpio_12v_en))
++		value = gpio_get_value(pdata->gpio_12v_en);
++
++	return sysfs_emit(buf, "%d\n", value);
++}
++
++static ssize_t set_12v_en(struct device *dev,
++			  struct device_attribute *attr,
++			  const char *buf, size_t count)
++{
++	struct cash_drawer_platform_data *pdata = cash_drawer_pdata(dev);
++	unsigned long value;
++	int ret;
++
++	if (!pdata || !gpio_is_valid(pdata->gpio_12v_en))
++		return -ENODEV;
++
++	ret = kstrtoul(buf, 10, &value);
++	if (ret)
++		return ret;
++
++	gpio_direction_output(pdata->gpio_12v_en, value ? 1 : 0);
++	dev_info(dev, "12V_EN set to %lu\n", value);
++	return count;
++}
++
++static DEVICE_ATTR(12v_en, 0644, show_12v_en, set_12v_en);
++
++static ssize_t show_24v_en(struct device *dev,
++			   struct device_attribute *attr, char *buf)
++{
++	struct cash_drawer_platform_data *pdata = cash_drawer_pdata(dev);
++	int value = 0;
++
++	if (pdata && gpio_is_valid(pdata->gpio_24v_en))
++		value = gpio_get_value(pdata->gpio_24v_en);
++
++	return sysfs_emit(buf, "%d\n", value);
++}
++
++static ssize_t set_24v_en(struct device *dev,
++			  struct device_attribute *attr,
++			  const char *buf, size_t count)
++{
++	struct cash_drawer_platform_data *pdata = cash_drawer_pdata(dev);
++	unsigned long value;
++	int ret;
++
++	if (!pdata || !gpio_is_valid(pdata->gpio_24v_en))
++		return -ENODEV;
++
++	ret = kstrtoul(buf, 10, &value);
++	if (ret)
++		return ret;
++
++	gpio_direction_output(pdata->gpio_24v_en, value ? 1 : 0);
++	dev_info(dev, "24V_EN set to %lu\n", value);
++	return count;
++}
++
++static DEVICE_ATTR(24v_en, 0644, show_24v_en, set_24v_en);
++
++static ssize_t show_rj232_en(struct device *dev,
++			     struct device_attribute *attr, char *buf)
++{
++	struct cash_drawer_platform_data *pdata = cash_drawer_pdata(dev);
++	int value = 0;
++
++	if (pdata && gpio_is_valid(pdata->gpio_rj232_en))
++		value = gpio_get_value(pdata->gpio_rj232_en);
++
++	return sysfs_emit(buf, "%d\n", value);
++}
++
++static ssize_t set_rj232_en(struct device *dev,
++			    struct device_attribute *attr,
++			    const char *buf, size_t count)
++{
++	struct cash_drawer_platform_data *pdata = cash_drawer_pdata(dev);
++	unsigned long value;
++	int ret;
++
++	if (!pdata || !gpio_is_valid(pdata->gpio_rj232_en))
++		return -ENODEV;
++
++	ret = kstrtoul(buf, 10, &value);
++	if (ret)
++		return ret;
++
++	gpio_direction_output(pdata->gpio_rj232_en, value ? 1 : 0);
++	dev_info(dev, "RJ232_EN set to %lu\n", value);
++	return count;
++}
++
++static DEVICE_ATTR(rj232_en, 0644, show_rj232_en, set_rj232_en);
++
++static ssize_t show_voltage_status(struct device *dev,
++				   struct device_attribute *attr, char *buf)
++{
++	struct cash_drawer_platform_data *pdata = cash_drawer_pdata(dev);
++	int voltage_12v = 0;
++	int voltage_24v = 0;
++	const char *voltage_str;
++
++	if (pdata) {
++		if (gpio_is_valid(pdata->gpio_12v_en))
++			voltage_12v = gpio_get_value(pdata->gpio_12v_en);
++		if (gpio_is_valid(pdata->gpio_24v_en))
++			voltage_24v = gpio_get_value(pdata->gpio_24v_en);
++	}
++
++	if (voltage_24v && !voltage_12v)
++		voltage_str = "24V";
++	else if (voltage_12v && !voltage_24v)
++		voltage_str = "12V";
++	else if (voltage_12v && voltage_24v)
++		voltage_str = "ERROR (both 12V and 24V enabled)";
++	else
++		voltage_str = "0V (both disabled)";
++
++	return sysfs_emit(buf, "Current voltage: %s\n12V_EN: %d\n24V_EN: %d\n",
++			  voltage_str, voltage_12v, voltage_24v);
++}
++
++static DEVICE_ATTR(voltage_status, 0444, show_voltage_status, NULL);
++
++static ssize_t show_cd_det(struct device *dev,
++			   struct device_attribute *attr, char *buf)
++{
++	struct cash_drawer_platform_data *pdata = cash_drawer_pdata(dev);
++	int value = 0;
++
++	if (pdata && gpio_is_valid(pdata->gpio_cd_det))
++		value = gpio_get_value(pdata->gpio_cd_det);
++
++	return sysfs_emit(buf, "%d\n", value);
++}
++
++static DEVICE_ATTR(cd_det, 0444, show_cd_det, NULL);
++
++static int cash_drawer_open(struct inode *inode, struct file *filp)
++{
++	filp->private_data = cash_drawer_dev;
++	return 0;
++}
++
++static int cash_drawer_release(struct inode *inode, struct file *filp)
++{
++	return 0;
++}
++
++static const struct file_operations cash_drawer_fops = {
++	.owner = THIS_MODULE,
++	.open = cash_drawer_open,
++	.release = cash_drawer_release,
++};
++
++static irqreturn_t cd_det_interrupt(int irq, void *dev_id)
++{
++	struct cash_drawer_platform_data *pdata = dev_id;
++	int det_value;
++
++	if (!pdata || !gpio_is_valid(pdata->gpio_cd_det))
++		return IRQ_NONE;
++
++	det_value = gpio_get_value(pdata->gpio_cd_det);
++
++	if (input_dev) {
++		input_report_key(input_dev, KEY_PROG1, det_value ? 0 : 1);
++		input_sync(input_dev);
++		if (input_dev->dev.parent)
++			dev_dbg(input_dev->dev.parent,
++				"Cash drawer %s\n",
++				det_value ? "close" : "open");
++	}
++
++	return IRQ_HANDLED;
++}
++
++static void cash_drawer_free_gpios(struct cash_drawer_platform_data *pdata)
++{
++	if (!pdata)
++		return;
++
++	if (gpio_is_valid(pdata->gpio_cd_det))
++		gpio_free(pdata->gpio_cd_det);
++	if (gpio_is_valid(pdata->gpio_cd2_en))
++		gpio_free(pdata->gpio_cd2_en);
++	if (gpio_is_valid(pdata->gpio_cd1_en))
++		gpio_free(pdata->gpio_cd1_en);
++	if (gpio_is_valid(pdata->gpio_rj232_en))
++		gpio_free(pdata->gpio_rj232_en);
++	if (gpio_is_valid(pdata->gpio_12v_en))
++		gpio_free(pdata->gpio_12v_en);
++	if (gpio_is_valid(pdata->gpio_24v_en))
++		gpio_free(pdata->gpio_24v_en);
++
++	pdata->gpio_24v_en = -EINVAL;
++	pdata->gpio_12v_en = -EINVAL;
++	pdata->gpio_rj232_en = -EINVAL;
++	pdata->gpio_cd1_en = -EINVAL;
++	pdata->gpio_cd2_en = -EINVAL;
++	pdata->gpio_cd_det = -EINVAL;
++}
++
++static int parse_device_tree(struct platform_device *pdev)
++{
++	struct device *dev = &pdev->dev;
++	struct device_node *np = dev->of_node;
++	struct cash_drawer_platform_data *pdata;
++	int ret;
++
++	pdata = devm_kzalloc(dev, sizeof(*pdata), GFP_KERNEL);
++	if (!pdata)
++		return -ENOMEM;
++
++	pdata->gpio_24v_en = -EINVAL;
++	pdata->gpio_12v_en = -EINVAL;
++	pdata->gpio_rj232_en = -EINVAL;
++	pdata->gpio_cd1_en = -EINVAL;
++	pdata->gpio_cd2_en = -EINVAL;
++	pdata->gpio_cd_det = -EINVAL;
++
++	pdata->gpio_24v_en = of_get_named_gpio(np, "gpio_24v_en", 0);
++	if (!gpio_is_valid(pdata->gpio_24v_en)) {
++		dev_err(dev, "Failed to get 24v_en GPIO\n");
++		return -EINVAL;
++	}
++	ret = gpio_request(pdata->gpio_24v_en, "gpio_24v_en");
++	if (ret < 0) {
++		dev_err(dev, "Request gpio_24v_en GPIO failed, ret = %d\n", ret);
++		pdata->gpio_24v_en = -EINVAL;
++		goto err_free_gpios;
++	}
++
++	pdata->gpio_12v_en = of_get_named_gpio(np, "gpio_12v_en", 0);
++	if (!gpio_is_valid(pdata->gpio_12v_en)) {
++		dev_err(dev, "Failed to get 12v_en GPIO\n");
++		ret = -EINVAL;
++		goto err_free_gpios;
++	}
++	ret = gpio_request(pdata->gpio_12v_en, "gpio_12v_en");
++	if (ret < 0) {
++		dev_err(dev, "Request gpio_12v_en GPIO failed, ret = %d\n", ret);
++		pdata->gpio_12v_en = -EINVAL;
++		goto err_free_gpios;
++	}
++
++	pdata->gpio_rj232_en = of_get_named_gpio(np, "gpio_rj232_en", 0);
++	if (!gpio_is_valid(pdata->gpio_rj232_en)) {
++		dev_err(dev, "Failed to get gpio_rj232_en GPIO\n");
++		ret = -EINVAL;
++		goto err_free_gpios;
++	}
++	ret = gpio_request(pdata->gpio_rj232_en, "gpio_rj232_en");
++	if (ret < 0) {
++		dev_err(dev, "Request gpio_rj232_en GPIO failed, ret = %d\n", ret);
++		pdata->gpio_rj232_en = -EINVAL;
++		goto err_free_gpios;
++	}
++
++	pdata->gpio_cd1_en = of_get_named_gpio(np, "gpio_cd1_en", 0);
++	if (!gpio_is_valid(pdata->gpio_cd1_en)) {
++		dev_err(dev, "Failed to get gpio_cd1_en GPIO\n");
++		ret = -EINVAL;
++		goto err_free_gpios;
++	}
++	ret = gpio_request(pdata->gpio_cd1_en, "gpio_cd1_en");
++	if (ret < 0) {
++		dev_err(dev, "Request gpio_cd1_en GPIO failed, ret = %d\n", ret);
++		pdata->gpio_cd1_en = -EINVAL;
++		goto err_free_gpios;
++	}
++
++	pdata->gpio_cd2_en = of_get_named_gpio(np, "gpio_cd2_en", 0);
++	if (!gpio_is_valid(pdata->gpio_cd2_en)) {
++		dev_err(dev, "Failed to get gpio_cd2_en GPIO\n");
++		ret = -EINVAL;
++		goto err_free_gpios;
++	}
++	ret = gpio_request(pdata->gpio_cd2_en, "gpio_cd2_en");
++	if (ret < 0) {
++		dev_err(dev, "Request gpio_cd2_en GPIO failed, ret = %d\n", ret);
++		pdata->gpio_cd2_en = -EINVAL;
++		goto err_free_gpios;
++	}
++
++	pdata->gpio_cd_det = of_get_named_gpio(np, "gpio_cd_det", 0);
++	if (!gpio_is_valid(pdata->gpio_cd_det)) {
++		dev_err(dev, "Failed to get gpio_cd_det GPIO\n");
++		ret = -EINVAL;
++		goto err_free_gpios;
++	}
++	ret = gpio_request(pdata->gpio_cd_det, "gpio_cd_det");
++	if (ret < 0) {
++		dev_err(dev, "Request gpio_cd_det GPIO failed, ret = %d\n", ret);
++		pdata->gpio_cd_det = -EINVAL;
++		goto err_free_gpios;
++	}
++	gpio_direction_input(pdata->gpio_cd_det);
++
++	ret = of_property_read_u32(dev->of_node, "pulse-width-ms",
++				   &pdata->pulse_width_ms);
++	if (ret) {
++		dev_warn(dev, "No pulse-width-ms specified, using default %dms\n",
++			 PULSE_WIDTH_MS);
++		pdata->pulse_width_ms = PULSE_WIDTH_MS;
++	}
++
++	dev_set_drvdata(dev, pdata);
++	dev_info(dev, "Cash drawer platform data parsed successfully\n");
++	return 0;
++
++err_free_gpios:
++	cash_drawer_free_gpios(pdata);
++	return ret;
++}
++
++static int create_cash_drawer_device(struct platform_device *pdev)
++{
++	struct device *dev = &pdev->dev;
++	struct cash_drawer_device *cdev;
++	struct cash_drawer_platform_data *pdata = cash_drawer_pdata(dev);
++	dev_t devno;
++	int ret;
++
++	cdev = devm_kzalloc(dev, sizeof(*cdev), GFP_KERNEL);
++	if (!cdev)
++		return -ENOMEM;
++
++	ret = alloc_chrdev_region(&devno, 0, 1, DEVICE_NAME);
++	if (ret < 0) {
++		dev_err(dev, "Failed to allocate device number\n");
++		return ret;
++	}
++
++	cdev->devno = devno;
++	cdev->pdata = pdata;
++
++	cdev_init(&cdev->cdev, &cash_drawer_fops);
++	cdev->cdev.owner = THIS_MODULE;
++
++	ret = cdev_add(&cdev->cdev, devno, 1);
++	if (ret) {
++		dev_err(dev, "Failed to add character device\n");
++		unregister_chrdev_region(devno, 1);
++		return ret;
++	}
++
++	cdev->device = device_create(cash_drawer_class, dev, devno, cdev,
++				     DEVICE_NAME);
++	if (IS_ERR(cdev->device)) {
++		ret = PTR_ERR(cdev->device);
++		dev_err(dev, "Failed to create device node\n");
++		cdev_del(&cdev->cdev);
++		unregister_chrdev_region(devno, 1);
++		return ret;
++	}
++
++	cash_drawer_dev = cdev;
++	dev_info(dev, "Cash drawer character device created\n");
++	return 0;
++}
++
++static int create_control_nodes(struct platform_device *pdev)
++{
++	struct device *dev = &pdev->dev;
++	int ret;
++
++	ret = device_create_file(dev, &dev_attr_cd1_en);
++	if (ret) {
++		dev_err(dev, "Failed to create cd1_en attribute\n");
++		return ret;
++	}
++
++	ret = device_create_file(dev, &dev_attr_cd2_en);
++	if (ret) {
++		dev_err(dev, "Failed to create cd2_en attribute\n");
++		device_remove_file(dev, &dev_attr_cd1_en);
++		return ret;
++	}
++
++	ret = device_create_file(dev, &dev_attr_12v_en);
++	if (ret) {
++		dev_err(dev, "Failed to create 12v_en attribute\n");
++		device_remove_file(dev, &dev_attr_cd1_en);
++		device_remove_file(dev, &dev_attr_cd2_en);
++		return ret;
++	}
++
++	ret = device_create_file(dev, &dev_attr_24v_en);
++	if (ret) {
++		dev_err(dev, "Failed to create 24v_en attribute\n");
++		device_remove_file(dev, &dev_attr_cd1_en);
++		device_remove_file(dev, &dev_attr_cd2_en);
++		device_remove_file(dev, &dev_attr_12v_en);
++		return ret;
++	}
++
++	ret = device_create_file(dev, &dev_attr_rj232_en);
++	if (ret) {
++		dev_err(dev, "Failed to create rj232_en attribute\n");
++		device_remove_file(dev, &dev_attr_cd1_en);
++		device_remove_file(dev, &dev_attr_cd2_en);
++		device_remove_file(dev, &dev_attr_12v_en);
++		device_remove_file(dev, &dev_attr_24v_en);
++		return ret;
++	}
++
++	ret = device_create_file(dev, &dev_attr_voltage_status);
++	if (ret) {
++		dev_err(dev, "Failed to create voltage_status attribute\n");
++		device_remove_file(dev, &dev_attr_cd1_en);
++		device_remove_file(dev, &dev_attr_cd2_en);
++		device_remove_file(dev, &dev_attr_12v_en);
++		device_remove_file(dev, &dev_attr_24v_en);
++		device_remove_file(dev, &dev_attr_rj232_en);
++		return ret;
++	}
++
++	ret = device_create_file(dev, &dev_attr_cd_det);
++	if (ret) {
++		dev_err(dev, "Failed to create cd_det attribute\n");
++		device_remove_file(dev, &dev_attr_cd1_en);
++		device_remove_file(dev, &dev_attr_cd2_en);
++		device_remove_file(dev, &dev_attr_12v_en);
++		device_remove_file(dev, &dev_attr_24v_en);
++		device_remove_file(dev, &dev_attr_rj232_en);
++		device_remove_file(dev, &dev_attr_voltage_status);
++		return ret;
++	}
++
++	dev_info(dev, "All control nodes created successfully\n");
++	return 0;
++}
++
++static void remove_control_nodes(struct platform_device *pdev)
++{
++	struct device *dev = &pdev->dev;
++
++	device_remove_file(dev, &dev_attr_cd1_en);
++	device_remove_file(dev, &dev_attr_cd2_en);
++	device_remove_file(dev, &dev_attr_12v_en);
++	device_remove_file(dev, &dev_attr_24v_en);
++	device_remove_file(dev, &dev_attr_rj232_en);
++	device_remove_file(dev, &dev_attr_voltage_status);
++	device_remove_file(dev, &dev_attr_cd_det);
++}
++
++static int create_input_device(struct platform_device *pdev)
++{
++	struct device *dev = &pdev->dev;
++	int ret;
++
++	input_dev = input_allocate_device();
++	if (!input_dev) {
++		dev_err(dev, "Failed to allocate input device\n");
++		return -ENOMEM;
++	}
++
++	input_dev->name = "Cash Drawer Detector";
++	input_dev->phys = "cash_drawer/input0";
++	input_dev->id.bustype = BUS_HOST;
++	input_dev->dev.parent = &pdev->dev;
++
++	set_bit(EV_KEY, input_dev->evbit);
++	set_bit(KEY_PROG1, input_dev->keybit);
++
++	ret = input_register_device(input_dev);
++	if (ret) {
++		dev_err(dev, "Failed to register input device\n");
++		input_free_device(input_dev);
++		input_dev = NULL;
++		return ret;
++	}
++
++	dev_info(dev, "Cash drawer input device created\n");
++	return 0;
++}
++
++static int cash_drawer_probe(struct platform_device *pdev)
++{
++	struct device *dev = &pdev->dev;
++	struct cash_drawer_platform_data *pdata;
++	int ret;
++
++	dev_info(dev, "Cash drawer driver probing\n");
++
++	ret = parse_device_tree(pdev);
++	if (ret) {
++		dev_err(dev, "Failed to parse device tree\n");
++		return ret;
++	}
++	pdata = cash_drawer_pdata(dev);
++
++	cash_drawer_class = class_create(DRIVER_NAME);
++	if (IS_ERR(cash_drawer_class)) {
++		dev_err(dev, "Failed to create device class\n");
++		cash_drawer_free_gpios(pdata);
++		return PTR_ERR(cash_drawer_class);
++	}
++
++	ret = create_control_nodes(pdev);
++	if (ret) {
++		class_destroy(cash_drawer_class);
++		cash_drawer_free_gpios(pdata);
++		return ret;
++	}
++
++	ret = create_input_device(pdev);
++	if (ret) {
++		remove_control_nodes(pdev);
++		class_destroy(cash_drawer_class);
++		cash_drawer_free_gpios(pdata);
++		return ret;
++	}
++
++	cd_det_irq = gpio_to_irq(pdata->gpio_cd_det);
++	if (cd_det_irq < 0) {
++		dev_err(dev, "Failed to get IRQ for cd_det GPIO\n");
++		ret = cd_det_irq;
++		goto err_irq;
++	}
++
++	ret = request_irq(cd_det_irq, cd_det_interrupt,
++			  IRQF_TRIGGER_FALLING | IRQF_TRIGGER_RISING,
++			  "cash_drawer_det", pdata);
++	if (ret) {
++		dev_err(dev, "Failed to request interrupt for cd_det GPIO\n");
++		goto err_irq;
++	}
++
++	dev_info(dev, "Registered interrupt %d for cash drawer detection\n",
++		 cd_det_irq);
++
++	ret = create_cash_drawer_device(pdev);
++	if (ret) {
++		dev_err(dev, "Failed to create cash drawer device\n");
++		goto err_device;
++	}
++
++	dev_info(dev, "Cash drawer driver probed successfully\n");
++	return 0;
++
++err_device:
++	free_irq(cd_det_irq, pdata);
++	cd_det_irq = 0;
++err_irq:
++	remove_control_nodes(pdev);
++	if (input_dev) {
++		input_unregister_device(input_dev);
++		input_dev = NULL;
++	}
++	class_destroy(cash_drawer_class);
++	cash_drawer_class = NULL;
++	cash_drawer_free_gpios(pdata);
++	return ret;
++}
++
++static void cash_drawer_remove(struct platform_device *pdev)
++{
++	struct cash_drawer_platform_data *pdata = cash_drawer_pdata(&pdev->dev);
++
++	dev_info(&pdev->dev, "Removing cash drawer driver\n");
++
++	if (cash_drawer_dev) {
++		device_destroy(cash_drawer_class, cash_drawer_dev->devno);
++		cdev_del(&cash_drawer_dev->cdev);
++		unregister_chrdev_region(cash_drawer_dev->devno, 1);
++		cash_drawer_dev = NULL;
++	}
++
++	remove_control_nodes(pdev);
++
++	if (input_dev) {
++		input_unregister_device(input_dev);
++		input_dev = NULL;
++	}
++
++	if (cash_drawer_class) {
++		class_destroy(cash_drawer_class);
++		cash_drawer_class = NULL;
++	}
++
++	if (cd_det_irq > 0) {
++		free_irq(cd_det_irq, pdata);
++		cd_det_irq = 0;
++	}
++
++	cash_drawer_free_gpios(pdata);
++	dev_set_drvdata(&pdev->dev, NULL);
++
++	dev_info(&pdev->dev, "Cash drawer driver removed\n");
++}
++
++static const struct of_device_id cash_drawer_of_match[] = {
++	{ .compatible = "vendor,cash-drawer", },
++	{ },
++};
++MODULE_DEVICE_TABLE(of, cash_drawer_of_match);
++
++static struct platform_driver cash_drawer_driver = {
++	.probe = cash_drawer_probe,
++	.remove = cash_drawer_remove,
++	.driver = {
++		.name = DRIVER_NAME,
++		.of_match_table = cash_drawer_of_match,
++		.owner = THIS_MODULE,
++	},
++};
++
++static int __init cash_drawer_init(void)
++{
++	pr_info("%s: init\n", __func__);
++	return platform_driver_register(&cash_drawer_driver);
++}
++
++static void __exit cash_drawer_exit(void)
++{
++	platform_driver_unregister(&cash_drawer_driver);
++}
++
++module_init(cash_drawer_init);
++module_exit(cash_drawer_exit);
++
++MODULE_LICENSE("GPL");
++MODULE_DESCRIPTION("MeiG cash drawer GPIO driver");
++MODULE_AUTHOR("MeiG");
+diff --git a/drivers/misc/ext-adc-gpio.c b/drivers/misc/ext-adc-gpio.c
+new file mode 100644
+index 0000000..906c7fd
+--- /dev/null
++++ b/drivers/misc/ext-adc-gpio.c
+@@ -0,0 +1,350 @@
++#include <linux/module.h>
++#include <linux/kobject.h>
++#include <linux/sysfs.h>
++#include <linux/string.h>
++#include <linux/kernel.h>
++#include <linux/init.h>
++#include <linux/gpio.h>
++#include <linux/of_gpio.h>
++#include <linux/list.h>
++#include <linux/spinlock.h>
++#include <linux/device.h>
++#include <linux/err.h>
++#include <linux/ctype.h>
++#include <linux/platform_device.h>
++#include <linux/delay.h>
++#include <linux/leds.h>
++#include <linux/of.h>
++#include <linux/interrupt.h>
++#include <linux/irq.h>
++#include <linux/workqueue.h>
++#include <linux/input/mt.h>
++#include <linux/iio/consumer.h>
++#include <linux/jiffies.h>
++#include <linux/workqueue.h>
++#include <linux/slab.h>
++
++#define DRIVER_NAME "ext-adc-driver"
++#define ADC_NUM_CHANNELS 2
++#define ADC_POLL_INTERVAL_MS 500  // 1秒采样间隔
++
++struct ext_adc_data {
++    struct device *dev;
++    struct iio_channel *adc_channels[ADC_NUM_CHANNELS];
++    int num_channels;
++    const char *channel_names[ADC_NUM_CHANNELS];
++    struct delayed_work poll_work;
++    struct kobject *kobj;
++    struct mutex lock;
++    int values[ADC_NUM_CHANNELS];
++    bool enabled;
++};
++
++static int ext_adc_read_channel(struct ext_adc_data *adc_data, int channel)
++{
++    int ret = 0;
++    int val = 0;
++    
++    if (channel >= adc_data->num_channels || !adc_data->adc_channels[channel]) {
++        dev_err(adc_data->dev, "Invalid channel %d\n", channel);
++        return -EINVAL;
++    }
++
++    dev_dbg(adc_data->dev, "Reading ADC channel %d\n", channel);
++
++    ret = iio_read_channel_processed(adc_data->adc_channels[channel], &val);
++    if (ret >= 0) {
++        dev_dbg(adc_data->dev, "Channel %d processed value: %d uV\n", channel, val);
++        return val;
++    }
++
++    dev_err(adc_data->dev, "Both processed and raw reads failed for channel %d: %d\n", 
++            channel, ret);
++
++    return ret;
++}
++
++// sysfs属性
++static ssize_t adc_value_show(struct device *dev,
++                             struct device_attribute *attr,
++                             char *buf)
++{
++    struct ext_adc_data *adc_data = dev_get_drvdata(dev);
++    const char *attr_name;
++    int channel = 0;
++    int val;
++
++    if (!adc_data)
++        return -ENODEV;
++
++    attr_name = attr->attr.name;
++    if (strstr(attr_name, "adc0"))
++        channel = 0;
++    else if (strstr(attr_name, "adc1"))
++        channel = 1;
++    
++    if (channel >= adc_data->num_channels)
++        return -EINVAL;
++    
++    mutex_lock(&adc_data->lock);
++    val = ext_adc_read_channel(adc_data,channel);
++    mutex_unlock(&adc_data->lock);
++    
++    if (val < 0) {
++        return scnprintf(buf, PAGE_SIZE, "Error: %d\n", val);
++    }
++
++    return scnprintf(buf, PAGE_SIZE, "%d\n", val);
++}
++
++static ssize_t adc_enable_store(struct device *dev,
++                               struct device_attribute *attr,
++                               const char *buf, size_t count)
++{
++    struct ext_adc_data *adc_data = dev_get_drvdata(dev);
++    bool enable;
++    int ret;
++
++    if (!adc_data)
++        return -ENODEV;
++    
++    ret = kstrtobool(buf, &enable);
++    if (ret)
++        return ret;
++    
++    mutex_lock(&adc_data->lock);
++    
++    if (enable && !adc_data->enabled) {
++        adc_data->enabled = true;
++        schedule_delayed_work(&adc_data->poll_work,
++                            msecs_to_jiffies(ADC_POLL_INTERVAL_MS));
++        dev_info(dev, "ADC polling enabled\n");
++    } else if (!enable && adc_data->enabled) {
++        adc_data->enabled = false;
++        cancel_delayed_work_sync(&adc_data->poll_work);
++        dev_info(dev, "ADC polling disabled\n");
++    }
++    
++    mutex_unlock(&adc_data->lock);
++    
++    return count;
++}
++
++static ssize_t adc_enable_show(struct device *dev,
++                              struct device_attribute *attr,
++                              char *buf)
++{
++    struct ext_adc_data *adc_data = dev_get_drvdata(dev);
++    bool enabled;
++
++    if (!adc_data)
++        return -ENODEV;
++
++    mutex_lock(&adc_data->lock);
++    enabled = adc_data->enabled;
++    mutex_unlock(&adc_data->lock);
++    
++    return scnprintf(buf, PAGE_SIZE, "%d\n", enabled);
++}
++
++static void adc_poll_work_func(struct work_struct *work)
++{
++    struct ext_adc_data *adc_data = container_of(work,
++                                                struct ext_adc_data,
++                                                poll_work.work);
++    int i;
++    
++    mutex_lock(&adc_data->lock);
++    
++    if (!adc_data->enabled) {
++        mutex_unlock(&adc_data->lock);
++        return;
++    }
++
++    for (i = 0; i < adc_data->num_channels; i++) {
++        adc_data->values[i] = ext_adc_read_channel(adc_data,i);
++        if (adc_data->values[i] >= 0) {
++            dev_info(adc_data->dev, "Channel %d: %d\n", i, adc_data->values[i]);
++        } else {
++            dev_err(adc_data->dev, "Channel %d read error: %d\n", 
++                   i, adc_data->values[i]);
++        }
++    }
++    
++    mutex_unlock(&adc_data->lock);
++
++    if (adc_data->enabled) {
++        schedule_delayed_work(&adc_data->poll_work,
++                            msecs_to_jiffies(ADC_POLL_INTERVAL_MS));
++    }
++}
++
++static DEVICE_ATTR(adc0_value, 0444, adc_value_show, NULL);
++static DEVICE_ATTR(adc1_value, 0444, adc_value_show, NULL);
++static DEVICE_ATTR(enable, 0644, adc_enable_show, adc_enable_store);
++
++static struct attribute *ext_adc_attrs[] = {
++    &dev_attr_adc0_value.attr,
++    &dev_attr_adc1_value.attr,
++    &dev_attr_enable.attr,
++    NULL,
++};
++
++static const struct attribute_group ext_adc_attr_group = {
++    .attrs = ext_adc_attrs,
++};
++
++static int ext_adc_probe(struct platform_device *pdev)
++{
++    struct device *dev = &pdev->dev;
++    struct ext_adc_data *adc_data;
++    int i, ret;
++    
++    dev_info(dev, "Probing external ADC driver\n");
++
++    adc_data = devm_kzalloc(dev, sizeof(*adc_data), GFP_KERNEL);
++    if (!adc_data)
++        return -ENOMEM;
++    
++    adc_data->dev = dev;
++    mutex_init(&adc_data->lock);
++
++    adc_data->num_channels = of_property_count_strings(dev->of_node,
++                                                      "io-channel-names");
++    if (adc_data->num_channels <= 0) {
++        dev_err(dev, "No ADC channels defined\n");
++        return -ENODEV;
++    }
++    
++    if (adc_data->num_channels > ADC_NUM_CHANNELS) {
++        dev_warn(dev, "Too many channels, using first %d\n", ADC_NUM_CHANNELS);
++        adc_data->num_channels = ADC_NUM_CHANNELS;
++    }
++
++    for (i = 0; i < adc_data->num_channels; i++) {
++        ret = of_property_read_string_index(dev->of_node,
++                                           "io-channel-names",
++                                           i, &adc_data->channel_names[i]);
++        if (ret) {
++            dev_err(dev, "Failed to get channel name %d\n", i);
++            return ret;
++        }
++
++        adc_data->adc_channels[i] = devm_iio_channel_get(dev,
++                                                         adc_data->channel_names[i]);
++        if (IS_ERR(adc_data->adc_channels[i])) {
++            ret = PTR_ERR(adc_data->adc_channels[i]);
++            dev_err(dev, "Failed to get ADC channel %s: %d\n",
++                   adc_data->channel_names[i], ret);
++            return ret;
++        }
++        
++        dev_info(dev, "Got ADC channel: %s\n", adc_data->channel_names[i]);
++    }
++
++    INIT_DELAYED_WORK(&adc_data->poll_work, adc_poll_work_func);
++
++    /* drvdata must be set before sysfs is visible */
++    platform_set_drvdata(pdev, adc_data);
++    adc_data->enabled = false;
++
++    ret = sysfs_create_group(&dev->kobj, &ext_adc_attr_group);
++    if (ret) {
++        dev_err(dev, "Failed to create sysfs group: %d\n", ret);
++        platform_set_drvdata(pdev, NULL);
++        return ret;
++    }
++
++    schedule_delayed_work(&adc_data->poll_work,
++                         msecs_to_jiffies(ADC_POLL_INTERVAL_MS));
++    
++    dev_info(dev, "External ADC driver probed successfully with %d channels\n",
++            adc_data->num_channels);
++    
++    return 0;
++}
++
++static void ext_adc_remove(struct platform_device *pdev)
++{
++    struct ext_adc_data *adc_data = platform_get_drvdata(pdev);
++
++    dev_info(&pdev->dev, "Removing external ADC driver\n");
++
++    cancel_delayed_work_sync(&adc_data->poll_work);
++    sysfs_remove_group(&pdev->dev.kobj, &ext_adc_attr_group);
++    mutex_destroy(&adc_data->lock);
++}
++
++#ifdef CONFIG_PM_SLEEP
++static int ext_adc_suspend(struct device *dev)
++{
++    struct ext_adc_data *adc_data = dev_get_drvdata(dev);
++    
++    dev_dbg(dev, "Suspending ADC driver\n");
++    
++    mutex_lock(&adc_data->lock);
++    if (adc_data->enabled) {
++        cancel_delayed_work_sync(&adc_data->poll_work);
++    }
++    mutex_unlock(&adc_data->lock);
++    
++    return 0;
++}
++
++static int ext_adc_resume(struct device *dev)
++{
++    struct ext_adc_data *adc_data = dev_get_drvdata(dev);
++    
++    dev_dbg(dev, "Resuming ADC driver\n");
++    
++    mutex_lock(&adc_data->lock);
++    if (adc_data->enabled) {
++        schedule_delayed_work(&adc_data->poll_work,
++                            msecs_to_jiffies(ADC_POLL_INTERVAL_MS));
++    }
++    mutex_unlock(&adc_data->lock);
++    
++    return 0;
++}
++
++static SIMPLE_DEV_PM_OPS(ext_adc_pm_ops, ext_adc_suspend, ext_adc_resume);
++#endif
++
++static const struct of_device_id of_ext_adc_match[] = {
++    { .compatible = "ext,adc-driver", },
++    {},
++};
++MODULE_DEVICE_TABLE(of, of_ext_adc_match);
++
++static struct platform_driver ext_adc_driver = {
++    .probe      = ext_adc_probe,
++    .remove     = ext_adc_remove,
++    .driver     = {
++        .name   = DRIVER_NAME,
++        .owner  = THIS_MODULE,
++        .of_match_table = of_match_ptr(of_ext_adc_match),
++#ifdef CONFIG_PM_SLEEP
++        .pm     = &ext_adc_pm_ops,
++#endif
++    },
++};
++
++static int __init ext_adc_init(void)
++{
++    pr_info("%s: External ADC driver init start\n", __func__);
++    return platform_driver_register(&ext_adc_driver);
++}
++
++static void __exit ext_adc_exit(void)
++{
++    platform_driver_unregister(&ext_adc_driver);
++    pr_info("%s: External ADC driver exit\n", __func__);
++}
++
++late_initcall(ext_adc_init);
++module_exit(ext_adc_exit);
++
++MODULE_DESCRIPTION("External ADC Driver for Multiple Channels");
++MODULE_AUTHOR("Your Name");
++MODULE_LICENSE("GPL v2");
++MODULE_ALIAS("platform:ext-adc-driver");
+\ No newline at end of file
+diff --git a/drivers/misc/modules.bzl b/drivers/misc/modules.bzl
+index df403c3..41bcef9 100644
+--- a/drivers/misc/modules.bzl
++++ b/drivers/misc/modules.bzl
+@@ -100,3 +100,23 @@
+         ],
+     )
+ 
++    registry.register(
++        name = "drivers/misc/ext-adc-gpio",
++        out = "ext-adc-gpio.ko",
++        config = "CONFIG_EXT_ADC_GPIO",
++        srcs = [
++            # do not sort
++            "drivers/misc/ext-adc-gpio.c",
++        ],
++    )
++
++    registry.register(
++        name = "drivers/misc/cash_drawer",
++        out = "cash_drawer.ko",
++        config = "CONFIG_CASH_DRAWER_DRIVER",
++        srcs = [
++            # do not sort
++            "drivers/misc/cash_drawer.c",
++        ],
++    )
++
+diff --git a/drivers/power/supply/Kconfig b/drivers/power/supply/Kconfig
+index 36c92b0..1092001 100644
+--- a/drivers/power/supply/Kconfig
++++ b/drivers/power/supply/Kconfig
+@@ -38,6 +38,13 @@
+ 	  to manage their power supply requirements through the charger’s
+ 	  reverse boost regulator.
+ 
++config SGM832
++	tristate "sgm832 power monitor"
++	depends on I2C
++	help
++	  Say Y to enable support for sgm832 Programmable
++	  power monitor (MeiG / A14 port).
++
+ source "$(KCONFIG_EXT_PREFIX)drivers/power/supply/qcom/Kconfig"
+ 
+ endif # POWER_SUPPLY
+diff --git a/drivers/power/supply/Makefile b/drivers/power/supply/Makefile
+index 8fb5605..8637d1a 100644
+--- a/drivers/power/supply/Makefile
++++ b/drivers/power/supply/Makefile
+@@ -8,3 +8,5 @@
+ obj-$(CONFIG_QTI_BATTERY_CHARGER) += qti-battery-charger.o
+ qti-battery-charger-objs += qti_battery_charger.o qti_charger_boost_lib.o qti_typec_class.o
+ 
++obj-$(CONFIG_SGM832) += sgm832.o
++
+diff --git a/drivers/power/supply/modules.bzl b/drivers/power/supply/modules.bzl
+index d9d0f656..3807b0e 100644
+--- a/drivers/power/supply/modules.bzl
++++ b/drivers/power/supply/modules.bzl
+@@ -41,3 +41,13 @@
+             "drivers/regulator/debug-regulator",
+         ],
+     )
++
++    registry.register(
++        name = "drivers/power/supply/sgm832",
++        out = "sgm832.ko",
++        config = "CONFIG_SGM832",
++        srcs = [
++            # do not sort
++            "drivers/power/supply/sgm832.c",
++        ],
++    )
+diff --git a/drivers/power/supply/sgm832.c b/drivers/power/supply/sgm832.c
+new file mode 100755
+index 0000000..c1e3b70
+--- /dev/null
++++ b/drivers/power/supply/sgm832.c
+@@ -0,0 +1,362 @@
++// SPDX-License-Identifier: GPL-2.0-only
++/*
++ * SGM832 power monitor (ported from A14 msm-5.4)
++ */
++#include <linux/pinctrl/consumer.h>
++#include <linux/io.h>
++#include <linux/module.h>
++#include <linux/types.h>
++#include <linux/delay.h>
++#include <linux/of.h>
++#include <linux/of_platform.h>
++#include <linux/of_gpio.h>
++#include <linux/gpio.h>
++#include <linux/i2c.h>
++#include <linux/interrupt.h>
++#include <linux/of_irq.h>
++#include <linux/kobject.h>
++#include <linux/sysfs.h>
++#include <linux/extcon.h>
++#include <linux/notifier.h>
++#include <linux/power_supply.h>
++
++struct sgm832_data {
++	struct i2c_client *client;
++	struct delayed_work delay_work;
++	struct kobject *bl_kobj;
++	int irq_gpio;
++	bool init_done;
++	struct power_supply *usb_psy;
++};
++
++static int swapEndianness(int value)
++{
++	return ((value & 0xff) << 8) | ((value >> 8) & 0xff);
++}
++
++static void delaywork_func(struct work_struct *work)
++{
++	struct sgm832_data *data = container_of(to_delayed_work(work),
++						struct sgm832_data, delay_work);
++	int buf;
++
++	buf = i2c_smbus_read_word_data(data->client, 0x01);
++	if (buf < 0) {
++		dev_err(&data->client->dev, "read reg 0x01 failed: %d\n", buf);
++		return;
++	}
++	dev_dbg(&data->client->dev, "01 is 0x%x, 0x%x\n",
++		buf, swapEndianness(buf));
++
++	buf = i2c_smbus_read_word_data(data->client, 0xfe);
++	if (buf < 0) {
++		dev_err(&data->client->dev, "read reg 0xfe failed: %d\n", buf);
++		return;
++	}
++	dev_dbg(&data->client->dev, "power 0xfe is 0x%x, 0x%x\n",
++		buf, swapEndianness(buf));
++
++	buf = i2c_smbus_read_word_data(data->client, 0xff);
++	if (buf < 0) {
++		dev_err(&data->client->dev, "read reg 0xff failed: %d\n", buf);
++		return;
++	}
++	dev_dbg(&data->client->dev, "power 0xff is 0x%x, 0x%x\n",
++		buf, swapEndianness(buf));
++
++	buf = i2c_smbus_read_word_data(data->client, 0x05);
++	if (buf < 0) {
++		dev_err(&data->client->dev, "read reg 0x05 failed: %d\n", buf);
++		return;
++	}
++	dev_dbg(&data->client->dev, "05 is 0x%x, 0x%x\n",
++		buf, swapEndianness(buf));
++}
++
++static ssize_t sgm832_current_show(struct device *dev,
++				   struct device_attribute *attr, char *buf)
++{
++	struct sgm832_data *data = dev_get_drvdata(dev);
++	int buf_current;
++
++	if (!data || !data->client)
++		return -ENODEV;
++
++	buf_current = i2c_smbus_read_word_data(data->client, 0x04);
++	if (buf_current < 0) {
++		dev_err(dev, "read current reg 0x04 failed: %d\n", buf_current);
++		return buf_current;
++	}
++
++	buf_current = swapEndianness(buf_current);
++	dev_dbg(dev, "current 0x04:0x%x\n", buf_current);
++	buf_current = (buf_current * 4900) / 32768;
++
++	return sysfs_emit(buf, "%d\n", buf_current);
++}
++
++static ssize_t sgm832_power_show(struct device *dev,
++				 struct device_attribute *attr, char *buf)
++{
++	struct sgm832_data *data = dev_get_drvdata(dev);
++	int buf_power;
++
++	if (!data || !data->client)
++		return -ENODEV;
++
++	buf_power = i2c_smbus_read_word_data(data->client, 0x03);
++	if (buf_power < 0) {
++		dev_err(dev, "read power reg 0x03 failed: %d\n", buf_power);
++		return buf_power;
++	}
++
++	buf_power = swapEndianness(buf_power);
++	dev_dbg(dev, "power 0x03:0x%x\n", buf_power);
++	/* 122500 * ~0xFFFF overflows 32-bit int; use 64-bit math */
++	buf_power = (int)(((long long)buf_power * 122500) / 32768);
++
++	return sysfs_emit(buf, "%d\n", buf_power);
++}
++
++static ssize_t sgm832_vbus_show(struct device *dev,
++				struct device_attribute *attr, char *buf)
++{
++	struct sgm832_data *data = dev_get_drvdata(dev);
++	int buf_vbus;
++
++	if (!data || !data->client)
++		return -ENODEV;
++
++	buf_vbus = i2c_smbus_read_word_data(data->client, 0x02);
++	if (buf_vbus < 0) {
++		dev_err(dev, "read vbus reg 0x02 failed: %d\n", buf_vbus);
++		return buf_vbus;
++	}
++
++	buf_vbus = swapEndianness(buf_vbus);
++	/* A14 used float *1.25; keep integer math for kernel */
++	buf_vbus = (buf_vbus * 5) / 4;
++
++	return sysfs_emit(buf, "%d\n", buf_vbus);
++}
++
++static struct device_attribute sgm832_dev_attr[] = {
++	__ATTR(sgm_current, 0444, sgm832_current_show, NULL),
++	__ATTR(sgm_power, 0444, sgm832_power_show, NULL),
++	__ATTR(sgm_vbus, 0444, sgm832_vbus_show, NULL),
++};
++
++static int sgm832_create_sysfs(struct device *dev)
++{
++	int result = 0, num_attr, i;
++
++	num_attr = ARRAY_SIZE(sgm832_dev_attr);
++	for (i = 0; i < num_attr; i++) {
++		result = device_create_file(dev, &sgm832_dev_attr[i]);
++		if (result < 0) {
++			while (--i >= 0)
++				device_remove_file(dev, &sgm832_dev_attr[i]);
++			return result;
++		}
++	}
++
++	return 0;
++}
++
++static void sgm832_remove_sysfs(struct device *dev)
++{
++	int i;
++
++	for (i = 0; i < ARRAY_SIZE(sgm832_dev_attr); i++)
++		device_remove_file(dev, &sgm832_dev_attr[i]);
++}
++
++static irqreturn_t sgm832_irq_handler(int irq, void *dev_id)
++{
++	struct sgm832_data *data = dev_id;
++
++	if (!data || !data->client)
++		return IRQ_NONE;
++
++	disable_irq_nosync(irq);
++	dev_dbg(&data->client->dev, "sgm832_irq_handler\n");
++	schedule_delayed_work(&data->delay_work, msecs_to_jiffies(500));
++	enable_irq(irq);
++	return IRQ_HANDLED;
++}
++
++static int sgm832_request_irq(struct sgm832_data *data)
++{
++	int ret = -EINVAL;
++
++	if (gpio_is_valid(data->irq_gpio) || data->client->irq > 0) {
++		if (gpio_is_valid(data->irq_gpio))
++			data->client->irq = gpio_to_irq(data->irq_gpio);
++
++		ret = request_threaded_irq(data->client->irq, NULL,
++					   sgm832_irq_handler,
++					   IRQF_TRIGGER_FALLING | IRQF_ONESHOT,
++					   data->client->name,
++					   data);
++		if (ret < 0) {
++			dev_err(&data->client->dev,
++				"Failed to request irq %d\n", data->client->irq);
++			return ret;
++		}
++		return 0;
++	}
++
++	return ret;
++}
++
++static int sgm832_parse_dt(struct device *dev, struct sgm832_data *data)
++{
++	int ret;
++	struct device_node *np = dev->of_node;
++
++	data->irq_gpio = of_get_named_gpio(np, "sgm832,irq-gpio", 0);
++	if (!gpio_is_valid(data->irq_gpio)) {
++		dev_err(dev, "invalid irq-gpio\n");
++		return -EINVAL;
++	}
++
++	ret = gpio_request(data->irq_gpio, "irq-gpio");
++	if (ret < 0) {
++		dev_err(dev, "request irq-gpio failed: %d\n", ret);
++		return ret;
++	}
++
++	gpio_direction_input(data->irq_gpio);
++	return 0;
++}
++
++static void sgm832_shutdown(struct i2c_client *client)
++{
++	struct sgm832_data *data = i2c_get_clientdata(client);
++
++	if (!data || !data->init_done)
++		return;
++
++	cancel_delayed_work_sync(&data->delay_work);
++}
++
++static int sgm832_probe(struct i2c_client *client)
++{
++	struct sgm832_data *data;
++	int ret;
++
++	dev_info(&client->dev, "sgm832_probe start addr=0x%x\n", client->addr);
++	if (!i2c_check_functionality(client->adapter, I2C_FUNC_I2C)) {
++		dev_err(&client->dev, "Failed check I2C functionality");
++		return -ENODEV;
++	}
++
++	data = devm_kzalloc(&client->dev, sizeof(*data), GFP_KERNEL);
++	if (!data)
++		return -ENOMEM;
++
++	data->init_done = false;
++	data->irq_gpio = -EINVAL;
++	data->client = client;
++	i2c_set_clientdata(client, data);
++
++	if (client->dev.of_node) {
++		ret = sgm832_parse_dt(&client->dev, data);
++		if (ret) {
++			dev_err(&client->dev, "Failed parse dts\n");
++			goto err_clear_drvdata;
++		}
++	}
++
++	ret = i2c_smbus_write_word_data(data->client, 0x05, 0x550d);
++	if (ret < 0) {
++		dev_err(&client->dev, "write reg 0x05 failed: %d\n", ret);
++		goto err_free_gpio;
++	}
++
++	INIT_DELAYED_WORK(&data->delay_work, delaywork_func);
++
++	ret = sgm832_request_irq(data);
++	if (ret < 0) {
++		dev_err(&client->dev, "Failed to request irq\n");
++		goto err_free_gpio;
++	}
++
++	ret = sgm832_create_sysfs(&client->dev);
++	if (ret < 0) {
++		dev_err(&client->dev, "Cannot create sysfs\n");
++		goto err_free_irq;
++	}
++
++	/* Start delayed work only after all resources are ready */
++	schedule_delayed_work(&data->delay_work, msecs_to_jiffies(5000));
++
++	data->init_done = true;
++	dev_info(&client->dev, "sgm832_probe success\n");
++	return 0;
++
++err_free_irq:
++	if (data->client->irq > 0)
++		free_irq(data->client->irq, data);
++err_free_gpio:
++	if (gpio_is_valid(data->irq_gpio))
++		gpio_free(data->irq_gpio);
++err_clear_drvdata:
++	i2c_set_clientdata(client, NULL);
++	return ret;
++}
++
++static void sgm832_remove(struct i2c_client *client)
++{
++	struct sgm832_data *data = i2c_get_clientdata(client);
++
++	if (!data)
++		return;
++
++	cancel_delayed_work_sync(&data->delay_work);
++	sgm832_remove_sysfs(&client->dev);
++
++	if (data->client->irq > 0)
++		free_irq(data->client->irq, data);
++
++	if (gpio_is_valid(data->irq_gpio))
++		gpio_free(data->irq_gpio);
++
++	i2c_set_clientdata(client, NULL);
++	dev_info(&client->dev, "sgm832 driver removed\n");
++}
++
++static const struct of_device_id sgm832_match_table[] = {
++	{.compatible = "sgm832",},
++	{ },
++};
++MODULE_DEVICE_TABLE(of, sgm832_match_table);
++
++static struct i2c_driver sgm832_driver = {
++	.probe		= sgm832_probe,
++	.remove		= sgm832_remove,
++	.shutdown	= sgm832_shutdown,
++	.driver = {
++		.name	  = "sgm832",
++		.owner	  = THIS_MODULE,
++		.of_match_table = sgm832_match_table,
++	},
++};
++
++static int __init sgm832_init(void)
++{
++	pr_info("sgm832 driver installing..\n");
++	return i2c_add_driver(&sgm832_driver);
++}
++
++static void __exit sgm832_exit(void)
++{
++	pr_info("sgm832 driver exited\n");
++	i2c_del_driver(&sgm832_driver);
++}
++
++late_initcall(sgm832_init);
++module_exit(sgm832_exit);
++
++MODULE_DESCRIPTION("SGM832 power monitor");
++MODULE_LICENSE("GPL");

@@ -35,7 +35,7 @@ struct usb_extcon_info {
 	struct delayed_work wq_detcable;
 	/* ID-only: ID high = none (not gadget). Used by mux/DIP to Type-C. */
 	bool id_high_is_none;
-	/* DIP host (ID low) → drive low; DIP type-c (ID high) → drive high */
+	/* DIP host (ID low) → drive high (release RESET#); Type-C → drive low */
 	struct gpio_desc *hub_reset_gpiod;
 };
 
@@ -93,9 +93,9 @@ static void usb_extcon_detect_cable(struct work_struct *work)
 			extcon_set_state_sync(info->edev, EXTCON_USB, true);
 	}
 
-	/* ID low (host/D1): hub reset low; ID high (type-c/D2): hub reset high */
+	/* DIP host (ID low): release RESET# (high); Type-C (ID high): assert (low) */
 	if (info->hub_reset_gpiod)
-		gpiod_set_value_cansleep(info->hub_reset_gpiod, !!id);
+		gpiod_set_value_cansleep(info->hub_reset_gpiod, !id);
 }
 
 static irqreturn_t usb_irq_handler(int irq, void *dev_id)
@@ -139,11 +139,12 @@ static int usb_extcon_probe(struct platform_device *pdev)
 		return PTR_ERR(info->vbus_gpiod);
 
 	info->hub_reset_gpiod = devm_gpiod_get_optional(&pdev->dev, "hub-reset",
-							GPIOD_OUT_HIGH);
+							GPIOD_OUT_LOW);
 	if (IS_ERR(info->hub_reset_gpiod))
 		return PTR_ERR(info->hub_reset_gpiod);
 	if (info->hub_reset_gpiod)
-		dev_info(dev, "hub-reset: ID low=low, ID high=high\n");
+		dev_info(dev,
+			 "hub-reset: ID low(host)=high(release), ID high=low\n");
 
 	info->id_high_is_none = of_property_read_bool(np, "id-high-is-none");
 	if (info->id_high_is_none)

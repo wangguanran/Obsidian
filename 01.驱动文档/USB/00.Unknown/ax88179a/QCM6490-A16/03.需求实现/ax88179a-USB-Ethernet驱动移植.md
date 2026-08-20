@@ -258,4 +258,158 @@ drivers/net/usb/ax_usb_nic/
 
 ---
 
+
+---
+
+## 补充：内核 common 侧排除通用驱动绑定（#196763）
+
+**Change**: #196763 | **项目**: meigla/kernel/common | **分支**: Develop_QCM6490.LA.6.0_VENDOR_QCOM_Platform_Elo_Rigel | **作者**: qianyiping | **状态**: MERGED
+**任务**: Task 120099（与 #196024 同一任务，合并归档）
+
+### 需求描述
+
+Rigel A16 上内核 `kernel/common` 的通用网络驱动会与 vendor 的 `ax_usb_nic` 驱动**竞争绑定** AX88179/178A 设备：
+
+- `drivers/net/usb/ax88179_178a.c`（内核自带版本）通过 `driver_info` 绑定 0x0b95:0x1790 / 0x178a；
+- `drivers/net/usb/cdc_ncm.c` 的通用 CDC-NCM 匹配也可能命中（AX88179 支持 NCM 接口）。
+
+两个通用驱动抢在 vendor 驱动之前 probe 时，vendor `ax_usb_nic` 无法绑定设备，导致带 PTP 等定制功能的驱动不生效。需要把这两个通用驱动对 AX88179/178A 的匹配**排除掉**（driver_info = 0 黑名单）。
+
+### 方案
+
+1. `ax88179_178a.c`：
+   - `ax88179_info` / `ax88178a_info` 标记 `__maybe_unused`（不再被引用，避免编译告警）；
+   - products 表中 AX88179/AX88178A 两项 `.driver_info = 0`（`usbnet_probe()` 对 driver_info==0 视为黑名单返回 -ENODEV）；
+   - 注释明确"Exclude ASIX AX88179 so vendor ax_usb_nic can bind"。
+2. `cdc_ncm.c`：CDC-NCM 设备表新增两条 `driver_info = 0` 的 AX88179/178A 黑名单项（`USB_DEVICE_AND_INTERFACE_INFO(0x0b95, 0x1790/0x178a, ...)`）。
+
+### 修改文件清单
+
+| 文件 | 改动 | 说明 |
+|------|------|------|
+| [[01.驱动文档/USB/00.Unknown/ax88179a/QCM6490-A16/91.源码与补丁索引/kernel_driver/drivers/net/usb/ax88179_178a.c\|drivers/net/usb/ax88179_178a.c]] | +8/-6 | AX88179/178A 黑名单（driver_info=0） |
+| [[01.驱动文档/USB/00.Unknown/ax88179a/QCM6490-A16/91.源码与补丁索引/kernel_driver/drivers/net/usb/cdc_ncm.c\|drivers/net/usb/cdc_ncm.c]] | +16/-0 | CDC-NCM 黑名单项 |
+
+### 配置方式
+
+```c
+/* ax88179_178a.c 产品表 */
+USB_DEVICE_AND_INTERFACE_INFO(0x0b95, 0x1790, 0xff, 0xff, 0),
+.driver_info = 0,   /* 黑名单：让 vendor ax_usb_nic 绑定 */
+
+/* cdc_ncm.c 黑名单 */
+{ USB_DEVICE_AND_INTERFACE_INFO(0x0b95, 0x1790, USB_CLASS_COMM, USB_CDC_SUBCLASS_NCM, USB_CDC_PROTO_NONE),
+  .driver_info = 0 },
+```
+
+### 验证方式
+
+```bash
+# 确认 vendor 驱动绑定（而非通用 ax88179_178a / cdc_ncm）
+ls -l /sys/bus/usb/devices/*/net/
+dmesg | grep -i "ax_usb_nic\|ax88179"
+# 预期：ax_usb_nic 成功 bind，网卡功能 + PTP 正常
+```
+
+### 补丁内容
+
+```diff
+From 2046da1e03c2181f33c4da1a97ca1d194624c449 Mon Sep 17 00:00:00 2001
+
+---
+
+diff --git a/drivers/net/usb/ax88179_178a.c b/drivers/net/usb/ax88179_178a.c
+index b034ef8..bac1a97 100644
+--- a/drivers/net/usb/ax88179_178a.c
++++ b/drivers/net/usb/ax88179_178a.c
+@@ -1713,7 +1713,7 @@
+ 	return 0;
+ }
+ 
+-static const struct driver_info ax88179_info = {
++static const struct driver_info ax88179_info __maybe_unused = {
+ 	.description = "ASIX AX88179 USB 3.0 Gigabit Ethernet",
+ 	.bind = ax88179_bind,
+ 	.unbind = ax88179_unbind,
+@@ -1726,7 +1726,7 @@
+ 	.tx_fixup = ax88179_tx_fixup,
+ };
+ 
+-static const struct driver_info ax88178a_info = {
++static const struct driver_info ax88178a_info __maybe_unused = {
+ 	.description = "ASIX AX88178A USB 2.0 Gigabit Ethernet",
+ 	.bind = ax88179_bind,
+ 	.unbind = ax88179_unbind,
+@@ -1884,13 +1884,15 @@
+ 
+ static const struct usb_device_id products[] = {
+ {
+-	/* ASIX AX88179 10/100/1000 */
++	/* Exclude ASIX AX88179 so vendor ax_usb_nic can bind.
++	 * usbnet_probe() treats driver_info == 0 as a blacklist (-ENODEV).
++	 */
+ 	USB_DEVICE_AND_INTERFACE_INFO(0x0b95, 0x1790, 0xff, 0xff, 0),
+-	.driver_info = (unsigned long)&ax88179_info,
++	.driver_info = 0,
+ }, {
+-	/* ASIX AX88178A 10/100/1000 */
++	/* Exclude ASIX AX88178A so vendor ax_usb_nic can bind. */
+ 	USB_DEVICE_AND_INTERFACE_INFO(0x0b95, 0x178a, 0xff, 0xff, 0),
+-	.driver_info = (unsigned long)&ax88178a_info,
++	.driver_info = 0,
+ }, {
+ 	/* Cypress GX3 SuperSpeed to Gigabit Ethernet Bridge Controller */
+ 	USB_DEVICE_AND_INTERFACE_INFO(0x04b4, 0x3610, 0xff, 0xff, 0),
+diff --git a/drivers/net/usb/cdc_ncm.c b/drivers/net/usb/cdc_ncm.c
+index 5c89e03..48a8e84 100644
+--- a/drivers/net/usb/cdc_ncm.c
++++ b/drivers/net/usb/cdc_ncm.c
+@@ -2105,6 +2105,22 @@
+ 	  .driver_info = (unsigned long)&cdc_ncm_zlp_info,
+ 	},
+ 
++	/*
++	 * Exclude ASIX AX88179/179A (0x0b95:0x1790 / 0x178a) from generic
++	 * CDC-NCM matching so the vendor ax_usb_nic driver can bind.
++	 * usbnet_probe() treats driver_info == 0 as a blacklist (-ENODEV).
++	 */
++	{ USB_DEVICE_AND_INTERFACE_INFO(0x0b95, 0x1790,
++		USB_CLASS_COMM,
++		USB_CDC_SUBCLASS_NCM, USB_CDC_PROTO_NONE),
++	  .driver_info = 0,
++	},
++	{ USB_DEVICE_AND_INTERFACE_INFO(0x0b95, 0x178a,
++		USB_CLASS_COMM,
++		USB_CDC_SUBCLASS_NCM, USB_CDC_PROTO_NONE),
++	  .driver_info = 0,
++	},
++
+ 	/* Generic CDC-NCM devices */
+ 	{ USB_INTERFACE_INFO(USB_CLASS_COMM,
+ 		USB_CDC_SUBCLASS_NCM, USB_CDC_PROTO_NONE),
+```
+
+### 补丁验证
+
+| Change | 验证方式 | 结果 |
+|--------|---------|------|
+| #196763 | Gerrit REST 拉取 current revision 源码与补丁比对 | ✅ 与归档源码一致 |
+
+> ⚠️ 项目 `meigla/kernel/common` 不在 134 服务器上，无法 `git apply --check`。已通过 Gerrit REST 拉取源码比对。
+
+### 源码归档
+
+- [[01.驱动文档/USB/00.Unknown/ax88179a/QCM6490-A16/91.源码与补丁索引/kernel_driver/drivers/net/usb/ax88179_178a.c|ax88179_178a.c]]（REST，含 #196763 改动）
+- [[01.驱动文档/USB/00.Unknown/ax88179a/QCM6490-A16/91.源码与补丁索引/kernel_driver/drivers/net/usb/cdc_ncm.c|cdc_ncm.c]]（REST，含 #196763 改动）
+- 补丁：[[01.驱动文档/USB/00.Unknown/ax88179a/QCM6490-A16/91.源码与补丁索引/patches/196763.patch|196763.patch]]
+
+### 引用文件索引（#196763 补充）
+
+| 序号 | 文件 | 说明 |
+|------|------|------|
+| 1 | [[01.驱动文档/USB/00.Unknown/ax88179a/QCM6490-A16/91.源码与补丁索引/kernel_driver/drivers/net/usb/ax88179_178a.c\|ax88179_178a.c]] | 内核通用 AX88179 驱动（黑名单） |
+| 2 | [[01.驱动文档/USB/00.Unknown/ax88179a/QCM6490-A16/91.源码与补丁索引/kernel_driver/drivers/net/usb/cdc_ncm.c\|cdc_ncm.c]] | CDC-NCM 通用驱动（黑名单） |
+| 3 | [[01.驱动文档/USB/00.Unknown/ax88179a/QCM6490-A16/91.源码与补丁索引/patches/196763.patch\|196763.patch]] | #196763 补丁 |
+
+
 _Author: wangguanran_

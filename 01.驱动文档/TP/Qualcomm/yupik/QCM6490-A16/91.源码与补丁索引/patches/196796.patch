@@ -1,0 +1,107 @@
+From 172172b65b506ee0ec243371de22526fff15c356 Mon Sep 17 00:00:00 2001
+
+---
+
+diff --git a/egalax/egalax_i2c.c b/egalax/egalax_i2c.c
+index 1492684..e44854c 100644
+--- a/egalax/egalax_i2c.c
++++ b/egalax/egalax_i2c.c
+@@ -1351,7 +1351,7 @@
+ 			egalax_active_panel,
+ 			egalax_touch_panel_notifier_callback,
+ 			NULL);
+-		if (!cookie) {
++		if (!cookie || IS_ERR(cookie)) {
+ 			pr_err("egalax: panel_event_notifier_register fail");
+ 			egalax_active_panel = NULL;
+ 			return;
+diff --git a/sis95xx/sis_i2c.c b/sis95xx/sis_i2c.c
+index 11eabd9..8211a19 100644
+--- a/sis95xx/sis_i2c.c
++++ b/sis95xx/sis_i2c.c
+@@ -74,6 +74,7 @@
+ //static int g_tp_wakeup_last_value = 0;
+ static int gesture_mode_enable = 1;
+ static int poweroff_when_suspend_flag = 0;
++static bool sis_irq_suspended;
+ void PrintBuffer(int start, int length, char *buf)
+ {
+ 	int i;
+@@ -575,12 +576,12 @@
+ 		disable_irq_nosync(ts->client->irq);
+ */
+ 
+-	if(gesture_mode_enable ==1 && g_tp_wakeup_flag == 1) {
++	if (gesture_mode_enable == 1 && g_tp_wakeup_flag == 1) {
+ 		input_report_key(ts->input_dev, KEY_WAKEUP, 1);
+ 		input_sync(ts->input_dev);
+ 		input_report_key(ts->input_dev, KEY_WAKEUP, 0);
+ 		input_sync(ts->input_dev);
+-		pr_err("%s g_tp_wakeup_flag:%d\n",__func__, g_tp_wakeup_flag);
++        pr_err("%s g_tp_wakeup_flag:%d\n",__func__, g_tp_wakeup_flag);
+ 	}
+ 
+ 	if(ts_bak->is_cmd_mode == MODE_IS_TOUCH) {
+@@ -1273,31 +1274,40 @@
+ 			pr_debug("sis: resume early, skip");
+ 		} else {
+ 			g_tp_wakeup_flag = 0;
+-			if (!gesture_mode_enable)
+-				enable_irq(ts_bak->client->irq);
+-			else
++			if (gesture_mode_enable)
+ 				disable_irq_wake(ts_bak->client->irq);
+ 			if (poweroff_when_suspend_flag) {
+ 				pr_info("sis: poweron TP on resume by gpio");
+-				gpio_direction_output(ts_bak->en_gpio, 1);
++				if (gpio_is_valid(ts_bak->en_gpio))
++					gpio_direction_output(ts_bak->en_gpio, 1);
+ 				mdelay(5);
+-				gpio_direction_output(ts_bak->rst_gpio, 0);
+-				mdelay(5);
+-				gpio_direction_output(ts_bak->rst_gpio, 1);
++				if (gpio_is_valid(ts_bak->rst_gpio)) {
++					gpio_direction_output(ts_bak->rst_gpio, 0);
++					mdelay(5);
++					gpio_direction_output(ts_bak->rst_gpio, 1);
++				}
++			}
++			if (sis_irq_suspended) {
++				enable_irq(ts_bak->client->irq);
++				sis_irq_suspended = false;
+ 			}
+ 		}
+ 		break;
+ 	case DRM_PANEL_EVENT_BLANK:
+ 		if (notification->notif_data.early_trigger) {
+-			g_tp_wakeup_flag = 1;
+-			if (!gesture_mode_enable)
+-				disable_irq(ts_bak->client->irq);
+-			else
++			if (gesture_mode_enable) {
++				g_tp_wakeup_flag = 1;
+ 				enable_irq_wake(ts_bak->client->irq);
++			} else if (!sis_irq_suspended) {
++				disable_irq(ts_bak->client->irq);
++				sis_irq_suspended = true;
++			}
+ 			if (poweroff_when_suspend_flag) {
+ 				pr_info("sis: poweroff TP on suspend by gpio");
+-				gpio_direction_output(ts_bak->rst_gpio, 0);
+-				gpio_direction_output(ts_bak->en_gpio, 0);
++				if (gpio_is_valid(ts_bak->rst_gpio))
++					gpio_direction_output(ts_bak->rst_gpio, 0);
++				if (gpio_is_valid(ts_bak->en_gpio))
++					gpio_direction_output(ts_bak->en_gpio, 0);
+ 			}
+ 		} else {
+ 			pr_debug("sis: suspend late, skip");
+@@ -1347,7 +1357,7 @@
+ 			sis_active_panel,
+ 			sis_touch_panel_notifier_callback,
+ 			NULL);
+-		if (!cookie) {
++		if (!cookie || IS_ERR(cookie)) {
+ 			pr_err("sis: panel_event_notifier_register fail");
+ 			sis_active_panel = NULL;
+ 			return;

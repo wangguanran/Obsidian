@@ -1,0 +1,127 @@
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# Misc strange devices
+#
+
+menu "Misc devices"
+
+config QCOM_COINCELL
+	tristate "Qualcomm coincell charger support"
+	depends on MFD_SPMI_PMIC || COMPILE_TEST
+	help
+	  This driver supports the coincell block found inside of
+	  Qualcomm PMICs.  The coincell charger provides a means to
+	  charge a coincell battery or backup capacitor which is used
+	  to maintain PMIC register and RTC state in the absence of
+	  external power.
+
+config QSEECOM_PROXY
+	tristate "To enable qseecom proxy driver for kernel client"
+	help
+	 qseecom proxy driver serves the kernel clients by providing
+	 required ops via call back functions with a minimal framework.
+	 These callback functions can be used to start, shutdown and
+	 send commands to the trusted apps.
+
+config BOOTMARKER_PROXY
+	tristate "To enable Bootmarker proxy driver for kernel client"
+	help
+	  Bootmarker proxy driver serves the kernel clients by providing
+	  required ops via call back functions with a minimal framework.
+	  These callback functions can be used to access the place marker.
+	  To compile this driver as a module, choose M here.
+	  If unsure, say N.
+
+config LKDTM
+	tristate "Linux Kernel Dump Test Tool Module"
+	depends on DEBUG_FS
+	help
+	This module enables testing of the different dumping mechanisms by
+	inducing system failures at predefined crash points.
+	If you don't need it: say N
+	Choose M here to compile this code as a module. The module will be
+	called lkdtm.
+
+	Documentation on how to use the module can be found in
+	Documentation/fault-injection/provoke-crashes.rst
+
+config ISL97900_LED
+	tristate "ISL97900_I2C_Driver"
+	select REGMAP_I2C
+	depends on I2C
+	help
+	  Support for ISL97900 LED driver IC, using this driver,
+	  user can set different values to control the LED current
+	  using I2C.
+
+	  Say Y if you want to enable ISL97900 driver.
+
+
+config QTI_FASTRPC
+	tristate "Qualcomm FastRPC"
+	depends on ARCH_QCOM || COMPILE_TEST
+	depends on RPMSG
+	select QCOM_SCM
+	select DMA_SHARED_BUFFER
+	help
+	  Provides a communication mechanism that allows for clients to
+	  make remote method invocations across processor boundary to
+	  applications DSP processor. Say M if you want to enable this
+	  module.
+
+config ODMCONFIG
+	tristate "partition odmconfig"
+	help
+	  Partition odmconfig read/write support via sysfs.
+
+config GPIO_USERSPACE
+	tristate "Userspace GPIO support"
+	depends on OF && GPIOLIB
+	help
+	  Export GPIOs described in DT to userspace under
+	  /sys/class/gpio_userspace/.
+
+config USB_UART_SW
+	tristate "USB UART switch GPIO support"
+	depends on OF && GPIOLIB && EXTCON
+	help
+	  Control USB/UART switch GPIO based on USB VBUS extcon events.
+
+config USB_SPEED_SHOW
+	tristate "USB speed show support"
+	depends on USB && OF
+	help
+	  Expose USB mass-storage device speed via sysfs and notify
+	  userspace of USB connect/disconnect events.
+
+config MEIG_HWPROJ
+	tristate "MeiG hardware project sysfs"
+	depends on OF
+	help
+	  Expose androidboot.project.model as lowercase hwproject via
+	  /sys/devices/virtual/hwproj/function/hwproject for sensors registry.
+
+
+
+config HUB_CONTROL
+	tristate "USB hub control (MeiG)"
+	depends on USB && OF && GPIOLIB
+	help
+	  Sysfs/GPIO control of USB hub ports, PoE edge logic,
+	  and optional Renesas xHCI PCIe recovery.
+
+config EXT_ADC_GPIO
+	tristate "External ADC GPIO channel sysfs (MeiG)"
+	depends on OF && IIO
+	help
+	  Expose external ADC channels described in DT (compatible
+	  "ext,adc-driver") via sysfs. Used by MC9392.
+
+config CASH_DRAWER_DRIVER
+	tristate "Cash drawer GPIO driver (MeiG)"
+	depends on OF && GPIOLIB && INPUT
+	help
+	  Cash drawer control/detection (compatible "vendor,cash-drawer").
+	  Used by MC9392.
+
+endmenu

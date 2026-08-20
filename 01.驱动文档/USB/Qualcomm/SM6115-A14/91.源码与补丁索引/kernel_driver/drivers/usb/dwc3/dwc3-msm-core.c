@@ -5874,12 +5874,16 @@ static int dwc3_msm_core_init(struct dwc3_msm *mdwc)
 		goto err;
 	}
 
-	mdwc->vbus_en_gpiods = devm_gpiod_get_array_optional(mdwc->dev,
+	mdwc->vbus_en_gpiods = devm_gpiod_get_array(mdwc->dev,
 					"vbus-en", GPIOD_OUT_LOW);
 	if (IS_ERR(mdwc->vbus_en_gpiods)) {
 		ret = PTR_ERR(mdwc->vbus_en_gpiods);
-		dev_err(mdwc->dev, "Error %d extracting vbus-en gpios\n", ret);
-		goto err;
+		if (ret == -ENOENT) {
+			mdwc->vbus_en_gpiods = NULL;
+		} else {
+			dev_err(mdwc->dev, "Error %d extracting vbus-en gpios\n", ret);
+			goto err;
+		}
 	}
 
 	if (mdwc->oc_gpiod) {

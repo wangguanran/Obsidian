@@ -1,0 +1,28 @@
+From 8cb7b23068aeb28611631db781e2994a5f9d7350 Mon Sep 17 00:00:00 2001
+
+---
+
+diff --git a/kernel_platform/msm-kernel/drivers/usb/dwc3/dwc3-msm-core.c b/kernel_platform/msm-kernel/drivers/usb/dwc3/dwc3-msm-core.c
+index bab869e..04549d1 100644
+--- a/kernel_platform/msm-kernel/drivers/usb/dwc3/dwc3-msm-core.c
++++ b/kernel_platform/msm-kernel/drivers/usb/dwc3/dwc3-msm-core.c
+@@ -5874,12 +5874,16 @@
+ 		goto err;
+ 	}
+ 
+-	mdwc->vbus_en_gpiods = devm_gpiod_get_array_optional(mdwc->dev,
++	mdwc->vbus_en_gpiods = devm_gpiod_get_array(mdwc->dev,
+ 					"vbus-en", GPIOD_OUT_LOW);
+ 	if (IS_ERR(mdwc->vbus_en_gpiods)) {
+ 		ret = PTR_ERR(mdwc->vbus_en_gpiods);
+-		dev_err(mdwc->dev, "Error %d extracting vbus-en gpios\n", ret);
+-		goto err;
++		if (ret == -ENOENT) {
++			mdwc->vbus_en_gpiods = NULL;
++		} else {
++			dev_err(mdwc->dev, "Error %d extracting vbus-en gpios\n", ret);
++			goto err;
++		}
+ 	}
+ 
+ 	if (mdwc->oc_gpiod) {
