@@ -1,0 +1,2174 @@
+Subject: [PATCH] [HXB_SRM955_CongPingKeJi][MeiglinkID]0028810 [Description]nvp6188 four-stream hotplug per-CH unlock sibling isolation memcpy hold-last [Owner]wangchuanyou
+
+
+---
+
+diff --git a/vendor/qcom/proprietary/camx/src/hwl/ife/camxifenode.cpp b/vendor/qcom/proprietary/camx/src/hwl/ife/camxifenode.cpp
+index 42bee56..9539a15 100755
+--- a/vendor/qcom/proprietary/camx/src/hwl/ife/camxifenode.cpp
++++ b/vendor/qcom/proprietary/camx/src/hwl/ife/camxifenode.cpp
+@@ -3714,6 +3714,38 @@
+ }
+ 
+ ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
++// IFENode::ProcessingNodeFenceCallback
++////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
++VOID IFENode::ProcessingNodeFenceCallback(
++    NodeFenceHandlerData* pFenceHandlerData,
++    UINT64                requestId,
++    UINT                  portId)
++{
++    CAMX_UNREFERENCED_PARAM(pFenceHandlerData);
++
++    if ((IFEOutputPortRDI0 > portId) || (IFEOutputPortRDI3 < portId))
++    {
++        return;
++    }
++    if ((FALSE == m_isYUVSensor) ||
++        (NULL == m_pSensorCaps) ||
++        (NULL == m_pSensorModeData) ||
++        (1 >= m_pSensorModeData->streamConfigCount))
++    {
++        return;
++    }
++
++    const INT nvpChip = Nvp6188ChipFromSensorName(m_pSensorCaps->pSensorName);
++    if (0 > nvpChip)
++    {
++        return;
++    }
++
++    const UINT vc = portId - IFEOutputPortRDI0;
++    Nvp6188NoteRdiFence(static_cast<UINT>(nvpChip), vc, requestId);
++}
++
++////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+ // IFENode::SubmitInitPacket
+ ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+ CamxResult IFENode::SubmitInitPacket()
+diff --git a/vendor/qcom/proprietary/camx/src/hwl/ife/camxifenode.h b/vendor/qcom/proprietary/camx/src/hwl/ife/camxifenode.h
+index efeeee6..dd2dbce 100755
+--- a/vendor/qcom/proprietary/camx/src/hwl/ife/camxifenode.h
++++ b/vendor/qcom/proprietary/camx/src/hwl/ife/camxifenode.h
+@@ -723,6 +723,23 @@
+         ExecuteProcessRequestData* pExecuteProcessRequestData);
+ 
+     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
++    /// ProcessingNodeFenceCallback
++    ///
++    /// @brief  NVP6188: note per-RDI BUF_DONE so detect can unlock only the
++    ///         missing VC (not siblings) before bank0 0xa8 asserts.
++    ///
++    /// @param  pFenceHandlerData Fence handler data
++    /// @param  requestId         Request whose fence returned
++    /// @param  portId            Output port id
++    ///
++    /// @return None
++    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
++    virtual VOID ProcessingNodeFenceCallback(
++        NodeFenceHandlerData* pFenceHandlerData,
++        UINT64                requestId,
++        UINT                  portId);
++
++    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+     /// PrepareStreamOn
+     ///
+     /// @brief  virtual method to that will be called before streamOn command is sent to HW. HW nodes may use
+diff --git a/vendor/qcom/proprietary/camx/src/hwl/ife/camxnvp6188detect.cpp b/vendor/qcom/proprietary/camx/src/hwl/ife/camxnvp6188detect.cpp
+index c3b9d50..f49a272 100644
+--- a/vendor/qcom/proprietary/camx/src/hwl/ife/camxnvp6188detect.cpp
++++ b/vendor/qcom/proprietary/camx/src/hwl/ife/camxnvp6188detect.cpp
+@@ -17,6 +17,7 @@
+ #include <sys/ioctl.h>
+ #include <sys/system_properties.h>
+ #include <stdint.h>
++#include <time.h>
+ #include <unistd.h>
+ 
+ #include "camxdebugprint.h"
+@@ -25,6 +26,9 @@
+ #include "camxsensorproperty.h"
+ #include "camxsensordriver.h"
+ 
++#include <log/log.h>
++#define NVP_ALOG(fmt, ...) ALOGE("nvp6188: " fmt, ##__VA_ARGS__)
++
+ // NOWHINE ENTIRE FILE
+ 
+ namespace CamX
+@@ -73,6 +77,13 @@
+     UINT        pendCnt[NvpMaxCh];
+     BOOL        unlocked[NvpMaxCh];
+     UINT        unlockStreak[NvpMaxCh];
++    UINT        cablePresentStreak[NvpMaxCh]; // !vloss while unlocked (plug-back)
++    UINT        relockStreak[NvpMaxCh];       // consecutive present before leave colorbar
++    UINT64      relockHoldUntilMs[NvpMaxCh];  // after re-lock: ignore VFC flicker unlock
++    UINT        plugNudgeCount[NvpMaxCh];     // capped CH-only set_chn attempts
++    UINT        plugKickCount[NvpMaxCh];      // capped bank13 kicks (anti-EPOCH)
++    BOOL        a8WasLost[NvpMaxCh];          // prev poll a8 lost (rising-edge primary)
++    UINT        primarySticky;                // last rising-edge lost CH (§77)
+ };
+ 
+ static pthread_mutex_t g_nvpLock    = PTHREAD_MUTEX_INITIALIZER;
+@@ -82,19 +93,191 @@
+         {1280, 1280, 1280, 1280}, {720, 720, 720, 720},
+         {1280, 1280, 1280, 1280}, {720, 720, 720, 720},
+         FALSE, {0xff, 0xff, 0xff, 0xff}, FALSE, FALSE, FALSE, FALSE, 0, FALSE, NULL, 0,
+-        {0xff, 0xff, 0xff, 0xff}, {0, 0, 0, 0}, {FALSE, FALSE, FALSE, FALSE}, {0, 0, 0, 0}
++        {0xff, 0xff, 0xff, 0xff}, {0, 0, 0, 0}, {FALSE, FALSE, FALSE, FALSE}, {0, 0, 0, 0},
++        {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0},
++        {FALSE, FALSE, FALSE, FALSE}, 4
+     },
+     {
+         {1280, 1280, 1280, 1280}, {720, 720, 720, 720},
+         {1280, 1280, 1280, 1280}, {720, 720, 720, 720},
+         FALSE, {0xff, 0xff, 0xff, 0xff}, FALSE, FALSE, FALSE, FALSE, 0, FALSE, NULL, 0,
+-        {0xff, 0xff, 0xff, 0xff}, {0, 0, 0, 0}, {FALSE, FALSE, FALSE, FALSE}, {0, 0, 0, 0}
++        {0xff, 0xff, 0xff, 0xff}, {0, 0, 0, 0}, {FALSE, FALSE, FALSE, FALSE}, {0, 0, 0, 0},
++        {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0},
++        {FALSE, FALSE, FALSE, FALSE}, 4
+     }
+ };
+ static std::atomic<BOOL> g_nvpPollRun[NvpChipMax] = { FALSE, FALSE };
+ static const UINT NvpDebounceUp        = 2;
+ static const UINT NvpDebounceDown      = 5;
+-static const UINT NvpUnlockRefreshNeed = 3;
++// Bank0 0xa8 video-loss bit — unlock THIS CH only (fast). Never unlock on VFC
++// unknown alone — MIPI glitch would colorbar siblings (§65).
++// §74: sole-a8 confirm ~400ms; ignore a8 couple on CHs that still have valid VFC
++// (CH2 unplug was flashing CH1 colorbar).
++static const UINT NvpUnlockConfirmNeedVloss = 2; // §82: was 1 — early unlock → CH1 闪彩条 + 卡顿
++// §67: while any peer is lost/unlocked, NEVER unlock locked siblings (even dual-signal).
++static const UINT NvpUnlockConfirmNeedPeer  = 0x7fffffff; // effectively disabled
++// Plug-back: DO NOT set_chn/bank13 — shared MIPI thrash → sibling RDI miss/EPOCH (§66).
++static const UINT NvpRelockConfirmNeed      = 2;   // §104: <2s plug-back; do not wait a8
++static const UINT NvpRelockHoldMs           = 400;
++static const UINT NvpUnlockConfirmNeedVlossHold = 2;
++static const UINT NvpPollGraceMs            = 2500;
++static const UINT NvpPatternMinIntervalMs   = 0;
++static const UINT NvpPeerShieldExtraMs      = 400;  // §79: was 2000 — cut sibling EPOCH stutter
++static const UINT NvpSiblingHoldMs          = 250;  // §79: was 400
++static const UINT NvpCablePresentLogEvery     = 4;
++static const UINT NvpCablePresentNudgeNeed    = 1;   // §79: a8-clear → nudge ASAP
++static const UINT NvpCablePresentNudgePeriod  = 4;
++static const UINT NvpCablePresentNudgeMax     = 1; // §99: one CSID-size set_chn on a8-clear; no 720/1080 flip
++static const UINT NvpCablePresentHardKickNeed = 8;
++static const UINT NvpCablePresentHardKickMax  = 0;   // §79: bank13 → long EPOCH stutter
++static const UINT NvpStickyA8NudgeNeed         = 20;  // ~4s @200ms — only if a8 sticky forever
++static const UINT NvpUnlockConfirmNeed      = 8;
++static UINT64     g_nvpPollGraceUntilMs[NvpChipMax] = { 0, 0 };
++static UINT64     g_nvpPeerShieldUntilMs[NvpChipMax] = { 0, 0 };
++static UINT64     g_nvpSiblingHoldUntilMs[NvpChipMax] = { 0, 0 };
++// §98: per-VC RDI BUF_DONE. everAnalog only while locked (0x78 SOF must not count).
++static UINT64     g_nvpRdiLastDoneMs[NvpChipMax][NvpMaxCh] = { { 0 } };
++static UINT64     g_nvpRdiFenceReq[NvpChipMax] = { 0, 0 };
++static UINT8      g_nvpRdiFenceMask[NvpChipMax] = { 0, 0 };
++static BOOL       g_nvpEverAnalog[NvpChipMax][NvpMaxCh] = { { FALSE } };
++static BOOL       g_nvpNoSofUnlock[NvpChipMax][NvpMaxCh] = { { FALSE } };
++static BOOL       g_nvpA8LostSeen[NvpChipMax][NvpMaxCh] = { { FALSE } };
++static UINT8      g_nvpLeftoverVfc[NvpChipMax][NvpMaxCh] = { { 0xff, 0xff, 0xff, 0xff } };
++static const UINT NvpSofHoleDeadMs      = 500; // one CH silent this long = candidate
++static const UINT NvpSofHoleLiveMs      = 150; // other analog still producing
++static const UINT NvpSofHoleNeed        = 2;   // ~1s to blue; 1080 lag is tens of ms
++static UINT       g_nvpHoleStreak[NvpChipMax][NvpMaxCh] = { { 0 } };
++static BOOL       g_nvpKeepPattern[NvpChipMax][NvpMaxCh] = { { FALSE } };
++
++static UINT64 NvpNowMs();
++static VOID NvpSyncVirtualPattern(INT fd, UINT chipId, UINT8 vlossMaskExtra);
++static CAMX_INLINE BOOL NvpChipValid(UINT chipId);
++
++// §104: unlock analog CHs only on a single-CH SOF hole.
++// a8 couples onto the lowest live CH (~5s lag) → sibling 闪蓝. 720 lastDone
++// stays "fresh" while 1080 DMA lags tens of ms — relative freshness is wrong.
++// EPOCH (all analog dead) → 0x78 keepalive, no unlock.
++// Call without g_nvpLock held.
++static VOID NvpApplySofHole(
++    INT  fd,
++    UINT chipId,
++    UINT count)
++{
++    if ((fd < 0) || (FALSE == NvpChipValid(chipId)) || (count > NvpMaxCh))
++    {
++        return;
++    }
++    if (NvpNowMs() < g_nvpPollGraceUntilMs[chipId])
++    {
++        return;
++    }
++
++    const UINT64 nowMs = NvpNowMs();
++    const BOOL inShield =
++        (nowMs < g_nvpPeerShieldUntilMs[chipId]) ||
++        (nowMs < g_nvpSiblingHoldUntilMs[chipId]);
++
++    UINT deadMask = 0;
++    UINT liveMask = 0;
++    pthread_mutex_lock(&g_nvpLock);
++    for (UINT ch = 0; ch < count; ch++)
++    {
++        if ((TRUE == g_nvp[chipId].unlocked[ch]) ||
++            (FALSE == g_nvpEverAnalog[chipId][ch]) ||
++            (0 == g_nvpRdiLastDoneMs[chipId][ch]))
++        {
++            g_nvpHoleStreak[chipId][ch] = 0;
++            continue;
++        }
++        const UINT64 t   = g_nvpRdiLastDoneMs[chipId][ch];
++        const UINT64 age = (nowMs >= t) ? (nowMs - t) : 0;
++        if (age <= static_cast<UINT64>(NvpSofHoleLiveMs))
++        {
++            liveMask |= (1u << ch);
++            g_nvpHoleStreak[chipId][ch] = 0;
++        }
++        else if (age >= static_cast<UINT64>(NvpSofHoleDeadMs))
++        {
++            deadMask |= (1u << ch);
++        }
++    }
++
++    const UINT deadN = static_cast<UINT>(__builtin_popcount(deadMask));
++    const UINT liveN = static_cast<UINT>(__builtin_popcount(liveMask));
++    BOOL needPat = FALSE;
++    BOOL needPub = FALSE;
++
++    if ((1U == deadN) && (liveN >= 1U))
++    {
++        for (UINT ch = 0; ch < count; ch++)
++        {
++            if (0 == (deadMask & (1u << ch)))
++            {
++                continue;
++            }
++            // Keep MIPI SOF immediately so siblings do not EPOCH.
++            g_nvpKeepPattern[chipId][ch] = TRUE;
++            needPat = TRUE;
++            if (TRUE == inShield)
++            {
++                continue;
++            }
++            g_nvpHoleStreak[chipId][ch]++;
++            if (g_nvpHoleStreak[chipId][ch] >= NvpSofHoleNeed)
++            {
++                g_nvp[chipId].unlocked[ch]          = TRUE;
++                g_nvp[chipId].unlockStreak[ch]      = 0;
++                g_nvp[chipId].relockStreak[ch]      = 0;
++                g_nvp[chipId].relockHoldUntilMs[ch] = 0;
++                g_nvp[chipId].lastVfc[ch]           = 0xff;
++                g_nvpHoleStreak[chipId][ch]         = 0;
++                needPub = TRUE;
++                CAMX_LOG_ERROR(CamxLogGroupISP,
++                               "nvp6188: sof-hole unlock ch%u (single analog dead, "
++                               "siblings live) — lock=0 + 0x78",
++                               ch);
++                NVP_ALOG("sof-hole unlock ch%u", ch);
++            }
++        }
++    }
++    else if (deadN >= 2U)
++    {
++        for (UINT ch = 0; ch < count; ch++)
++        {
++            if (0 != (deadMask & (1u << ch)))
++            {
++                g_nvpKeepPattern[chipId][ch] = TRUE;
++                needPat = TRUE;
++            }
++            g_nvpHoleStreak[chipId][ch] = 0;
++        }
++    }
++    else
++    {
++        for (UINT ch = 0; ch < count; ch++)
++        {
++            g_nvpHoleStreak[chipId][ch] = 0;
++        }
++    }
++    pthread_mutex_unlock(&g_nvpLock);
++
++    if (TRUE == needPat)
++    {
++        NvpSyncVirtualPattern(fd, chipId, 0);
++    }
++    if (TRUE == needPub)
++    {
++        Nvp6188PublishActiveSizes(chipId);
++    }
++}
++
++static UINT64 NvpNowMs()
++{
++    struct timespec ts;
++    clock_gettime(CLOCK_MONOTONIC, &ts);
++    return (static_cast<UINT64>(ts.tv_sec) * 1000ULL) +
++           (static_cast<UINT64>(ts.tv_nsec) / 1000000ULL);
++}
+ 
+ ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+ // Nvp6188ChipFromSensorName
+@@ -200,6 +383,154 @@
+     return NvpWrite(fd, 0xff, bank) && NvpRead(fd, reg, pVal);
+ }
+ 
++// Bank0 0xa8 video-loss on this NVP6188 board (field evidence):
++//   all cams locked → 0xa8==0x00; CH2 unplug → 0xa8==0x04 (bit2 set).
++// Polarity: bit=1 means lost  →  is_lost = (reg >> ch) & 1
++// (NVP6158 inverted ~reg polarity is WRONG here — caused all-colorbar §48.)
++static BOOL NvpReadVideoLossReg(
++    INT    fd,
++    UINT8* pReg)
++{
++    if ((NULL == pReg) || (FALSE == NvpReadBank(fd, 0x00, 0xa8, pReg)))
++    {
++        return FALSE;
++    }
++    return TRUE;
++}
++
++static BOOL NvpChVideoLost(
++    UINT8 vlossReg,
++    UINT  ch)
++{
++    if (ch >= NvpMaxCh)
++    {
++        return FALSE;
++    }
++    return (((static_cast<UINT>(vlossReg) >> ch) & 0x1u) != 0) ? TRUE : FALSE;
++}
++
++// Per-CH virtual pattern on unlock (bank0 0x78/0x79). Keeps MIPI SOF/BUF_DONE for
++// missing lanes so FourStream siblings stay alive. Product default ON; set
++// persist.vendor.camera.nvp6188.pattern_on_unlock=0 to disable. No set_chn / no MAR.
++static BOOL NvpPatternOnUnlockEnabled()
++{
++    CHAR val[PROP_VALUE_MAX] = { 0 };
++    if (__system_property_get("persist.vendor.camera.nvp6188.pattern_on_unlock", val) <= 0)
++    {
++        return TRUE;
++    }
++    // Explicit off only.
++    return !(('0' == val[0]) || ('n' == val[0]) || ('N' == val[0]) || ('f' == val[0]));
++}
++
++static VOID NvpKickAutoDetect(
++    INT fd)
++{
++    // bank13 — wake AHD format detect. Call only under peer shield (unlocked peer).
++    NvpWriteBank(fd, 0x13, 0x30, 0x7f);
++    NvpWriteBank(fd, 0x13, 0x31, 0xff);
++    NvpWriteBank(fd, 0x13, 0x70, 0x3f);
++}
++
++static VOID NvpSyncVirtualPattern(
++    INT   fd,
++    UINT  chipId,
++    UINT8 vlossMaskExtra)
++{
++    static BOOL   s_patternOn[NvpChipMax]     = { FALSE, FALSE };
++    static UINT8  s_patternMask[NvpChipMax]   = { 0, 0 };
++    static UINT64 s_patternLastMs[NvpChipMax] = { 0, 0 };
++
++    if ((fd < 0) || (FALSE == NvpChipValid(chipId)) ||
++        (FALSE == NvpPatternOnUnlockEnabled()))
++    {
++        return;
++    }
++
++    // Pattern bits (§74):
++    //  - unlocked CHs
++    //  - optional sole-keepalive bit in vlossMaskExtra (caller passes 0 or ONE bit only)
++    UINT8 mask = 0;
++    pthread_mutex_lock(&g_nvpLock);
++    for (UINT ch = 0; ch < NvpMaxCh; ch++)
++    {
++        if ((TRUE == g_nvp[chipId].unlocked[ch]) ||
++            (TRUE == g_nvpKeepPattern[chipId][ch]))
++        {
++            mask = static_cast<UINT8>(mask | static_cast<UINT8>(1U << ch));
++        }
++    }
++    pthread_mutex_unlock(&g_nvpLock);
++    // Sole-a8 SOF keepalive only — never raw multi-a8 couple mask.
++    mask = static_cast<UINT8>(mask | (vlossMaskExtra & 0x0f));
++
++    const BOOL anyPattern = (0 != mask);
++
++    // §70: rewrite ONLY when mask changes or HW dropped 0x78 (mismatch).
++    // §69 always-rewrite (~10Hz) thrashed MIPI → boot with 3 cams: DRQ stuck / no display.
++    UINT8 hw78 = 0;
++    const BOOL hwOk = NvpReadBank(fd, 0x00, 0x78, &hw78);
++    const UINT64 nowMs = NvpNowMs();
++
++    if (FALSE == anyPattern)
++    {
++        if ((FALSE == s_patternOn[chipId]) && (0 == s_patternMask[chipId]))
++        {
++            return;
++        }
++        if ((TRUE == NvpWriteBank(fd, 0x00, 0x78, 0x00)) &&
++            (TRUE == NvpWriteBank(fd, 0x00, 0x79, 0x11)))
++        {
++            s_patternOn[chipId]     = FALSE;
++            s_patternMask[chipId]   = 0;
++            s_patternLastMs[chipId] = nowMs;
++            CAMX_LOG_ERROR(CamxLogGroupISP,
++                           "%s: pattern OFF (0x78/0x79=0x00/0x11) — all locked",
++                           NvpTag[chipId]);
++            NVP_ALOG("pattern OFF");
++        }
++        return;
++    }
++
++    const BOOL hwMismatch =
++        (FALSE == hwOk) || (hw78 != mask) || (FALSE == s_patternOn[chipId]) ||
++        (mask != s_patternMask[chipId]);
++    if (FALSE == hwMismatch)
++    {
++        return; // stable — do not spam I2C
++    }
++
++    // §75: only extend sibling hold on mask *change* (not every HW rewrite of same mask).
++    // Rewriting 0x78 every poll when HW drops was refreshing sibHold → settle stuck →
++    // siblings frozen for whole unplug (looked like long 卡顿).
++    const BOOL maskChanged =
++        (FALSE == s_patternOn[chipId]) || (mask != s_patternMask[chipId]);
++
++    // §86: 0x79 MUST stay 0x11 (live/init). Writing 0x79=mask turned on a
++    // global pattern mode → CH1 (1080) flashed colorbar whenever CH2/CH3
++    // pattern-on for SOF (exactly when EPOCH stuttered).
++    if ((TRUE == NvpWriteBank(fd, 0x00, 0x78, mask)) &&
++        (TRUE == NvpWriteBank(fd, 0x00, 0x79, 0x11)))
++    {
++        s_patternOn[chipId]     = TRUE;
++        s_patternMask[chipId]   = mask;
++        s_patternLastMs[chipId] = nowMs;
++        if (TRUE == maskChanged)
++        {
++            g_nvpSiblingHoldUntilMs[chipId] =
++                nowMs + static_cast<UINT64>(NvpSiblingHoldMs);
++            g_nvpPeerShieldUntilMs[chipId] =
++                nowMs + static_cast<UINT64>(NvpPeerShieldExtraMs);
++        }
++        CAMX_LOG_ERROR(CamxLogGroupISP,
++                       "%s: pattern ON (0x78=0x%02x 0x79=0x11) hwWas=0x%02x extra=0x%02x "
++                       "maskChg=%d sibHold=%ums",
++                       NvpTag[chipId], mask, hw78, vlossMaskExtra,
++                       maskChanged, NvpSiblingHoldMs);
++        NVP_ALOG("pattern ON 0x78=0x%02x extra=0x%02x", mask, vlossMaskExtra);
++    }
++}
++
+ static NvpReso NvpVfcToReso(UINT8 vfc)
+ {
+     if ((Vfc720pNtsc == vfc) || (Vfc720pPal == vfc))
+@@ -405,6 +736,22 @@
+         return FALSE;
+     }
+ 
++    // §103: after open freeze, Setup must not re-set_chn / re-classify lock.
++    // Mid-stream DetectAndSync(applySetChn) was the mixed-res path: bank13 +
++    // per-CH set_chn + lock-classify. A sibling with glitch VFC/a8 became
++    // lock=0 → memcpy 闪蓝. Poll owns hotplug after CSID is frozen.
++    pthread_mutex_lock(&g_nvpLock);
++    const BOOL alreadyFrozen = g_nvp[chipId].csidFrozen;
++    pthread_mutex_unlock(&g_nvpLock);
++    if ((TRUE == applySetChn) && (TRUE == alreadyFrozen))
++    {
++        CAMX_LOG_ERROR(CamxLogGroupISP,
++                       "%s: DetectAndSync skip mid-stream (CSID frozen, poll owns hotplug)",
++                       NvpTag[chipId]);
++        NvpCloseBus(fd);
++        return FALSE;
++    }
++
+     BOOL updated = FALSE;
+     UINT count   = static_cast<UINT>(pSensorModeData->streamConfigCount);
+     if (count > NvpMaxCh)
+@@ -604,10 +951,28 @@
+             // froze all-VC CSID at 720 while a live 1080 MIPI was present (boot flower).
+             const BOOL neverLocked = (NvpResoUnknown == NvpVfcToReso(prevVfc));
+ 
+-            if ((TRUE == applySetChn) && ((TRUE == neverLocked) || (FALSE == had1080)))
++            // §71: if 0xa8 already says missing, freeze CSID at 720 (not optimistic 1080).
++            // Boot-missing CH frozen at 1080 then plug 720 → flower + RDI EPOCH siblings.
++            // Plug later 1080 can HOTPLUG upgrade 720→1080 (IFE resync).
++            UINT8 vlossOpen = 0xff;
++            const BOOL vlossOpenOk = NvpReadVideoLossReg(fd, &vlossOpen);
++            const BOOL openChMissing =
++                (TRUE == vlossOpenOk) ? NvpChVideoLost(vlossOpen, ch) : FALSE;
++
++            if ((TRUE == applySetChn) && (TRUE == neverLocked) && (TRUE == openChMissing))
+             {
+-                // Force PAL 1080p MIPI on unlocked CH so late-lock 1080 after reboot can
+-                // be received. First open post-reboot often keeps VFC=0xFF for hundreds of ms.
++                w = 1280;
++                h = 720;
++                NvpSetChn720pPal(fd, static_cast<UINT8>(ch));
++                CAMX_LOG_ERROR(CamxLogGroupISP,
++                               "nvp6188: ch%u open missing (a8) — CSID 720 + set_chn720 "
++                               "(virtual; plug 1080 can upgrade)",
++                               ch);
++                // fall through to update streamConfig
++            }
++            else if ((TRUE == applySetChn) && ((TRUE == neverLocked) || (FALSE == had1080)))
++            {
++                // Cable present / unknown: Force PAL 1080p so late-lock 1080 is receivable.
+                 NvpSetChn1080pPal(fd, static_cast<UINT8>(ch));
+ 
+                 UINT8 vfcAfter = vfc;
+@@ -654,14 +1019,28 @@
+                 }
+                 else
+                 {
+-                    // Still unlocked after ~1.2s: keep set_chn_1080 + CSID 1920.
+-                    // Falling back to 720 (previous) left reboot-late 1080 frozen as 720
+-                    // → green-bar flower (Memcpy in=1280x720 while MIPI is 1080).
+-                    w = 1920;
+-                    h = 1080;
+-                    CAMX_LOG_ERROR(CamxLogGroupISP,
+-                                   "nvp6188: ch%u VFC=0x%02x still unlocked — optimistic CSID 1080 (keep set_chn_1080)",
+-                                   ch, vfc);
++                    // Re-check a8: still missing → 720; else optimistic 1080.
++                    UINT8 vloss2 = 0xff;
++                    const BOOL lost2 =
++                        (TRUE == NvpReadVideoLossReg(fd, &vloss2)) &&
++                        NvpChVideoLost(vloss2, ch);
++                    if (TRUE == lost2)
++                    {
++                        w = 1280;
++                        h = 720;
++                        NvpSetChn720pPal(fd, static_cast<UINT8>(ch));
++                        CAMX_LOG_ERROR(CamxLogGroupISP,
++                                       "nvp6188: ch%u still unlocked + a8 lost — CSID 720",
++                                       ch);
++                    }
++                    else
++                    {
++                        w = 1920;
++                        h = 1080;
++                        CAMX_LOG_ERROR(CamxLogGroupISP,
++                                       "nvp6188: ch%u VFC=0x%02x still unlocked — optimistic CSID 1080",
++                                       ch, vfc);
++                    }
+                 }
+                 // fall through to update streamConfig
+             }
+@@ -719,21 +1098,14 @@
+ 
+                 if (ch < NvpMaxCh)
+                 {
+-                    // If still unlocked after force1080, remember assumed 1080 VFC so poll
+-                    // does not treat later 0x31 as a size-change HOTPLUG.
++                    // Keep real VFC only. Do NOT invent Vfc1080Pal for unknown —
++                    // that pinned plug-back to 1080-only and blocked 720 (§63).
+                     UINT8 storeVfc = vfc;
+-                    if ((NvpResoUnknown == NvpVfcToReso(vfc)) && (w >= 1920) && (h >= 1080))
+-                    {
+-                        storeVfc = Vfc1080Pal;
+-                    }
+-                    else if ((NvpResoUnknown == NvpVfcToReso(vfc)) && (w <= 1280))
+-                    {
+-                        storeVfc = Vfc720pPal;
+-                    }
+                     pthread_mutex_lock(&g_nvpLock);
+                     g_nvp[chipId].activeW[ch]  = w;
+                     g_nvp[chipId].activeH[ch]  = h;
+                     g_nvp[chipId].lastVfc[ch]  = storeVfc;
++
+                     pthread_mutex_unlock(&g_nvpLock);
+                 }
+                 break;
+@@ -741,6 +1113,81 @@
+         }
+     }
+ 
++    // Final lock classify + HW virtual pattern — only after real set_chn (applySetChn).
++    // Per-CH independence: locked → live; unlocked → pattern bit + Memcpy colorbar.
++    // 0xa8 polarity on this board: bit=1 lost (see NvpChVideoLost).
++    if (TRUE == applySetChn)
++    {
++        UINT8 lockMask   = 0;
++        UINT8 unlockMask = 0;
++        UINT8 vlossReg   = 0xff;
++        const BOOL vlossOk = NvpReadVideoLossReg(fd, &vlossReg);
++        for (UINT ch = 0; ch < NvpMaxCh; ch++)
++        {
++            UINT8 vfcNow = 0xff;
++            NvpReadBank(fd, static_cast<UINT8>(0x05 + ch), 0xf0, &vfcNow);
++            const BOOL vfcOk  = (NvpResoUnknown != NvpVfcToReso(vfcNow));
++            const BOOL chLost = (TRUE == vlossOk) ? NvpChVideoLost(vlossReg, ch) : FALSE;
++            const BOOL locked = (TRUE == vfcOk) && (FALSE == chLost);
++            pthread_mutex_lock(&g_nvpLock);
++            if (TRUE == locked)
++            {
++                g_nvp[chipId].unlocked[ch]          = FALSE;
++                g_nvp[chipId].unlockStreak[ch]      = 0;
++                g_nvp[chipId].relockStreak[ch]      = 0;
++                g_nvp[chipId].relockHoldUntilMs[ch] = 0;
++                g_nvp[chipId].lastVfc[ch]           = vfcNow;
++                lockMask = static_cast<UINT8>(lockMask | (1U << ch));
++            }
++            else
++            {
++                g_nvp[chipId].unlocked[ch]          = TRUE;
++                g_nvp[chipId].unlockStreak[ch]      = 2;
++                g_nvp[chipId].relockStreak[ch]      = 0;
++                g_nvp[chipId].relockHoldUntilMs[ch] = 0;
++                if (TRUE == chLost)
++                {
++                    g_nvpA8LostSeen[chipId][ch] = TRUE;
++                }
++                unlockMask = static_cast<UINT8>(unlockMask | (1U << ch));
++            }
++            pthread_mutex_unlock(&g_nvpLock);
++        }
++        CAMX_LOG_ERROR(CamxLogGroupISP,
++                       "%s: open lock-classify lockMask=0x%02x unlockMask=0x%02x "
++                       "vloss=0x%02x ok=%d (per-CH isolate)",
++                       NvpTag[chipId], lockMask, unlockMask, vlossReg, vlossOk);
++        // §70: open-time one-shot set_chn for unlocked CHs to match stream WxH so
++        // HW pattern SOF matches CSID (any-count cameras + virtual on missing).
++        // Mid-stream hotplug must NOT spam set_chn here — poll owns plug-back nudge.
++        for (UINT ch = 0; ch < NvpMaxCh; ch++)
++        {
++            BOOL isUnlocked = FALSE;
++            UINT32 aw = 0;
++            UINT32 ah = 0;
++            pthread_mutex_lock(&g_nvpLock);
++            isUnlocked = g_nvp[chipId].unlocked[ch];
++            aw         = g_nvp[chipId].activeW[ch];
++            ah         = g_nvp[chipId].activeH[ch];
++            pthread_mutex_unlock(&g_nvpLock);
++            if (FALSE == isUnlocked)
++            {
++                continue;
++            }
++            if ((aw >= 1920) && (ah >= 1080))
++            {
++                NvpSetChn1080pPal(fd, static_cast<UINT8>(ch));
++            }
++            else
++            {
++                NvpSetChn720pPal(fd, static_cast<UINT8>(ch));
++            }
++            CAMX_LOG_ERROR(CamxLogGroupISP,
++                           "nvp6188: open ch%u unlocked → set_chn %ux%u + pattern bit",
++                           ch, aw, ah);
++        }
++        NvpSyncVirtualPattern(fd, chipId, 0); // §98: never OR raw a8 — couples empty CHs into 0x78
++    }
+     NvpCloseBus(fd);
+     Nvp6188PublishActiveSizes(chipId);
+ 
+@@ -770,6 +1217,40 @@
+ }
+ 
+ ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
++// Nvp6188NoteRdiFence
++////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
++VOID Nvp6188NoteRdiFence(
++    UINT   chipId,
++    UINT   vc,
++    UINT64 requestId)
++{
++    if ((FALSE == NvpChipValid(chipId)) || (vc >= NvpMaxCh) ||
++        (FALSE == g_nvpPollRun[chipId].load()))
++    {
++        return;
++    }
++
++    const UINT64 nowMs = NvpNowMs();
++
++    pthread_mutex_lock(&g_nvpLock);
++    if (requestId != g_nvpRdiFenceReq[chipId])
++    {
++        g_nvpRdiFenceReq[chipId]  = requestId;
++        g_nvpRdiFenceMask[chipId] = 0;
++    }
++    g_nvpRdiFenceMask[chipId] =
++        static_cast<UINT8>(g_nvpRdiFenceMask[chipId] | static_cast<UINT8>(1U << vc));
++    g_nvpRdiLastDoneMs[chipId][vc] = nowMs;
++    // 0x78 SOF on an unlocked CH must not count as analog.
++    if (FALSE == g_nvp[chipId].unlocked[vc])
++    {
++        g_nvpEverAnalog[chipId][vc]    = TRUE;
++        g_nvpKeepPattern[chipId][vc]   = FALSE;
++    }
++    pthread_mutex_unlock(&g_nvpLock);
++}
++
++////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+ // Nvp6188PublishActiveSizes
+ ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+ VOID Nvp6188PublishActiveSizes(
+@@ -782,19 +1263,65 @@
+     // CHI memcpy cannot link CamX symbols; publish via system properties.
+     CHAR key[64];
+     CHAR val[32];
++    BOOL anyUnlocked   = FALSE;
++    BOOL anySettle     = FALSE;
++    BOOL anyDebouncing = FALSE;
++    const UINT64 nowMs = NvpNowMs();
+     pthread_mutex_lock(&g_nvpLock);
+     for (UINT ch = 0; ch < NvpMaxCh; ch++)
+     {
++        if (TRUE == g_nvp[chipId].unlocked[ch])
++        {
++            anyUnlocked = TRUE;
++        }
++        // §78: only LOCKED CHs in debounce keep settle=1.
++        // Unlocked CH left unlockStreak>=need → settle stuck → Memcpy froze siblings.
++        if ((FALSE == g_nvp[chipId].unlocked[ch]) &&
++            (g_nvp[chipId].unlockStreak[ch] >= 1U))
++        {
++            anyDebouncing = TRUE;
++        }
++        if ((0 != g_nvp[chipId].relockHoldUntilMs[ch]) &&
++            (nowMs < g_nvp[chipId].relockHoldUntilMs[ch]))
++        {
++            anySettle = TRUE;
++        }
+         snprintf(key, sizeof(key), "%s.vc%u", NvpPropPrefix[chipId], ch);
+         snprintf(val, sizeof(val), "%ux%u", g_nvp[chipId].activeW[ch], g_nvp[chipId].activeH[ch]);
+         __system_property_set(key, val);
++        // lock=0 unlock / lock=1 locked — Memcpy SW bars on THIS VC unlock.
++        snprintf(key, sizeof(key), "%s.vc%u.lock", NvpPropPrefix[chipId], ch);
++        __system_property_set(key, (TRUE == g_nvp[chipId].unlocked[ch]) ? "0" : "1");
+         // Dual-open safe: also publish by cameraId when known.
+-        if (0 != g_nvp[chipId].cameraId)
++        if ((0 != g_nvp[chipId].cameraId) && (0xFFFFFFFFu != g_nvp[chipId].cameraId))
+         {
+             snprintf(key, sizeof(key), "vendor.camera.nvp.c%u.vc%u", g_nvp[chipId].cameraId, ch);
+             __system_property_set(key, val);
++            snprintf(key, sizeof(key), "vendor.camera.nvp.c%u.vc%u.lock",
++                     g_nvp[chipId].cameraId, ch);
++            __system_property_set(key, (TRUE == g_nvp[chipId].unlocked[ch]) ? "0" : "1");
+         }
+     }
++    __system_property_set("vendor.camera.nvp6188.fourstream", "1");
++    // peer: unlocked/debounce. settle: short sibling hold + debounce + relock hold.
++    // Do NOT keep settle=1 for entire unlocked session (§74) — that froze siblings.
++    const CHAR* peerKey   =
++        (0 == chipId) ? "vendor.camera.nvp6188.peer" : "vendor.camera.nvp61882.peer";
++    const CHAR* settleKey =
++        (0 == chipId) ? "vendor.camera.nvp6188.settle" : "vendor.camera.nvp61882.settle";
++    const BOOL sibHold =
++        (0 != g_nvpSiblingHoldUntilMs[chipId]) &&
++        (nowMs < g_nvpSiblingHoldUntilMs[chipId]);
++    const BOOL plugShield =
++        (0 != g_nvpPeerShieldUntilMs[chipId]) &&
++        (nowMs < g_nvpPeerShieldUntilMs[chipId]);
++    // §102: hold-last on locked siblings during plug/0x78 rewrite (EPOCH),
++    // not for the whole unlocked session.
++    const BOOL shield =
++        (TRUE == anySettle) || (TRUE == anyDebouncing) ||
++        (TRUE == sibHold) || (TRUE == plugShield);
++    __system_property_set(peerKey, (TRUE == anyUnlocked) ? "1" : "0");
++    __system_property_set(settleKey, (TRUE == shield) ? "1" : "0");
+     pthread_mutex_unlock(&g_nvpLock);
+ }
+ 
+@@ -890,6 +1417,7 @@
+         return NULL;
+     }
+     CAMX_LOG_ERROR(CamxLogGroupISP, "%s: Phase3 poll thread start", NvpTag[chipId]);
++    NVP_ALOG("Phase3 poll thread start chip=%u", chipId);
+ 
+     UINT i2cFailStreak = 0;
+ 
+@@ -917,6 +1445,8 @@
+             continue;
+         }
+ 
++        BOOL peerEvent = FALSE;
++
+         if (NULL != pMode)
+         {
+             INT fd = NvpOpenBus(chipId);
+@@ -943,12 +1473,233 @@
+                 count = NvpMaxCh;
+             }
+ 
++            UINT8 vlossReg = 0xff;
++            const BOOL vlossOk = NvpReadVideoLossReg(fd, &vlossReg);
++            const UINT8 vlossMask =
++                (TRUE == vlossOk) ? static_cast<UINT8>(vlossReg & 0x0f) : 0;
++            {
++                static UINT s_tickLog = 0;
++                if (0 == ((s_tickLog++) % 10U))
++                {
++                    NVP_ALOG("poll a8=0x%02x ok=%d", vlossMask, vlossOk);
++                }
++            }
++
++            // §72: pattern AFTER streak update (end of CH loop) — not here with raw a8.
++            // Early Sync with full a8 mask painted HW bars onto siblings.
++
++            // Peer-event shield: unlocked peer, video-loss peer, or recent nudge/kick.
++            const UINT64 nowMsShield = NvpNowMs();
++            if (nowMsShield < g_nvpPeerShieldUntilMs[chipId])
++            {
++                peerEvent = TRUE;
++            }
++            pthread_mutex_lock(&g_nvpLock);
++            for (UINT pc = 0; pc < count; pc++)
++            {
++                const BOOL pcLost =
++                    (TRUE == vlossOk) ? NvpChVideoLost(vlossReg, pc) : FALSE;
++                if ((TRUE == g_nvp[chipId].unlocked[pc]) || (TRUE == pcLost))
++                {
++                    peerEvent = TRUE;
++                    break;
++                }
++            }
++            pthread_mutex_unlock(&g_nvpLock);
++
++            // §77: primary lost = rising-edge sticky (real unplug), NOT lowest index.
++            // §75 "first locked a8-lost" made CH0 primary when unplugging CH2/CH3
++            // (a8 couple) → pattern/EPOCH on wrong ports → CH0/CH1 freeze or flower.
++            UINT8 vfcSnap[NvpMaxCh];
++            BOOL  lostSnap[NvpMaxCh];
++            UINT  primaryLost = NvpMaxCh;
++            UINT  lostLockedN = 0;
++            UINT  soleLostCh  = NvpMaxCh;
++            for (UINT i = 0; i < NvpMaxCh; i++)
++            {
++                vfcSnap[i]  = 0xff;
++                lostSnap[i] = FALSE;
++            }
+             for (UINT ch = 0; ch < count; ch++)
+             {
+                 UINT8 vfc = 0xff;
+-                if (FALSE == NvpReadBank(fd, static_cast<UINT8>(0x05 + ch), 0xf0, &vfc))
++                NvpReadBank(fd, static_cast<UINT8>(0x05 + ch), 0xf0, &vfc);
++                vfcSnap[ch] = vfc;
++                lostSnap[ch] =
++                    (TRUE == vlossOk) ? NvpChVideoLost(vlossReg, ch) : FALSE;
++            }
++            pthread_mutex_lock(&g_nvpLock);
++            for (UINT ch = 0; ch < count; ch++)
++            {
++                if (TRUE == lostSnap[ch])
+                 {
+-                    continue;
++                    g_nvpA8LostSeen[chipId][ch] = TRUE;
++                }
++            }
++            pthread_mutex_unlock(&g_nvpLock);
++            // §98: after stream-on grace, locked + never analog SOF = leftover VFC
++            // on an empty CH. Unlock once and keep virtual (蓝屏) until real plug.
++            if ((NvpNowMs() >= g_nvpPollGraceUntilMs[chipId]) &&
++                (FALSE == peerEvent))
++            {
++                BOOL noSofPub = FALSE;
++                pthread_mutex_lock(&g_nvpLock);
++                for (UINT ch = 0; ch < count; ch++)
++                {
++                    if ((FALSE == g_nvp[chipId].unlocked[ch]) &&
++                        (FALSE == g_nvpEverAnalog[chipId][ch]) &&
++                        (0 == g_nvpRdiLastDoneMs[chipId][ch]))
++                    {
++                        g_nvp[chipId].unlocked[ch]          = TRUE;
++                        g_nvp[chipId].unlockStreak[ch]      = 0;
++                        g_nvp[chipId].relockStreak[ch]      = 0;
++                        g_nvp[chipId].relockHoldUntilMs[ch] = 0;
++                        g_nvp[chipId].lastVfc[ch]           = 0xff;
++                        g_nvpNoSofUnlock[chipId][ch]        = TRUE;
++                        g_nvpLeftoverVfc[chipId][ch]        = vfcSnap[ch];
++                        noSofPub = TRUE;
++                        CAMX_LOG_ERROR(CamxLogGroupISP,
++                                       "nvp6188: poll ch%u no-SOF leftover → unlock "
++                                       "(keep virtual, leftoverVfc=0x%02x)",
++                                       ch, vfcSnap[ch]);
++                    }
++                }
++                pthread_mutex_unlock(&g_nvpLock);
++                if (TRUE == noSofPub)
++                {
++                    NvpSyncVirtualPattern(fd, chipId, 0);
++                    Nvp6188PublishActiveSizes(chipId);
++                }
++            }
++            // §104: single-CH SOF hole → 0x78 keepalive + unlock that CH only.
++            NvpApplySofHole(fd, chipId, count);
++            pthread_mutex_lock(&g_nvpLock);
++            for (UINT ch = 0; ch < count; ch++)
++            {
++                const BOOL lockedLost =
++                    (FALSE == g_nvp[chipId].unlocked[ch]) && (TRUE == lostSnap[ch]);
++                if (TRUE == lockedLost)
++                {
++                    lostLockedN++;
++                    soleLostCh = ch;
++                    // §85: do NOT steal unknown-VFC over valid-VFC.
++                    // CH1 is 1080: EPOCH/MIPI glitch makes CH1 VFC unknown first while
++                    // unplugged 720 CH2/CH3 still report valid VFC → unk-over-known
++                    // painted HW 0x78 on CH1 (flash colorbar during 5–6s stutter).
++                    // Rising-edge: claim if none; steal only higher index (once).
++                    {
++                        const UINT sticky = g_nvp[chipId].primarySticky;
++                        const BOOL stickyAlive =
++                            (sticky < NvpMaxCh) &&
++                            (FALSE == g_nvp[chipId].unlocked[sticky]) &&
++                            (TRUE == lostSnap[sticky]);
++                        BOOL better = (FALSE == stickyAlive);
++                        if ((TRUE == stickyAlive) &&
++                            (FALSE == g_nvp[chipId].a8WasLost[ch]) &&
++                            (ch > sticky))
++                        {
++                            better = TRUE;
++                        }
++                        if ((FALSE == g_nvp[chipId].a8WasLost[ch]) && (TRUE == better))
++                        {
++                            g_nvp[chipId].primarySticky = ch;
++                            CAMX_LOG_ERROR(CamxLogGroupISP,
++                                           "nvp6188: primarySticky <- ch%u (a8 rising%s)",
++                                           ch,
++                                           (TRUE == stickyAlive) ? " steal" : "");
++                        }
++                    }
++                }
++                g_nvp[chipId].a8WasLost[ch] = lockedLost;
++            }
++            if (1U == lostLockedN)
++            {
++                g_nvp[chipId].primarySticky = soleLostCh;
++            }
++            else if (0U == lostLockedN)
++            {
++                g_nvp[chipId].primarySticky = NvpMaxCh;
++            }
++            else
++            {
++                // §82: multi — keep sticky if still lost; only switch when sticky has
++                // valid VFC and another lost has unknown (real unplug vs couple).
++                // Avoid every-poll reassignment (pattern mask churn → 5s EPOCH).
++                const UINT sticky = g_nvp[chipId].primarySticky;
++                const BOOL stickyAlive =
++                    (sticky < NvpMaxCh) &&
++                    (FALSE == g_nvp[chipId].unlocked[sticky]) &&
++                    (TRUE == lostSnap[sticky]);
++                if (TRUE == stickyAlive)
++                {
++                    // Keep sticky (no unk-over-known, no every-poll reshuffle).
++                    // Higher-index steal already happened on that CH's a8 rising edge.
++                }
++                else
++                {
++                    // sticky gone — pick highest a8-lost index (CH2/CH3 over CH1 couple)
++                    UINT best = NvpMaxCh;
++                    for (INT ch = static_cast<INT>(count) - 1; ch >= 0; ch--)
++                    {
++                        if ((FALSE == g_nvp[chipId].unlocked[ch]) &&
++                            (TRUE == lostSnap[ch]))
++                        {
++                            best = static_cast<UINT>(ch);
++                            break;
++                        }
++                    }
++                    g_nvp[chipId].primarySticky = best;
++                }
++            }
++            primaryLost = g_nvp[chipId].primarySticky;
++            // §84: only primary may stay unlocked. Reclaim false unlock on couple CHs
++            // (unplug CH3 → CH1 briefly primary/unlock → 闪彩条).
++            BOOL reclaimPub = FALSE;
++            for (UINT ch = 0; ch < count; ch++)
++            {
++                // §98: never reclaim empty / no-SOF CHs — that vs leftover VFC
++                // unlock/relock every poll is CH3 闪彩条 when unplugging a sibling.
++                if ((TRUE == g_nvp[chipId].unlocked[ch]) &&
++                    (primaryLost < NvpMaxCh) &&
++                    (ch != primaryLost) &&
++                    (TRUE == g_nvpEverAnalog[chipId][ch]) &&
++                    (FALSE == g_nvpNoSofUnlock[chipId][ch]) &&
++                    (0 != g_nvpRdiLastDoneMs[chipId][ch]))
++                {
++                    g_nvp[chipId].unlocked[ch]     = FALSE;
++                    g_nvp[chipId].unlockStreak[ch] = 0;
++                    g_nvp[chipId].relockStreak[ch] = 0;
++                    reclaimPub                     = TRUE;
++                    CAMX_LOG_ERROR(CamxLogGroupISP,
++                                   "nvp6188: reclaim unlock ch%u (primary=ch%u) "
++                                   "— anti CH flash colorbar",
++                                   ch, primaryLost);
++                }
++            }
++            pthread_mutex_unlock(&g_nvpLock);
++            if (TRUE == reclaimPub)
++            {
++                NvpSyncVirtualPattern(fd, chipId, 0);
++                Nvp6188PublishActiveSizes(chipId);
++            }
++            const BOOL multiLost = (lostLockedN > 1U);
++            if (primaryLost < NvpMaxCh)
++            {
++                CAMX_LOG_ERROR(CamxLogGroupISP,
++                               "nvp6188: primaryLost=ch%u lostN=%u multi=%d a8=0x%02x",
++                               primaryLost, lostLockedN, multiLost, vlossMask);
++            }
++
++            for (UINT ch = 0; ch < count; ch++)
++            {
++                UINT8 vfc = vfcSnap[ch];
++                if ((0xff == vfc) && (FALSE == lostSnap[ch]))
++                {
++                    // read failed and not lost — try once more
++                    if (FALSE == NvpReadBank(fd, static_cast<UINT8>(0x05 + ch), 0xf0, &vfc))
++                    {
++                        continue;
++                    }
+                 }
+ 
+                 pthread_mutex_lock(&g_nvpLock);
+@@ -958,55 +1709,431 @@
+                 pthread_mutex_unlock(&g_nvpLock);
+ 
+                 NvpReso reso = NvpVfcToReso(vfc);
++                const BOOL chLost = lostSnap[ch];
++                BOOL selfUnlocked = FALSE;
++                pthread_mutex_lock(&g_nvpLock);
++                selfUnlocked = g_nvp[chipId].unlocked[ch];
++                pthread_mutex_unlock(&g_nvpLock);
++                const BOOL vfcUnknown = (NvpResoUnknown == reso);
++                const BOOL isPrimaryLost =
++                    (ch == primaryLost) && (primaryLost < NvpMaxCh);
+ 
+-                // Observe-only while CSID frozen. Mid-stream set_chn (even on the
+-                // "correct" CH) glitches shared MIPI and flowers sibling 1080 panes —
+-                // seen when plugging 720: ch1 unlock→re-lock→refresh set_chn_1080.
+-                if (NvpResoUnknown == reso)
++                // Peer isolate (§67)
++                BOOL peerUnlockedOthers = FALSE;
++                pthread_mutex_lock(&g_nvpLock);
++                for (UINT pc = 0; pc < NvpMaxCh; pc++)
+                 {
++                    if ((pc != ch) && (TRUE == g_nvp[chipId].unlocked[pc]))
++                    {
++                        peerUnlockedOthers = TRUE;
++                        break;
++                    }
++                }
++                pthread_mutex_unlock(&g_nvpLock);
++
++                if ((TRUE == peerUnlockedOthers) && (FALSE == selfUnlocked))
++                {
++                    pthread_mutex_lock(&g_nvpLock);
++                    g_nvp[chipId].unlockStreak[ch] = 0;
++                    pthread_mutex_unlock(&g_nvpLock);
++                    if (TRUE == vfcUnknown)
++                    {
++                        continue;
++                    }
++                }
++
++                BOOL signalAbsent = FALSE;
++                if (TRUE == selfUnlocked)
++                {
++                    signalAbsent = vfcUnknown;
++                }
++                else if (TRUE == peerUnlockedOthers)
++                {
++                    signalAbsent = FALSE;
++                }
++                else if ((TRUE == chLost) && (TRUE == isPrimaryLost))
++                {
++                    // §104: never unlock analog locked CHs on a8. Couple marks
++                    // the lowest live CH → sibling 闪蓝. Unplug is sof-hole.
++                    pthread_mutex_lock(&g_nvpLock);
++                    g_nvp[chipId].unlockStreak[ch] = 0;
++                    pthread_mutex_unlock(&g_nvpLock);
++                    signalAbsent = FALSE;
++                }
++                else if (TRUE == chLost)
++                {
++                    // Non-primary a8 couple — ignore.
++                    pthread_mutex_lock(&g_nvpLock);
++                    g_nvp[chipId].unlockStreak[ch] = 0;
++                    pthread_mutex_unlock(&g_nvpLock);
++                    signalAbsent = FALSE;
++                }
++                else
++                {
++                    signalAbsent = FALSE;
++                }
++
++                // Observe-only while CSID frozen.
++                if (TRUE == signalAbsent)
++                {
++                    // Stream-on grace: I2C often returns 0xff right after StreamOn.
++                    // Video-loss bit is allowed through grace (real cable unplug).
++                    if ((FALSE == chLost) && (NvpNowMs() < g_nvpPollGraceUntilMs[chipId]))
++                    {
++                        continue;
++                    }
++
++                    // Post re-lock hold: ignore unknown-VFC unlock (plug settle flicker →
++                    // live then colorbar). Real unplug still via 0xa8 with longer confirm.
++                    UINT64 holdUntil = 0;
++                    pthread_mutex_lock(&g_nvpLock);
++                    holdUntil = g_nvp[chipId].relockHoldUntilMs[ch];
++                    g_nvp[chipId].relockStreak[ch] = 0;
++                    pthread_mutex_unlock(&g_nvpLock);
++                    const BOOL inRelockHold =
++                        (0 != holdUntil) && (NvpNowMs() < holdUntil);
++                    if ((TRUE == inRelockHold) && (FALSE == chLost) &&
++                        (FALSE == selfUnlocked))
++                    {
++                        pthread_mutex_lock(&g_nvpLock);
++                        g_nvp[chipId].unlockStreak[ch] = 0;
++                        pthread_mutex_unlock(&g_nvpLock);
++                        continue;
++                    }
++
++                    // §85: multi-a8 no longer blocks PRIMARY unlock (that froze SOF
++                    // 5–6s and let CH1 HW pattern flash). Siblings still blocked.
++                    const UINT needUnlock =
++                        ((TRUE == peerUnlockedOthers) && (FALSE == selfUnlocked))
++                            ? NvpUnlockConfirmNeedPeer
++                            : (((TRUE == multiLost) && (FALSE == isPrimaryLost))
++                                   ? NvpUnlockConfirmNeedPeer
++                                   : ((TRUE == inRelockHold)
++                                          ? NvpUnlockConfirmNeedVlossHold
++                                          : NvpUnlockConfirmNeedVloss));
++                    BOOL publishUnlock = FALSE;
++                    UINT presentStreak = 0;
++                    BOOL logPlugBack   = FALSE;
++                    BOOL doChNudge     = FALSE;
++                    BOOL doHardKick    = FALSE;
++                    UINT32 nudgeW      = oldW;
++                    UINT32 nudgeH      = oldH;
++                    UINT8  nudgeLastVfc = lastVfc;
++                    UINT   nudgeIdx    = 0;
+                     pthread_mutex_lock(&g_nvpLock);
+                     if (FALSE == g_nvp[chipId].unlocked[ch])
+                     {
+-                        g_nvp[chipId].unlocked[ch] = TRUE;
+-                        g_nvp[chipId].unlockStreak[ch] = 1;
+-                        g_nvp[chipId].pendVfc[ch] = 0xff;
+-                        g_nvp[chipId].pendCnt[ch] = 0;
+-                        CAMX_LOG_ERROR(CamxLogGroupISP,
+-                                       "nvp6188: poll ch%u VFC 0x%02x -> 0x%02x (unlock, keep %ux%u, no set_chn)",
+-                                       ch, lastVfc, vfc, oldW, oldH);
+-                    }
+-                    else if (g_nvp[chipId].unlockStreak[ch] < 1000)
+-                    {
+                         g_nvp[chipId].unlockStreak[ch]++;
++                        g_nvp[chipId].cablePresentStreak[ch] = 0;
++                        if (g_nvp[chipId].unlockStreak[ch] >= needUnlock)
++                        {
++                            // §85: final gate — still primary, and no higher-index a8-lost
++                            // (CH1 must not unlock while CH2/CH3 are the real unplug).
++                            BOOL higherLost = FALSE;
++                            for (UINT pc = ch + 1; pc < NvpMaxCh; pc++)
++                            {
++                                if ((TRUE == lostSnap[pc]) &&
++                                    (FALSE == g_nvp[chipId].unlocked[pc]))
++                                {
++                                    higherLost = TRUE;
++                                    break;
++                                }
++                            }
++                            if ((ch != g_nvp[chipId].primarySticky) ||
++                                (TRUE == higherLost))
++                            {
++                                g_nvp[chipId].unlockStreak[ch] = 0;
++                                CAMX_LOG_ERROR(CamxLogGroupISP,
++                                               "nvp6188: poll ch%u skip unlock "
++                                               "(primary=%u higherLost=%d) anti-flash",
++                                               ch, g_nvp[chipId].primarySticky,
++                                               higherLost);
++                            }
++                            else
++                            {
++                                g_nvp[chipId].unlocked[ch]           = TRUE;
++                                g_nvp[chipId].unlockStreak[ch]       = 0;
++                                g_nvp[chipId].pendVfc[ch]            = 0xff;
++                                g_nvp[chipId].pendCnt[ch]            = 0;
++                                g_nvp[chipId].relockStreak[ch]       = 0;
++                                g_nvp[chipId].relockHoldUntilMs[ch]  = 0;
++                                g_nvp[chipId].cablePresentStreak[ch] = 0;
++                                g_nvp[chipId].plugNudgeCount[ch]     = 0;
++                                g_nvp[chipId].plugKickCount[ch]      = 0;
++                                g_nvp[chipId].lastVfc[ch]            = 0xff;
++                                publishUnlock = TRUE;
++                                CAMX_LOG_ERROR(CamxLogGroupISP,
++                                               "nvp6188: poll ch%u VFC 0x%02x -> 0x%02x "
++                                               "vloss=%d (unlock confirmed streak=%u/%u, "
++                                               "keep %ux%u, pattern-only)",
++                                               ch, lastVfc, vfc, chLost,
++                                               0, needUnlock,
++                                               oldW, oldH);
++                            }
++                        }
++                        else
++                        {
++                            CAMX_LOG_ERROR(CamxLogGroupISP,
++                                           "nvp6188: poll ch%u VFC 0x%02x -> 0x%02x "
++                                           "vloss=%d (unlock debounce %u/%u%s)",
++                                           ch, lastVfc, vfc, chLost,
++                                           g_nvp[chipId].unlockStreak[ch], needUnlock,
++                                           (TRUE == multiLost) ? " multi-a8-block" : "");
++                        }
++                    }
++                    else
++                    {
++                        // §79: while still a8-lost (unplugged), do NOT spam set_chn —
++                        // that burned nudge budget + PeerShield → siblings stutter 5–9s.
++                        // Nudge only when a8 clears (cable present) but VFC still unknown.
++                        // Rare sticky-a8 after physical plug: slow fallback nudge.
++                        if (TRUE == chLost)
++                        {
++                            g_nvp[chipId].cablePresentStreak[ch]++;
++                            presentStreak = g_nvp[chipId].cablePresentStreak[ch];
++                            if ((0 == (presentStreak % NvpCablePresentLogEvery)) ||
++                                (1 == presentStreak))
++                            {
++                                logPlugBack = TRUE;
++                            }
++                            if ((presentStreak >= NvpStickyA8NudgeNeed) &&
++                                (g_nvp[chipId].plugNudgeCount[ch] < NvpCablePresentNudgeMax) &&
++                                (0 == (presentStreak % NvpStickyA8NudgeNeed)) &&
++                                (NvpNowMs() >= g_nvpPollGraceUntilMs[chipId]))
++                            {
++                                doChNudge    = TRUE;
++                                nudgeIdx     = g_nvp[chipId].plugNudgeCount[ch];
++                                nudgeW       = oldW;
++                                nudgeH       = oldH;
++                                nudgeLastVfc = g_nvp[chipId].lastVfc[ch];
++                                g_nvp[chipId].plugNudgeCount[ch]++;
++                            }
++                        }
++                        else
++                        {
++                            g_nvp[chipId].cablePresentStreak[ch]++;
++                            presentStreak = g_nvp[chipId].cablePresentStreak[ch];
++                            if ((0 == (presentStreak % NvpCablePresentLogEvery)) ||
++                                (1 == presentStreak))
++                            {
++                                logPlugBack = TRUE;
++                            }
++                            if ((presentStreak >= NvpCablePresentNudgeNeed) &&
++                                (g_nvp[chipId].plugNudgeCount[ch] < NvpCablePresentNudgeMax) &&
++                                (NvpNowMs() >= g_nvpPollGraceUntilMs[chipId]))
++                            {
++                                const UINT since =
++                                    presentStreak - NvpCablePresentNudgeNeed;
++                                if ((0 == since) ||
++                                    (0 == (since % NvpCablePresentNudgePeriod)))
++                                {
++                                    doChNudge    = TRUE;
++                                    nudgeIdx     = g_nvp[chipId].plugNudgeCount[ch];
++                                    nudgeW       = oldW;
++                                    nudgeH       = oldH;
++                                    nudgeLastVfc = g_nvp[chipId].lastVfc[ch];
++                                    g_nvp[chipId].plugNudgeCount[ch]++;
++                                }
++                            }
++                        }
+                     }
+                     pthread_mutex_unlock(&g_nvpLock);
++                    if (TRUE == publishUnlock)
++                    {
++                        // Pattern BEFORE publish lock=0 — keep SOF for rdi_only (§72).
++                        NvpSyncVirtualPattern(fd, chipId,
++                                              static_cast<UINT8>(1U << ch));
++                        // sibHold only if this CH was analog-live (real unplug).
++                        // Empty-CH unlock must not settle/hold live siblings.
++                        if (TRUE == g_nvpEverAnalog[chipId][ch])
++                        {
++                            g_nvpSiblingHoldUntilMs[chipId] =
++                                NvpNowMs() + static_cast<UINT64>(NvpSiblingHoldMs);
++                        }
++                        Nvp6188PublishActiveSizes(chipId);
++                    }
++                    if ((TRUE == doChNudge) || (TRUE == doHardKick))
++                    {
++                        g_nvpPeerShieldUntilMs[chipId] =
++                            NvpNowMs() + static_cast<UINT64>(NvpPeerShieldExtraMs);
++                    }
++                    if (TRUE == doChNudge)
++                    {
++                        // §99: one shot at frozen CSID size only — do not flip
++                        // 720↔1080 (that thrashed MIPI and stalled 1080).
++                        const BOOL use1080 = (nudgeW >= 1920) && (nudgeH >= 1080);
++                        if (TRUE == use1080)
++                        {
++                            NvpSetChn1080pPal(fd, static_cast<UINT8>(ch));
++                        }
++                        else
++                        {
++                            NvpSetChn720pPal(fd, static_cast<UINT8>(ch));
++                        }
++                        NvpSyncVirtualPattern(fd, chipId, 0); // §83: never OR raw a8 couple
++                        CAMX_LOG_ERROR(CamxLogGroupISP,
++                                       "nvp6188: poll ch%u plug-back CH-only set_chn "
++                                       "nudge (%s idx=%u) a8_lost=%d VFC=0x%02x streak=%u",
++                                       ch, (TRUE == use1080) ? "1080" : "720",
++                                       nudgeIdx, chLost, vfc, presentStreak);
++                    }
++                    if (TRUE == doHardKick)
++                    {
++                        NvpKickAutoDetect(fd);
++                        NvpSyncVirtualPattern(fd, chipId, 0); // §83: unlocked[] only
++                        CAMX_LOG_ERROR(CamxLogGroupISP,
++                                       "nvp6188: poll ch%u plug-back bank13 kick "
++                                       "(still VFC=0x%02x streak=%u, peer shield on)",
++                                       ch, vfc, presentStreak);
++                    }
++                    if (TRUE == logPlugBack)
++                    {
++                        CAMX_LOG_ERROR(CamxLogGroupISP,
++                                       "nvp6188: poll ch%u plug-back wait VFC "
++                                       "(a8_lost=%d VFC=0x%02x streak=%u)",
++                                       ch, chLost, vfc, presentStreak);
++                    }
+                     continue;
+                 }
+ 
++                // Present = valid VFC. §83: unlocked leave-colorbar also needs !a8
++                // (sticky a8 + valid VFC → live garbage → CH1 花屏卡死).
++                {
++                    BOOL publishRelock = FALSE;
++                    UINT streak        = 0;
++                    UINT32 csidWSnap   = 0;
++                    UINT32 csidHSnap   = 0;
++                    BOOL   sizeMatch   = TRUE;
++                    BOOL   doAlignCsid = FALSE;
++                    pthread_mutex_lock(&g_nvpLock);
++                    g_nvp[chipId].unlockStreak[ch]       = 0;
++                    g_nvp[chipId].cablePresentStreak[ch] = 0;
++                    csidWSnap = g_nvp[chipId].csidW[ch];
++                    csidHSnap = g_nvp[chipId].csidH[ch];
++                    {
++                        UINT32 vw = 1280;
++                        UINT32 vh = 720;
++                        if (NvpReso1080p == reso)
++                        {
++                            vw = 1920;
++                            vh = 1080;
++                        }
++                        sizeMatch = ((vw == csidWSnap) && (vh == csidHSnap));
++                    }
++                    if ((TRUE == g_nvp[chipId].unlocked[ch]) && (FALSE == sizeMatch) &&
++                        (g_nvp[chipId].plugNudgeCount[ch] < 1U))
++                    {
++                        // One CSID-size set_chn then relock anyway (letterbox).
++                        // Waiting for VFC==CSID blocked 1080 plug on 720 CSID.
++                        doAlignCsid = TRUE;
++                        g_nvp[chipId].plugNudgeCount[ch]++;
++                    }
++                    if (TRUE == g_nvp[chipId].unlocked[ch])
++                    {
++                        // §104: analog plug-back relocks on valid VFC — do NOT
++                        // wait for a8 clear (~5s). Empty leftover still needs
++                        // VFC change or a8 rising (same leftover + a8 = 闪).
++                        if (TRUE == chLost)
++                        {
++                            g_nvpA8LostSeen[chipId][ch] = TRUE;
++                        }
++                        const BOOL a8Rising =
++                            (TRUE == g_nvpA8LostSeen[chipId][ch]) &&
++                            (FALSE == chLost);
++                        const BOOL leftoverStay =
++                            (TRUE == g_nvpNoSofUnlock[chipId][ch]) &&
++                            (FALSE == a8Rising) &&
++                            ((vfc == g_nvpLeftoverVfc[chipId][ch]) ||
++                             (0xff == g_nvpLeftoverVfc[chipId][ch]));
++                        if ((TRUE == leftoverStay) && (TRUE == chLost))
++                        {
++                            g_nvp[chipId].relockStreak[ch] = 0;
++                        }
++                        else
++                        {
++                            const UINT needRelock = NvpRelockConfirmNeed;
++                            g_nvp[chipId].relockStreak[ch]++;
++                            streak = g_nvp[chipId].relockStreak[ch];
++                            if (streak >= needRelock)
++                            {
++                            g_nvp[chipId].unlocked[ch]          = FALSE;
++                            g_nvp[chipId].relockStreak[ch]      = 0;
++                            g_nvp[chipId].plugNudgeCount[ch]    = 0;
++                            g_nvp[chipId].plugKickCount[ch]     = 0;
++                            g_nvpNoSofUnlock[chipId][ch]        = FALSE;
++                            g_nvpA8LostSeen[chipId][ch]         = FALSE;
++                            // Keep 0x78 until analog BUF_DONE — avoids SOF hole → EPOCH.
++                            g_nvpKeepPattern[chipId][ch]        = TRUE;
++                                g_nvp[chipId].relockHoldUntilMs[ch] =
++                                    NvpNowMs() + static_cast<UINT64>(NvpRelockHoldMs);
++                                publishRelock = TRUE;
++                            }
++                        }
++                    }
++                    else
++                    {
++                        g_nvp[chipId].relockStreak[ch] = 0;
++                    }
++                    pthread_mutex_unlock(&g_nvpLock);
++                    if ((TRUE == doAlignCsid) && (FALSE == publishRelock))
++                    {
++                        if ((csidWSnap >= 1920) && (csidHSnap >= 1080))
++                        {
++                            NvpSetChn1080pPal(fd, static_cast<UINT8>(ch));
++                        }
++                        else
++                        {
++                            NvpSetChn720pPal(fd, static_cast<UINT8>(ch));
++                        }
++                        NvpSyncVirtualPattern(fd, chipId,
++                                              static_cast<UINT8>(1U << ch));
++                        CAMX_LOG_ERROR(CamxLogGroupISP,
++                                       "nvp6188: poll ch%u align set_chn to CSID "
++                                       "%ux%u (no IFE resync, then relock)",
++                                       ch, csidWSnap, csidHSnap);
++                    }
++                    if (TRUE == publishRelock)
++                    {
++                        // §82: NO set_chn on relock — size already matched; extra set_chn
++                        // thrashed MIPI → sibling 卡顿 + CH1 花屏卡死不恢复.
++                        NvpSyncVirtualPattern(fd, chipId, 0);
++                        // §100: empty-CH first lock (boot-empty plug-in) must not
++                        // settle-hold live siblings → 花屏 then recover.
++                        if (TRUE == g_nvpEverAnalog[chipId][ch])
++                        {
++                            g_nvpSiblingHoldUntilMs[chipId] =
++                                NvpNowMs() + static_cast<UINT64>(NvpSiblingHoldMs);
++                        }
++                        Nvp6188PublishActiveSizes(chipId);
++                        NVP_ALOG("re-lock ch%u VFC=0x%02x", ch, vfc);
++                        CAMX_LOG_ERROR(CamxLogGroupISP,
++                                       "nvp6188: poll ch%u re-lock VFC=0x%02x "
++                                       "confirm=%u/%u hold=%ums",
++                                       ch, vfc, streak, NvpRelockConfirmNeed,
++                                       NvpRelockHoldMs);
++                    }
++                    else if ((TRUE == selfUnlocked) && (streak > 0) &&
++                             (streak < NvpRelockConfirmNeed))
++                    {
++                        CAMX_LOG_ERROR(CamxLogGroupISP,
++                                       "nvp6188: poll ch%u re-lock debounce "
++                                       "VFC=0x%02x %u/%u (stay colorbar)",
++                                       ch, vfc, streak, NvpRelockConfirmNeed);
++                        continue;
++                    }
++                }
++
+                 // Same format as committed (incl. after unlock flicker)
+                 if (vfc == lastVfc)
+                 {
+                     pthread_mutex_lock(&g_nvpLock);
+                     g_nvp[chipId].pendVfc[ch] = vfc;
+                     g_nvp[chipId].pendCnt[ch] = 0;
+-                    const BOOL wasUn = g_nvp[chipId].unlocked[ch];
+-                    const UINT streak = g_nvp[chipId].unlockStreak[ch];
+-                    g_nvp[chipId].unlocked[ch] = FALSE;
+-                    g_nvp[chipId].unlockStreak[ch] = 0;
+                     pthread_mutex_unlock(&g_nvpLock);
+-
+-                    if ((TRUE == wasUn) && (streak >= NvpUnlockRefreshNeed))
+-                    {
+-                        // Sibling cable events can unlock a stable 1080 CH for seconds.
+-                        // Re-running set_chn mid-stream flowers that pane — do not refresh.
+-                        CAMX_LOG_ERROR(CamxLogGroupISP,
+-                                       "nvp6188: poll ch%u re-lock VFC=0x%02x streak=%u (no set_chn)",
+-                                       ch, vfc, streak);
+-                    }
+                     continue;
+                 }
+ 
+-                // Debounce format change.
++                // Debounce format change (unlocked already cleared above).
+                 pthread_mutex_lock(&g_nvpLock);
+                 if (g_nvp[chipId].pendVfc[ch] != vfc)
+                 {
+@@ -1041,85 +2168,103 @@
+                     continue;
+                 }
+ 
+-                // Size != frozen CSID:
+-                // - Upgrade 720→1080: allow IFE resync (only grow) so reboot-late lock recovers
+-                // - Shrink 1080→720: keep CSID (downgrade mid-stream is unstable)
++                // Size != frozen CSID.
++                // §103: NEVER mid-stream 720→1080 IFE resync (ecac967).
++                // CSLReleaseHardware on shared rdi_only kills sibling SOF → 闪蓝.
++                // Preview must not switch CSID; memcpy letterbox. Plug 1080 into
++                // a 720-frozen CH stays CSID-sized until next stream-on.
+                 if ((w != csidW) || (h != csidH))
+                 {
+-                    const BOOL upgrade =
+-                        ((csidW <= 1280) && (w >= 1920) && (h >= 1080));
+-
+-                    if (TRUE == upgrade)
+-                    {
+-                        NvpSetChn1080pPal(fd, static_cast<UINT8>(ch));
+-                        pthread_mutex_lock(&g_nvpLock);
+-                        g_nvp[chipId].lastVfc[ch]  = vfc;
+-                        g_nvp[chipId].activeW[ch]  = w;
+-                        g_nvp[chipId].activeH[ch]  = h;
+-                        g_nvp[chipId].csidW[ch]    = w;
+-                        g_nvp[chipId].csidH[ch]    = h;
+-                        g_nvp[chipId].unlocked[ch] = FALSE;
+-                        g_nvp[chipId].pendCnt[ch]  = 0;
+-                        g_nvp[chipId].ifeResync    = TRUE;
+-                        pthread_mutex_unlock(&g_nvpLock);
+-
+-                        for (UINT si = 0; si < pMode->streamConfigCount; si++)
++                    // §87: NEVER unlock a still-locked CH on VFC size glitch.
++                        // peerEvent was FALSE for ~5s until 0xa8 caught up → CH1
++                        // 1080 VFC flickered 720 → flower-recover colorbar (闪彩屏).
++                        if (FALSE == selfUnlocked)
+                         {
+-                            if ((StreamType::IMAGE == pMode->streamConfig[si].type) &&
+-                                (pMode->streamConfig[si].vc == ch))
+-                            {
+-                                NvpUpdateStreamDimension(pMode, si, w, h);
+-                                break;
+-                            }
++                            CAMX_LOG_ERROR(CamxLogGroupISP,
++                                           "nvp6188: poll ch%u ignore HOTPLUG mismatch "
++                                           "(locked stay live, no IFE resync) VFC 0x%02x "
++                                           "want %ux%u CSID %ux%u",
++                                           ch, vfc, w, h, csidW, csidH);
++                            NVP_ALOG("ch%u ignore mismatch locked", ch);
++                            continue;
+                         }
+-                        Nvp6188PublishActiveSizes(chipId);
+-                        CAMX_LOG_ERROR(CamxLogGroupISP,
+-                                       "nvp6188: poll ch%u HOTPLUG upgrade VFC 0x%02x->0x%02x CSID %ux%u->%ux%u IFE resync",
+-                                       ch, lastVfc, vfc, csidW, csidH, w, h);
+-                    }
+-                    else
+-                    {
++                        // Already unlocked (plug-back): stay colorbar + align to CSID.
++                        BOOL needPub = FALSE;
+                         pthread_mutex_lock(&g_nvpLock);
+-                        g_nvp[chipId].lastVfc[ch]  = vfc;
++                        g_nvp[chipId].lastVfc[ch]  = 0xff;
+                         g_nvp[chipId].activeW[ch]  = csidW;
+                         g_nvp[chipId].activeH[ch]  = csidH;
+-                        g_nvp[chipId].unlocked[ch] = FALSE;
+-                        g_nvp[chipId].pendCnt[ch]  = 0;
+-                        pthread_mutex_unlock(&g_nvpLock);
++                        if (FALSE == g_nvp[chipId].unlocked[ch])
++                        {
++                            g_nvp[chipId].unlocked[ch] = TRUE;
++                            needPub = TRUE;
++                        }
++                        g_nvp[chipId].relockStreak[ch] = 0;
++                        g_nvp[chipId].pendCnt[ch]      = 0;
++                        if (g_nvp[chipId].plugNudgeCount[ch] < 2U)
++                        {
++                            g_nvp[chipId].plugNudgeCount[ch]++;
++                            pthread_mutex_unlock(&g_nvpLock);
++                            if ((csidW >= 1920) && (csidH >= 1080))
++                            {
++                                NvpSetChn1080pPal(fd, static_cast<UINT8>(ch));
++                            }
++                            else
++                            {
++                                NvpSetChn720pPal(fd, static_cast<UINT8>(ch));
++                            }
++                        }
++                        else
++                        {
++                            pthread_mutex_unlock(&g_nvpLock);
++                        }
++                        NvpSyncVirtualPattern(fd, chipId,
++                                              static_cast<UINT8>(1U << ch));
++                        if (TRUE == needPub)
++                        {
++                            Nvp6188PublishActiveSizes(chipId);
++                        }
+                         CAMX_LOG_ERROR(CamxLogGroupISP,
+-                                       "nvp6188: poll ch%u HOTPLUG VFC 0x%02x->0x%02x want %ux%u CSID frozen %ux%u — keep CSID",
+-                                       ch, lastVfc, vfc, w, h, csidW, csidH);
+-                    }
++                                       "nvp6188: poll ch%u HOTPLUG mismatch "
++                                       "VFC 0x%02x want %ux%u CSID %ux%u — "
++                                       "colorbar + align (flower recover)",
++                                       ch, vfc, w, h, csidW, csidH);
+                     continue;
+                 }
+ 
+-                // Same size as frozen CSID: refresh set_chn for this CH only.
+-                if (NvpReso720p == reso)
+-                {
+-                    NvpSetChn720pPal(fd, static_cast<UINT8>(ch));
+-                }
+-                else
+-                {
+-                    NvpSetChn1080pPal(fd, static_cast<UINT8>(ch));
+-                }
++                // Same size as frozen CSID: commit VFC only — no set_chn / no MAR.
++                // §98: leftover VFC on an empty / already-unlocked CH must NOT
++                // force lock (that + reclaim is CH3 闪彩条).
+                 pthread_mutex_lock(&g_nvpLock);
+                 g_nvp[chipId].lastVfc[ch]  = vfc;
+                 g_nvp[chipId].activeW[ch]  = csidW;
+                 g_nvp[chipId].activeH[ch]  = csidH;
+-                g_nvp[chipId].unlocked[ch] = FALSE;
+                 g_nvp[chipId].pendCnt[ch]  = 0;
++                if ((FALSE == selfUnlocked) &&
++                    (FALSE == g_nvpNoSofUnlock[chipId][ch]) &&
++                    (TRUE == g_nvpEverAnalog[chipId][ch]))
++                {
++                    g_nvp[chipId].unlocked[ch] = FALSE;
++                }
+                 pthread_mutex_unlock(&g_nvpLock);
+                 Nvp6188PublishActiveSizes(chipId);
+                 CAMX_LOG_ERROR(CamxLogGroupISP,
+-                               "nvp6188: poll ch%u HOTPLUG same-CSID VFC 0x%02x->0x%02x refresh set_chn %ux%u",
+-                               ch, lastVfc, vfc, csidW, csidH);
++                               "nvp6188: poll ch%u HOTPLUG same-CSID VFC 0x%02x->0x%02x "
++                               "keep %ux%u (no set_chn/MAR unlocked=%d)",
++                               ch, lastVfc, vfc, csidW, csidH, selfUnlocked);
+             }
+ 
++            // §85: pattern = unlocked[] only. Pre-unlock keepalive on primary
++            // painted HW bars on CH1 during EPOCH (1080 VFC unknown couple).
++            NvpSyncVirtualPattern(fd, chipId, 0);
++            // Refresh peer/settle so Memcpy clears settle after RelockHoldMs / sibHold.
++            Nvp6188PublishActiveSizes(chipId);
+             NvpCloseBus(fd);
+         }
+ 
+-        // 500ms poll
+-        for (UINT i = 0; (i < 5) && (TRUE == g_nvpPollRun[chipId].load()); i++)
++        // Peer hotplug: poll ~200ms (less I2C than 100ms); idle ~500ms (§70).
++        const UINT sleepLoops = (TRUE == peerEvent) ? 2u : 5u;
++        for (UINT i = 0; (i < sleepLoops) && (TRUE == g_nvpPollRun[chipId].load()); i++)
+         {
+             usleep(100000);
+         }
+@@ -1156,10 +2301,23 @@
+     g_nvpPollRun[chipId].store(TRUE);
+     for (UINT ch = 0; ch < NvpMaxCh; ch++)
+     {
+-        g_nvp[chipId].pendVfc[ch]      = g_nvp[chipId].lastVfc[ch];
+-        g_nvp[chipId].pendCnt[ch]      = 0;
+-        g_nvp[chipId].unlocked[ch]     = FALSE;
+-        g_nvp[chipId].unlockStreak[ch] = 0;
++        g_nvp[chipId].pendVfc[ch] = g_nvp[chipId].lastVfc[ch];
++        g_nvp[chipId].pendCnt[ch] = 0;
++        // Keep open-time lock-classify (unlocked[]). Clearing it here caused poll to
++        // treat every CH as newly unlocked on the first 0xff and expand pattern to 0x0F.
++    }
++    g_nvpPollGraceUntilMs[chipId] = NvpNowMs() + NvpPollGraceMs;
++    g_nvpRdiFenceReq[chipId]      = 0;
++    g_nvpRdiFenceMask[chipId]     = 0;
++    for (UINT ch = 0; ch < NvpMaxCh; ch++)
++    {
++        g_nvpRdiLastDoneMs[chipId][ch] = 0;
++        g_nvpEverAnalog[chipId][ch]    = FALSE;
++        g_nvpNoSofUnlock[chipId][ch]   = FALSE;
++        g_nvpA8LostSeen[chipId][ch]    = FALSE;
++        g_nvpLeftoverVfc[chipId][ch]   = 0xff;
++        g_nvpHoleStreak[chipId][ch]    = 0;
++        g_nvpKeepPattern[chipId][ch]   = FALSE;
+     }
+     pthread_mutex_unlock(&g_nvpLock);
+ 
+@@ -1178,6 +2336,7 @@
+     g_nvp[chipId].pollThreadJoinable = TRUE;
+     pthread_mutex_unlock(&g_nvpLock);
+     CAMX_LOG_ERROR(CamxLogGroupISP, "%s: Phase3 poll started", NvpTag[chipId]);
++    NVP_ALOG("Phase3 poll started chip=%u", chipId);
+ }
+ 
+ ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+@@ -1211,12 +2370,28 @@
+     g_nvp[chipId].ifeResync  = FALSE;
+     for (UINT ch = 0; ch < NvpMaxCh; ch++)
+     {
+-        g_nvp[chipId].lastVfc[ch]      = 0xff;
+-        g_nvp[chipId].pendVfc[ch]      = 0xff;
+-        g_nvp[chipId].pendCnt[ch]      = 0;
+-        g_nvp[chipId].unlocked[ch]     = FALSE;
+-        g_nvp[chipId].unlockStreak[ch] = 0;
++        g_nvp[chipId].lastVfc[ch]           = 0xff;
++        g_nvp[chipId].pendVfc[ch]           = 0xff;
++        g_nvp[chipId].pendCnt[ch]           = 0;
++        g_nvp[chipId].unlocked[ch]          = FALSE;
++        g_nvp[chipId].unlockStreak[ch]      = 0;
++        g_nvp[chipId].cablePresentStreak[ch] = 0;
++        g_nvp[chipId].relockStreak[ch]      = 0;
++        g_nvp[chipId].relockHoldUntilMs[ch] = 0;
++        g_nvp[chipId].a8WasLost[ch]         = FALSE;
++        g_nvp[chipId].plugNudgeCount[ch]    = 0;
++        g_nvp[chipId].plugKickCount[ch]     = 0;
++        g_nvpRdiLastDoneMs[chipId][ch]     = 0;
++        g_nvpEverAnalog[chipId][ch]        = FALSE;
++        g_nvpNoSofUnlock[chipId][ch]       = FALSE;
++        g_nvpA8LostSeen[chipId][ch]        = FALSE;
++        g_nvpLeftoverVfc[chipId][ch]       = 0xff;
++        g_nvpHoleStreak[chipId][ch]        = 0;
++        g_nvpKeepPattern[chipId][ch]       = FALSE;
+     }
++    g_nvpRdiFenceReq[chipId]     = 0;
++    g_nvpRdiFenceMask[chipId]    = 0;
++    g_nvp[chipId].primarySticky = NvpMaxCh;
+     pthread_mutex_unlock(&g_nvpLock);
+     CAMX_LOG_ERROR(CamxLogGroupISP, "%s: Phase3 poll stop (CSID unfrozen)", NvpTag[chipId]);
+ }
+diff --git a/vendor/qcom/proprietary/camx/src/hwl/ife/camxnvp6188detect.h b/vendor/qcom/proprietary/camx/src/hwl/ife/camxnvp6188detect.h
+index a612a90..e437458 100644
+--- a/vendor/qcom/proprietary/camx/src/hwl/ife/camxnvp6188detect.h
++++ b/vendor/qcom/proprietary/camx/src/hwl/ife/camxnvp6188detect.h
+@@ -61,6 +61,12 @@
+ VOID Nvp6188PublishActiveSizes(
+     UINT chipId);
+ 
++/// @brief IFE RDI BUF_DONE — record lastDone / hole. Does not unlock.
++VOID Nvp6188NoteRdiFence(
++    UINT   chipId,
++    UINT   vc,
++    UINT64 requestId);
++
+ } // namespace CamX
+ 
+ #endif // CAMXNVP6188DETECT_H
+diff --git a/vendor/qcom/proprietary/chi-cdk/oem/qcom/node/memcpy/camxchinodememcpy.cpp b/vendor/qcom/proprietary/chi-cdk/oem/qcom/node/memcpy/camxchinodememcpy.cpp
+index f91c37c..86e1daf 100755
+--- a/vendor/qcom/proprietary/chi-cdk/oem/qcom/node/memcpy/camxchinodememcpy.cpp
++++ b/vendor/qcom/proprietary/chi-cdk/oem/qcom/node/memcpy/camxchinodememcpy.cpp
+@@ -11,6 +11,8 @@
+ 
+ #include <inttypes.h>
+ #include <stdio.h>
++#include <stdlib.h>
++#include <string.h>
+ #include <sys/system_properties.h>
+ 
+ #include "camxchinodememcpy.h"
+@@ -808,6 +810,15 @@
+     , m_nodeCaps(0)
+     , m_processedFrame(0)
+     , m_inducedSleepTime(0)
++    , m_pHoldNv12Y(NULL)
++    , m_pHoldNv12UV(NULL)
++    , m_holdYBytes(0)
++    , m_holdUVBytes(0)
++    , m_holdW(0)
++    , m_holdH(0)
++    , m_holdYStride(0)
++    , m_holdUVStride(0)
++    , m_hasHoldFrame(FALSE)
+ {
+     memset(&m_format, 0, sizeof(CHINODEIMAGEFORMAT));
+ }
+@@ -817,7 +828,18 @@
+ ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+ ChiMemCpyNode::~ChiMemCpyNode()
+ {
+-    m_hChiSession = NULL;
++    if (NULL != m_pHoldNv12Y)
++    {
++        free(m_pHoldNv12Y);
++        m_pHoldNv12Y = NULL;
++    }
++    if (NULL != m_pHoldNv12UV)
++    {
++        free(m_pHoldNv12UV);
++        m_pHoldNv12UV = NULL;
++    }
++    m_hasHoldFrame = FALSE;
++    m_hChiSession  = NULL;
+ }
+ 
+ ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+@@ -995,59 +1017,342 @@
+             pOutUV = pOutY + (outPlaneStride * outSliceHeight);
+         }
+ 
+-        if ((inWidth == outWidth) && (inHeight == outHeight))
++        // Product rule:
++        //   lock=1 → live camera UYVY
++        //   lock=0 → solid blue (unconnected; do not freeze / do not wait on MIPI)
++        BOOL signalLocked      = TRUE;
++        BOOL inputLooksEmpty   = FALSE;
++        BOOL inputLooksCorrupt = FALSE;
++        BOOL settleShield      = FALSE;
++        if (m_nodeInstanceId < 4)
+         {
+-            UYVYtoNV12(pIn,
+-                       pOutY,
+-                       pOutUV,
+-                       static_cast<int>(outWidth),
+-                       static_cast<int>(outHeight),
+-                       static_cast<int>(inStride),
+-                       static_cast<int>(outPlaneStride),
+-                       static_cast<int>(outUVStride));
++            CHAR lkey[64];
++            CHAR lval[PROP_VALUE_MAX] = { 0 };
++            BOOL gotLock = FALSE;
++            UINT32 cameraId = 0;
++            if ((NULL != g_ChiNodeInterface.pGetCameraID) &&
++                (CDKResultSuccess == g_ChiNodeInterface.pGetCameraID(m_hChiSession, &cameraId)) &&
++                (0 != cameraId))
++            {
++                snprintf(lkey, sizeof(lkey), "vendor.camera.nvp.c%u.vc%u.lock",
++                         cameraId, m_nodeInstanceId);
++                if (__system_property_get(lkey, lval) > 0)
++                {
++                    signalLocked = ('0' != lval[0]);
++                    gotLock = TRUE;
++                }
++            }
++            if (FALSE == gotLock)
++            {
++                const CHAR* prefixes[] = {
++                    "vendor.camera.nvp6188",
++                    "vendor.camera.nvp61882"
++                };
++                for (UINT pi = 0; pi < 2; pi++)
++                {
++                    snprintf(lkey, sizeof(lkey), "%s.vc%u.lock", prefixes[pi], m_nodeInstanceId);
++                    if (__system_property_get(lkey, lval) > 0)
++                    {
++                        signalLocked = ('0' != lval[0]);
++                        break;
++                    }
++                }
++            }
++            // §76: settle=1 → short sibHold/debounce hold-last.
++            // Do NOT treat peer=1 as settle — while CH2 unlocked peer stays 1 forever,
++            // which froze CH0/CH1 until plug-back (CH3 often had no hold → looked fine).
++            CHAR sval[PROP_VALUE_MAX] = { 0 };
++            if ((__system_property_get("vendor.camera.nvp6188.settle", sval) > 0) &&
++                ('1' == sval[0]))
++            {
++                settleShield = TRUE;
++            }
++            else if ((__system_property_get("vendor.camera.nvp61882.settle", sval) > 0) &&
++                     ('1' == sval[0]))
++            {
++                settleShield = TRUE;
++            }
+         }
+-        else
++
++        if (FALSE == signalLocked)
+         {
+-            // Nearest-neighbor scale UYVY -> NV12 for mixed VC sizes
++            // §98: unconnected CH → stable solid blue (not flashing 8-bar).
++            // Rec.601 100% blue-ish: Y=41, U=240, V=110.
++            static const UINT8 kBlueY = 41;
++            static const UINT8 kBlueU = 240;
++            static const UINT8 kBlueV = 110;
+             for (UINT32 y = 0; y < outHeight; y++)
+             {
+-                UINT32 sy = (inHeight > 0) ? ((y * inHeight) / outHeight) : 0;
+-                if (sy >= inHeight)
++                unsigned char* pDst =
++                    pOutY + static_cast<size_t>(y) * static_cast<size_t>(outPlaneStride);
++                memset(pDst, kBlueY, outWidth);
++            }
++            for (UINT32 y = 0; y < (outHeight / 2); y++)
++            {
++                unsigned char* pDst =
++                    pOutUV + static_cast<size_t>(y) * static_cast<size_t>(outUVStride);
++                for (UINT32 x = 0; x < outWidth; x += 2)
+                 {
+-                    sy = inHeight - 1;
++                    pDst[x]     = kBlueU;
++                    pDst[x + 1] = kBlueV;
+                 }
+-                const unsigned char* pSrc = pIn + static_cast<size_t>(sy) * static_cast<size_t>(inStride);
+-                unsigned char*       pY   = pOutY + static_cast<size_t>(y) * static_cast<size_t>(outPlaneStride);
+-                for (UINT32 x = 0; x < outWidth; x++)
++            }
++            continue;
++        }
++
++        UINT32 yCnt  = 0;
++        UINT32 uvDev = 0;
++        UINT32 yMin  = 255;
++        UINT32 yMax  = 0;
++        if ((NULL != pIn) && (inStride >= 4) && (inHeight > 0) && (inWidth > 1))
++        {
++            UINT32 ySum = 0;
++            const UINT32 sampleRows = (inHeight > 8) ? 8 : inHeight;
++            const UINT32 sampleCols = (inWidth > 32) ? 32 : (inWidth & ~1U);
++            for (UINT32 sy = 0; sy < sampleRows; sy++)
++            {
++                const UINT32 row =
++                    (sy * (inHeight - 1)) / ((sampleRows > 1) ? (sampleRows - 1) : 1);
++                const unsigned char* pRow =
++                    pIn + static_cast<size_t>(row) * static_cast<size_t>(inStride);
++                for (UINT32 sx = 0; sx < sampleCols; sx += 2)
+                 {
+-                    UINT32 sx = (inWidth > 0) ? ((x * inWidth) / outWidth) : 0;
+-                    if (sx >= inWidth)
++                    const UINT32 u = pRow[sx * 2];
++                    const UINT32 y = pRow[sx * 2 + 1];
++                    const UINT32 v = pRow[sx * 2 + 2];
++                    ySum += y;
++                    yCnt++;
++                    if (y < yMin) { yMin = y; }
++                    if (y > yMax) { yMax = y; }
++                    uvDev += (u > 128) ? (u - 128) : (128 - u);
++                    uvDev += (v > 128) ? (v - 128) : (128 - v);
++                }
++            }
++            if ((yCnt > 0) && (((ySum / yCnt) < 12U) || ((yMax - yMin) < 24U)))
++            {
++                inputLooksEmpty = TRUE;
++            }
++            // §99: colorful 1080 is not corrupt. uvDev/8-bar hold froze live 1080.
++            // Only treat chroma/bars as corrupt during the short settle window.
++            if ((TRUE == settleShield) && (yCnt > 0) && ((uvDev / yCnt) > 32U))
++            {
++                inputLooksCorrupt = TRUE;
++            }
++            // §86: HW 0x78 bleed looks like 8-bar colorbar, not "empty". Hold-last
++            // on locked VC so CH1 does not flash bars during peer EPOCH.
++            if ((TRUE == settleShield) && (yCnt > 0) && (inWidth >= 64) &&
++                (FALSE == inputLooksEmpty))
++            {
++                UINT32 bandMean[8] = { 0 };
++                UINT32 bandCnt[8]  = { 0 };
++                const UINT32 mid = inHeight / 2;
++                const unsigned char* pMid =
++                    pIn + static_cast<size_t>(mid) * static_cast<size_t>(inStride);
++                for (UINT32 x = 0; x < inWidth; x += 8)
++                {
++                    const UINT32 bi = (x * 8) / inWidth;
++                    if (bi < 8)
+                     {
+-                        sx = inWidth - 1;
++                        bandMean[bi] += pMid[(x & ~1U) * 2 + 1];
++                        bandCnt[bi]++;
+                     }
+-                    // UYVY: Y at odd bytes within macropixel
+-                    pY[x] = pSrc[(sx & ~1U) * 2 + ((sx & 1U) ? 3 : 1)];
++                }
++                UINT32 bMin = 255;
++                UINT32 bMax = 0;
++                UINT32 filled = 0;
++                for (UINT32 b = 0; b < 8; b++)
++                {
++                    if (0 < bandCnt[b])
++                    {
++                        bandMean[b] /= bandCnt[b];
++                        if (bandMean[b] < bMin) { bMin = bandMean[b]; }
++                        if (bandMean[b] > bMax) { bMax = bandMean[b]; }
++                        filled++;
++                    }
++                }
++                if ((filled >= 6U) && ((bMax - bMin) > 80U))
++                {
++                    inputLooksCorrupt = TRUE;
++                }
++            }
++        }
++
++        // §83: locked + corrupt/empty → hold-last (prevents 花屏卡死 after plug-back).
++        if ((TRUE == signalLocked) && (TRUE == m_hasHoldFrame) &&
++            (NULL != m_pHoldNv12Y) && (NULL != m_pHoldNv12UV) &&
++            (m_holdW == outWidth) && (m_holdH == outHeight) &&
++            ((TRUE == inputLooksEmpty) || (TRUE == inputLooksCorrupt)))
++        {
++            for (UINT32 y = 0; y < outHeight; y++)
++            {
++                unsigned char* pDst =
++                    pOutY + static_cast<size_t>(y) * static_cast<size_t>(outPlaneStride);
++                const unsigned char* pSrc =
++                    m_pHoldNv12Y + static_cast<size_t>(y) * static_cast<size_t>(m_holdYStride);
++                memcpy(pDst, pSrc, outWidth);
++            }
++            for (UINT32 y = 0; y < (outHeight / 2); y++)
++            {
++                unsigned char* pDst =
++                    pOutUV + static_cast<size_t>(y) * static_cast<size_t>(outUVStride);
++                const unsigned char* pSrc =
++                    m_pHoldNv12UV + static_cast<size_t>(y) * static_cast<size_t>(m_holdUVStride);
++                memcpy(pDst, pSrc, outWidth);
++            }
++            continue;
++        }
++
++        // Size mismatch: prefer hold during settle/corrupt; else letterbox (do NOT
++        // black-fill — §79 black made CH2/CH3 boot look like 无图像 when RDI=720
++        // and Chi out=1080).
++        const BOOL sizeMismatch =
++            (inWidth != outWidth) || (inHeight != outHeight);
++        if ((TRUE == sizeMismatch) && (TRUE == m_hasHoldFrame) &&
++            (NULL != m_pHoldNv12Y) && (NULL != m_pHoldNv12UV) &&
++            (m_holdW == outWidth) && (m_holdH == outHeight) &&
++            ((TRUE == settleShield) || (TRUE == inputLooksEmpty) ||
++             (TRUE == inputLooksCorrupt)))
++        {
++            for (UINT32 y = 0; y < outHeight; y++)
++            {
++                unsigned char* pDst =
++                    pOutY + static_cast<size_t>(y) * static_cast<size_t>(outPlaneStride);
++                const unsigned char* pSrc =
++                    m_pHoldNv12Y + static_cast<size_t>(y) * static_cast<size_t>(m_holdYStride);
++                memcpy(pDst, pSrc, outWidth);
++            }
++            for (UINT32 y = 0; y < (outHeight / 2); y++)
++            {
++                unsigned char* pDst =
++                    pOutUV + static_cast<size_t>(y) * static_cast<size_t>(outUVStride);
++                const unsigned char* pSrc =
++                    m_pHoldNv12UV + static_cast<size_t>(y) * static_cast<size_t>(m_holdUVStride);
++                memcpy(pDst, pSrc, outWidth);
++            }
++            continue;
++        }
++        if (TRUE == sizeMismatch)
++        {
++            // Centered letterbox — never nearest-upscale UYVY (flower §65).
++            const UINT32 copyW = (inWidth < outWidth) ? inWidth : outWidth;
++            const UINT32 copyH = (inHeight < outHeight) ? inHeight : outHeight;
++            const UINT32 offX  = ((outWidth - copyW) / 2) & ~1U;
++            const UINT32 offY  = (outHeight - copyH) / 2;
++            for (UINT32 y = 0; y < outHeight; y++)
++            {
++                unsigned char* pY =
++                    pOutY + static_cast<size_t>(y) * static_cast<size_t>(outPlaneStride);
++                memset(pY, 0x10, outWidth);
++                if ((y >= offY) && (y < (offY + copyH)) && (inHeight > 0))
++                {
++                    const UINT32 sy = y - offY;
++                    const unsigned char* pSrc =
++                        pIn + static_cast<size_t>(sy) * static_cast<size_t>(inStride);
++                    for (UINT32 x = 0; x < copyW; x++)
++                    {
++                        pY[offX + x] = pSrc[(x & ~1U) * 2 + ((x & 1U) ? 3 : 1)];
++                    }
+                 }
+             }
+             for (UINT32 y = 0; y < (outHeight / 2); y++)
+             {
+-                UINT32 sy = (inHeight > 0) ? (((y * 2) * inHeight) / outHeight) : 0;
+-                if (sy >= inHeight)
++                unsigned char* pUV =
++                    pOutUV + static_cast<size_t>(y) * static_cast<size_t>(outUVStride);
++                for (UINT32 x = 0; x < outWidth; x += 2)
+                 {
+-                    sy = inHeight - 1;
++                    pUV[x]     = 0x80;
++                    pUV[x + 1] = 0x80;
+                 }
+-                const unsigned char* pSrc = pIn + static_cast<size_t>(sy) * static_cast<size_t>(inStride);
+-                unsigned char*       pUV  = pOutUV + static_cast<size_t>(y) * static_cast<size_t>(outUVStride);
+-                for (UINT32 x = 0; x < (outWidth / 2); x++)
++                if ((y >= (offY / 2)) && (y < ((offY + copyH) / 2)) && (inHeight > 1))
+                 {
+-                    UINT32 sx = (inWidth > 0) ? (((x * 2) * inWidth) / outWidth) : 0;
+-                    sx &= ~1U;
+-                    if (sx >= inWidth)
++                    const UINT32 sy = (y * 2) - (offY & ~1U);
++                    if (sy < inHeight)
+                     {
+-                        sx = inWidth - 2;
++                        const unsigned char* pSrc =
++                            pIn + static_cast<size_t>(sy) * static_cast<size_t>(inStride);
++                        for (UINT32 x = 0; x < (copyW / 2); x++)
++                        {
++                            const UINT32 sx = (x * 2) & ~1U;
++                            pUV[offX + x * 2]     = pSrc[sx * 2];
++                            pUV[offX + x * 2 + 1] = pSrc[sx * 2 + 2];
++                        }
+                     }
+-                    pUV[x * 2]     = pSrc[sx * 2];     // U
+-                    pUV[x * 2 + 1] = pSrc[sx * 2 + 2]; // V
++                }
++            }
++            continue;
++        }
++
++        // §104: short settle window — hold-last on locked siblings so 0x78
++        // rewrite / MIPI glitch does not flash. Window is only sibHold/shield.
++        if ((TRUE == settleShield) && (TRUE == m_hasHoldFrame) &&
++            (NULL != m_pHoldNv12Y) && (NULL != m_pHoldNv12UV) &&
++            (m_holdW == outWidth) && (m_holdH == outHeight))
++        {
++            for (UINT32 y = 0; y < outHeight; y++)
++            {
++                unsigned char* pDst =
++                    pOutY + static_cast<size_t>(y) * static_cast<size_t>(outPlaneStride);
++                const unsigned char* pSrc =
++                    m_pHoldNv12Y + static_cast<size_t>(y) * static_cast<size_t>(m_holdYStride);
++                memcpy(pDst, pSrc, outWidth);
++            }
++            for (UINT32 y = 0; y < (outHeight / 2); y++)
++            {
++                unsigned char* pDst =
++                    pOutUV + static_cast<size_t>(y) * static_cast<size_t>(outUVStride);
++                const unsigned char* pSrc =
++                    m_pHoldNv12UV + static_cast<size_t>(y) * static_cast<size_t>(m_holdUVStride);
++                memcpy(pDst, pSrc, outWidth);
++            }
++            continue;
++        }
++
++        // Locked path only below — never hold-last on unlock (virtual bars already returned).
++        UYVYtoNV12(pIn,
++                   pOutY,
++                   pOutUV,
++                   static_cast<int>(outWidth),
++                   static_cast<int>(outHeight),
++                   static_cast<int>(inStride),
++                   static_cast<int>(outPlaneStride),
++                   static_cast<int>(outUVStride));
++
++        // Snapshot last good NV12 for peer/settle hold-last.
++        if ((FALSE == inputLooksEmpty) && (FALSE == inputLooksCorrupt) &&
++            (FALSE == sizeMismatch))
++        {
++            const UINT32 yBytes  = outPlaneStride * outHeight;
++            const UINT32 uvBytes = outUVStride * (outHeight / 2);
++            if ((yBytes > 0) && (uvBytes > 0))
++            {
++                if ((NULL == m_pHoldNv12Y) || (m_holdYBytes < yBytes))
++                {
++                    UINT8* pNew = static_cast<UINT8*>(realloc(m_pHoldNv12Y, yBytes));
++                    if (NULL != pNew)
++                    {
++                        m_pHoldNv12Y = pNew;
++                        m_holdYBytes = yBytes;
++                    }
++                }
++                if ((NULL == m_pHoldNv12UV) || (m_holdUVBytes < uvBytes))
++                {
++                    UINT8* pNew = static_cast<UINT8*>(realloc(m_pHoldNv12UV, uvBytes));
++                    if (NULL != pNew)
++                    {
++                        m_pHoldNv12UV = pNew;
++                        m_holdUVBytes = uvBytes;
++                    }
++                }
++                if ((NULL != m_pHoldNv12Y) && (NULL != m_pHoldNv12UV) &&
++                    (m_holdYBytes >= yBytes) && (m_holdUVBytes >= uvBytes))
++                {
++                    memcpy(m_pHoldNv12Y, pOutY, yBytes);
++                    memcpy(m_pHoldNv12UV, pOutUV, uvBytes);
++                    m_holdW        = outWidth;
++                    m_holdH        = outHeight;
++                    m_holdYStride  = outPlaneStride;
++                    m_holdUVStride = outUVStride;
++                    m_hasHoldFrame = TRUE;
+                 }
+             }
+         }
+diff --git a/vendor/qcom/proprietary/chi-cdk/oem/qcom/node/memcpy/camxchinodememcpy.h b/vendor/qcom/proprietary/chi-cdk/oem/qcom/node/memcpy/camxchinodememcpy.h
+index 91715ce..2403aca 100755
+--- a/vendor/qcom/proprietary/chi-cdk/oem/qcom/node/memcpy/camxchinodememcpy.h
++++ b/vendor/qcom/proprietary/chi-cdk/oem/qcom/node/memcpy/camxchinodememcpy.h
+@@ -199,5 +199,15 @@
+     UINT64              m_processedFrame;                         ///< The count for processed frame
+     UINT                m_inducedSleepTime;                       ///< Induce extra sleep in milliseconds
+     UINT64              m_pipelineDelay;                          ///< Pipeline delay
++    // Hotplug: hold last good NV12 only when THIS VC unlock (lock=0).
++    UINT8*              m_pHoldNv12Y;
++    UINT8*              m_pHoldNv12UV;
++    UINT32              m_holdYBytes;
++    UINT32              m_holdUVBytes;
++    UINT32              m_holdW;
++    UINT32              m_holdH;
++    UINT32              m_holdYStride;
++    UINT32              m_holdUVStride;
++    BOOL                m_hasHoldFrame;
+ };
+ #endif // CAMXCHINODEMEMCPY_H

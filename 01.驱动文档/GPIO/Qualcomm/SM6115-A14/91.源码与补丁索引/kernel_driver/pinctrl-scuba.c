@@ -1586,8 +1586,8 @@ static const struct msm_pingroup scuba_groups[] = {
 };
 
 static const int scuba_reserved_gpios[] = {
-		/* MT5205: 16/17 for MDB UART; 14 released for MDB DET; 15 stays reserved */
-		0, 1, 2, 3, 15, -1
+		/* MT5205: 0-3 released for SE0 SPI; 16/17 MDB UART; 14 MDB DET; 15 stays reserved */
+		15, -1
 };
 
 static const struct msm_gpio_wakeirq_map scuba_mpm_map[] = {

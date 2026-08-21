@@ -1,0 +1,89 @@
+Subject: [PATCH] [MC5616][96242][UFS]Fix clock scaling starvation on high-latency HOSINGLOBAL UFS 2.x device
+
+[Root Cause]
+flashval test 2.1/2.2/10.1/10.2 (clock scale transitions >= 1000) fail on
+the HOSINGLOBAL UFS 2.2 device (HBN1901280CHBC, manufacturer_id 0x0CD6):
+only 28~50 transitions observed, while the UFS 3.x device passes.
+1. simple_ondemand keeps the current frequency while busy% >
+   (upthreshold - downdifferential) = 70 - 65 = 5, i.e. the clock can
+   only scale DOWN when busy% <= 5. The UFS 2.2 part has ~2x per-IO
+   latency, so after each IO burst its busy% lingers at 10~47, pinning
+   core_clk at max and starving clock scaling.
+2. JEDEC id 0x0CD6 does not match UFS_VENDOR_SKHYNIX (0x1AD) in
+   ufs_qcom_dev_fixups[], so UFS_DEVICE_QUIRK_DELAY_BEFORE_LPM is not
+   applied and the host suspends immediately when idle, which further
+   removes the remaining scale-down windows.
+
+[Solution]
+1. In ufs_qcom_config_scaling_param(), relax downdifferential from 65
+   to 45 for UFS 2.x devices only (host->limit_phy_submode == 0),
+   raising the scale-down threshold from busy% <= 5 to busy% <= 25.
+   UFS 3.x devices keep the default and are unaffected.
+2. Add UFS_FIX(UFS_VENDOR_HOSINGLOBAL, UFS_ANY_MODEL,
+   UFS_DEVICE_QUIRK_DELAY_BEFORE_LPM) so 0x0CD6 parts get the same
+   delay-before-LPM treatment as other SKHynix parts.
+
+---
+
+diff --git a/kernel_platform/msm-kernel/drivers/scsi/ufs/ufs-qcom.c b/kernel_platform/msm-kernel/drivers/scsi/ufs/ufs-qcom.c
+index ff57b9e..b145883 100644
+--- a/kernel_platform/msm-kernel/drivers/scsi/ufs/ufs-qcom.c
++++ b/kernel_platform/msm-kernel/drivers/scsi/ufs/ufs-qcom.c
+@@ -4481,6 +4481,7 @@
+ 					  void *data)
+ {
+ 	static struct devfreq_simple_ondemand_data *d;
++	struct ufs_qcom_host *host;
+ 
+ 	if (!data)
+ 		return;
+@@ -4489,7 +4490,21 @@
+ 	p->polling_ms = 60;
+ 	p->timer = DEVFREQ_TIMER_DELAYED;
+ 	d->upthreshold = 70;
+-	d->downdifferential = 65;
++	/*
++	 * simple_ondemand keeps the current frequency while busy% is
++	 * above (upthreshold - downdifferential), so the scale-down
++	 * threshold is busy% <= 5 with the default 65.  UFS 2.x parts
++	 * with higher per-IO latency can hardly reach that after an IO
++	 * burst: their busy% lingers at 10~47 (ftrace measured), pinning
++	 * core_clk at max and starving clock scaling.  Relax to 45
++	 * (threshold busy% <= 25) for UFS 2.x only; UFS 3.x keeps the
++	 * default.
++	 */
++	host = ufshcd_get_variant(hba);
++	if (host && !host->limit_phy_submode)
++		d->downdifferential = 45;
++	else
++		d->downdifferential = 65;
+ }
+ 
+ static struct ufs_dev_fix ufs_qcom_dev_fixups[] = {
+@@ -4500,6 +4515,14 @@
+ 		UFS_DEVICE_QUIRK_DELAY_BEFORE_LPM),
+ 	UFS_FIX(UFS_VENDOR_SKHYNIX, UFS_ANY_MODEL,
+ 		UFS_DEVICE_QUIRK_DELAY_BEFORE_LPM),
++	/*
++	 * Hynix UFS 2.2 parts populated on parrot report JEDEC id 0x0CD6,
++	 * which does not match UFS_VENDOR_SKHYNIX (0x1AD).  Give them the
++	 * same delay-before-LPM treatment, otherwise the host suspends
++	 * too eagerly when idle and clock scaling windows are lost.
++	 */
++	UFS_FIX(UFS_VENDOR_HOSINGLOBAL, UFS_ANY_MODEL,
++		UFS_DEVICE_QUIRK_DELAY_BEFORE_LPM),
+ 	UFS_FIX(UFS_VENDOR_WDC, UFS_ANY_MODEL,
+ 		UFS_DEVICE_QUIRK_HOST_PA_TACTIVATE),
+ 	END_FIX
+diff --git a/kernel_platform/msm-kernel/drivers/scsi/ufs/ufs_quirks.h b/kernel_platform/msm-kernel/drivers/scsi/ufs/ufs_quirks.h
+index 59ce2db..c8297be 100644
+--- a/kernel_platform/msm-kernel/drivers/scsi/ufs/ufs_quirks.h
++++ b/kernel_platform/msm-kernel/drivers/scsi/ufs/ufs_quirks.h
+@@ -17,6 +17,7 @@
+ #define UFS_VENDOR_SKHYNIX     0x1AD
+ #define UFS_VENDOR_TOSHIBA     0x198
+ #define UFS_VENDOR_WDC         0x145
++#define UFS_VENDOR_HOSINGLOBAL 0x0CD6
+ 
+ /**
+  * ufs_dev_fix - ufs device quirk info

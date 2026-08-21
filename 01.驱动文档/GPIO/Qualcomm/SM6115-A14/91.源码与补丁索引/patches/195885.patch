@@ -1,0 +1,146 @@
+Subject: [PATCH] [MT5205][TaskID]118732[Description]enable SE SPI0 spidev and
+ handshake GPIOs [Solution]overlay SE0 10MHz dummy spidev, unreserve GPIO0-3,
+ export GPIO37/63/102 [Owner]wangguanran
+
+---
+ .../arm64/configs/vendor/bengal_GKI.config    |  1 +
+ .../drivers/pinctrl/qcom/pinctrl-scuba.c      |  4 +-
+ .../devicetree/qcom/scuba-iot-idp-overlay.dts | 70 ++++++++++++++++++-
+ 3 files changed, 72 insertions(+), 3 deletions(-)
+
+diff --git a/kernel_platform/msm-kernel/arch/arm64/configs/vendor/bengal_GKI.config b/kernel_platform/msm-kernel/arch/arm64/configs/vendor/bengal_GKI.config
+index 3cd796d3b63..97c815be97d 100644
+--- a/kernel_platform/msm-kernel/arch/arm64/configs/vendor/bengal_GKI.config
++++ b/kernel_platform/msm-kernel/arch/arm64/configs/vendor/bengal_GKI.config
+@@ -273,6 +273,7 @@ CONFIG_SM_GPUCC_SCUBA=m
+ CONFIG_SM_LPASS_AUDIOCC_6115=m
+ CONFIG_SND_USB_AUDIO_QMI=m
+ CONFIG_SPI_MSM_GENI=m
++CONFIG_SPI_SPIDEV=m
+ CONFIG_SPMI_MSM_PMIC_ARB=m
+ CONFIG_SPS=m
+ CONFIG_SPS_SUPPORT_NDP_BAM=y
+diff --git a/kernel_platform/msm-kernel/drivers/pinctrl/qcom/pinctrl-scuba.c b/kernel_platform/msm-kernel/drivers/pinctrl/qcom/pinctrl-scuba.c
+index 1d4a3e5d7cf..28d2a3a7d06 100644
+--- a/kernel_platform/msm-kernel/drivers/pinctrl/qcom/pinctrl-scuba.c
++++ b/kernel_platform/msm-kernel/drivers/pinctrl/qcom/pinctrl-scuba.c
+@@ -1586,8 +1586,8 @@ static const struct msm_pingroup scuba_groups[] = {
+ };
+ 
+ static const int scuba_reserved_gpios[] = {
+-		/* MT5205: 16/17 for MDB UART; 14 released for MDB DET; 15 stays reserved */
+-		0, 1, 2, 3, 15, -1
++		/* MT5205: 0-3 released for SE0 SPI; 16/17 MDB UART; 14 MDB DET; 15 stays reserved */
++		15, -1
+ };
+ 
+ static const struct msm_gpio_wakeirq_map scuba_mpm_map[] = {
+diff --git a/kernel_platform/qcom/proprietary/devicetree/qcom/scuba-iot-idp-overlay.dts b/kernel_platform/qcom/proprietary/devicetree/qcom/scuba-iot-idp-overlay.dts
+index 3d1654f1658..e985688633f 100755
+--- a/kernel_platform/qcom/proprietary/devicetree/qcom/scuba-iot-idp-overlay.dts
++++ b/kernel_platform/qcom/proprietary/devicetree/qcom/scuba-iot-idp-overlay.dts
+@@ -16,6 +16,8 @@
+ /*
+  * MT5205 gpio-userspace exports
+  *   GPIO102 SE_RESET -> Secure Element (SE) NRST (active-low), default high
++ *   GPIO37  se_ack   -> Secure MCU ACK (output, bias-disable)
++ *   GPIO63  se_rdy   -> Secure MCU RDY (input, bias-disable)
+  *   GPIO36  MDB_RESET -> STM32F103 NRST (active-low), idle output-high
+  *
+  * Sysfs: /sys/class/gpio_userspace/<label>/value
+@@ -66,6 +68,36 @@
+ 		};
+ 	};
+ 
++	/* Secure MCU ACK to SP */
++	mt5205_se_ack: mt5205_se_ack {
++		mux {
++			pins = "gpio37";
++			function = "gpio";
++		};
++
++		config {
++			pins = "gpio37";
++			drive-strength = <2>;
++			bias-disable;
++			output-low;
++		};
++	};
++
++	/* Secure MCU RDY from SP */
++	mt5205_se_rdy: mt5205_se_rdy {
++		mux {
++			pins = "gpio63";
++			function = "gpio";
++		};
++
++		config {
++			pins = "gpio63";
++			drive-strength = <2>;
++			bias-disable;
++			input-enable;
++		};
++	};
++
+ 	/* MDB STM32F103 nRST: idle output-high (no board pull-up on MB) */
+ 	mt5205_mdb_reset: mt5205_mdb_reset {
+ 		mux {
+@@ -120,7 +152,8 @@
+ 		compatible = "gpio-userspace";
+ 		status = "okay";
+ 		pinctrl-names = "default";
+-		pinctrl-0 = <&mt5205_se_reset &mt5205_mdb_reset>;
++		pinctrl-0 = <&mt5205_se_reset &mt5205_se_ack &mt5205_se_rdy
++			      &mt5205_mdb_reset>;
+ 
+ 		se-reset {
+ 			label = "se_reset";
+@@ -128,6 +161,18 @@
+ 			default-state = <1>;
+ 		};
+ 
++		se-ack {
++			label = "se_ack";
++			gpios = <&tlmm 37 GPIO_ACTIVE_HIGH>;
++			default-state = <0>;
++		};
++
++		se-rdy {
++			label = "se_rdy";
++			gpios = <&tlmm 63 GPIO_ACTIVE_HIGH>;
++			default-state = <2>;
++		};
++
+ 		mdb-reset {
+ 			label = "mdb_reset";
+ 			gpios = <&tlmm 36 GPIO_ACTIVE_HIGH>;
+@@ -153,3 +198,26 @@
+ 		};
+ 	};
+ };
++
++/* MT5205 Secure MCU STM32U585: SE0 SPI0 GPIO0~3 @ 10MHz, no runtime sleep.
++ * spidev@0 uses qcom,spi-msm-codec-slave dummy compatible from drivers/spi/spidev.c.
++ */
++&qupv3_se0_spi {
++	status = "ok";
++	spi-max-frequency = <10000000>;
++	qcom,disable-autosuspend;
++
++	spidev@0 {
++		compatible = "qcom,spi-msm-codec-slave";
++		reg = <0>;
++		spi-max-frequency = <10000000>;
++	};
++};
++
++&qupv3_se0_i2c {
++	status = "disabled";
++};
++
++&qupv3_se0_4uart {
++	status = "disabled";
++};
+-- 
+2.34.1
+
