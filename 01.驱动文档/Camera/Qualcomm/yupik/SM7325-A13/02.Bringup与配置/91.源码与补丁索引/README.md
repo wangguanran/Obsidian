@@ -9,7 +9,7 @@
 源码从 134 服务器 sm7325 源码树检索归档（2026-08-20）：
 
 ```
-/home3/wangguanran/workspace/MC5616/LA.VENDOR.1.0.R1/
+/home3/[同事]/workspace/MC5616/LA.VENDOR.1.0.R1/
 ```
 
 > 说明：patch 路径为 `vendor/qcom/proprietary/devicetree/qcom/Makefile`，134 树上该 git 仓库 checkout 位于 `kernel_platform/qcom/...`，归档时按 patch 相对路径存放。MC5616 为当前 134 上可用的 sm7325 树，文件为 gpiotest 移除后状态。

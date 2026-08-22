@@ -2,7 +2,7 @@
 
 > **模块**: GPIO | **厂商**: Qualcomm | **芯片**: SM6115 (scuba)
 > **平台**: SM6115-A14 (LA.VENDOR.13.2.1) | **类型**: 需求
-> **Change**: #195883 | **作者**: wangguanran | **状态**: MERGED
+> **Change**: #195883 | **作者**: [同事] | **状态**: MERGED
 
 ---
 
@@ -10,13 +10,13 @@
 
 | Change | 项目 | 分支 | 作者 | 类型 | 芯片 | 平台 | 模块 |
 |--------|------|------|------|------|------|------|------|
-| #195883 | LA.VENDOR.13.2.1 | MT5205 | wangguanran | 需求 | SM6115 (scuba) | SM6115-A14 | GPIO |
+| #195883 | LA.VENDOR.13.2.1 | [项目代号] | [同事] | 需求 | SM6115 (scuba) | SM6115-A14 | GPIO |
 
 ## 需求描述
 
 IO 接口板 Pulse 接口-1（GPIO32 检测）与 MDB 小板 Pulse 接口-2（GPIO33 输出）直连场景下，原有脉冲检测驱动存在以下问题：
 
-- 输入极性配置错误：MT5205 直连走线为同相（空闲低、检高脉冲），驱动默认按 ACTIVE_LOW（空闲高、检低脉冲）处理导致检测不到脉冲；
+- 输入极性配置错误：[项目代号] 直连走线为同相（空闲低、检高脉冲），驱动默认按 ACTIVE_LOW（空闲高、检低脉冲）处理导致检测不到脉冲；
 - 批量上报（batch）定时器未在脉冲到达时正确重置，导致一批脉冲被拆散或漏报；
 - 默认 debounce 过大，短脉冲被滤掉；
 - sysfs / ioctl 接口与 binding 文档、设备树 overlay 不一致。
@@ -24,13 +24,13 @@ IO 接口板 Pulse 接口-1（GPIO32 检测）与 MDB 小板 Pulse 接口-2（GP
 ## 环境
 
 - 芯片：SM6115 (scuba)
-- 平台：SM6115-A14（LA.VENDOR.13.2.1，MT5205 分支）
+- 平台：SM6115-A14（LA.VENDOR.13.2.1，[项目代号] 分支）
 - 设备：Scuba IOT IDP（实机 model 为 `Qualcomm Technologies, Inc. Scuba IOT IDP`，overlay 为 `scuba-iot-idp-overlay.dts`，注意不是 Bengal）
 - 内核：kernel_platform/msm-kernel
 
 ## 背景与设计
 
-1. **输入极性**：MT5205 POS MB 上 GPIO32/GPIO33 为直连同相（J1001.36/35），空闲时物理低电平，脉冲为物理高电平。原驱动按 ACTIVE_LOW（空闲高、检低脉冲）处理，导致空闲即触发、脉冲漏检。
+1. **输入极性**：[项目代号] POS MB 上 GPIO32/GPIO33 为直连同相（J1001.36/35），空闲时物理低电平，脉冲为物理高电平。原驱动按 ACTIVE_LOW（空闲高、检低脉冲）处理，导致空闲即触发、脉冲漏检。
 2. **批量定时器**：`batch_timer` 用于将 `batch_gap_ms` 间隔内的多个脉冲合并为一批上报；脉冲到达时应取消未到期的 batch_timer 重新计时，原实现未取消，造成批次边界错误。
 3. **debounce 默认值**：默认 debounce 2ms（`UIC_PULSE_DEBOUNCE_DEF_MS`），DT 未配置时按 2ms 生效，避免滤掉正常宽度脉冲。
 4. **接口不一致**：binding 文档（meig,gpio-pulse.txt）、overlay 的 in-gpios/out-gpios 极性标记、驱动默认配置三者需保持一致。
@@ -42,7 +42,7 @@ IO 接口板 Pulse 接口-1（GPIO32 检测）与 MDB 小板 Pulse 接口-2（GP
 - GPIO33 OUT：默认 ACTIVE_HIGH（空闲低、发高脉冲），pulse_width_ms 25~500、interval_ms 可配；
 - ioctl 接口：`UIC_PULSE_IOC_SET_CONFIG/GET_CONFIG`（struct uic_pulse_config）、`START/STOP/RESET`、`FLUSH_EVENT`、`OUTPUT`（struct uic_pulse_simulate）；`read()` 返回 `struct uic_pulse_event`；`poll()` 支持 POLLIN；
 - 新增 UAPI 头 `include/uapi/linux/uic_pulse.h`（+88 行）、binding 文档 `meig,gpio-pulse.txt`（+85 行）；
-- overlay：`in-gpios=<&tlmm 32>` + `out-gpios=<&tlmm 33>`，pinctrl `mt5205_pulse_default`（GPIO32 输入 bias-pull-up、GPIO33 输出 drive-strength 8）；
+- overlay：`in-gpios=<&tlmm 32>` + `out-gpios=<&tlmm 33>`，pinctrl `[项目代号]_pulse_default`（GPIO32 输入 bias-pull-up、GPIO33 输出 drive-strength 8）；
 - `CONFIG_MEIG_GPIO_PULSE=m` 写入 `bengal_GKI.config`，Kconfig/Makefile 增加模块构建项。
 
 ## 修改文件清单
@@ -70,7 +70,7 @@ CONFIG_MEIG_GPIO_PULSE=m
 
 ```dts
 &tlmm {
-    mt5205_pulse_default: mt5205_pulse_default {
+    [项目代号]_pulse_default: [项目代号]_pulse_default {
         mux_in {
             pins = "gpio32";
             function = "gpio";
@@ -98,7 +98,7 @@ CONFIG_MEIG_GPIO_PULSE=m
     meig_pulse: meig_pulse {
         compatible = "meig,gpio-pulse";
         pinctrl-names = "default";
-        pinctrl-0 = <&mt5205_pulse_default>;
+        pinctrl-0 = <&[项目代号]_pulse_default>;
         status = "okay";
         pulse0: pulse@0 {
             reg = <0>;
@@ -160,12 +160,12 @@ echo 50000 > /dev/meig_pulse0
 
 ## 结论
 
-新驱动统一了 GPIO32 检测 / GPIO33 输出的极性、去抖、批次上报与超时判定逻辑，提供 ioctl + sysfs 双接口，MT5205 直连（ACTIVE_HIGH 同相）与光耦反向（ACTIVE_LOW）两种硬件形态均可通过 DT/runtime 配置覆盖。内核编译与设备端加载验证通过。
+新驱动统一了 GPIO32 检测 / GPIO33 输出的极性、去抖、批次上报与超时判定逻辑，提供 ioctl + sysfs 双接口，[项目代号] 直连（ACTIVE_HIGH 同相）与光耦反向（ACTIVE_LOW）两种硬件形态均可通过 DT/runtime 配置覆盖。内核编译与设备端加载验证通过。
 
 ## 补丁内容
 
 ```diff
-Subject: [PATCH] [MT5205][TaskID]118743[Description]fix UIC pulse GPIO32/33 direct-wire detect and sysfs[Solution]ACTIVE_HIGH IN, batch_timer cancel, debounce default 2ms, update binding and DT overlay[Owner]wangguanran
+Subject: [PATCH] [[项目代号]][TaskID]118743[Description]fix UIC pulse GPIO32/33 direct-wire detect and sysfs[Solution]ACTIVE_HIGH IN, batch_timer cancel, debounce default 2ms, update binding and DT overlay[Owner][同事]
 
 ---
 
@@ -223,8 +223,8 @@ index 0000000..68fefe9
 +/*
 + * UIC GPIO pulse: /dev/uic_pulse and /sys/class/misc/uic_pulse
 + *
-+ * MT5205: GPIO32 IN (detect) / GPIO33 OUT (emit).
-+ * Default: IN/OUT ACTIVE_HIGH (MT5205 direct wire); optocoupler boards use ACTIVE_LOW IN.
++ * [项目代号]: GPIO32 IN (detect) / GPIO33 OUT (emit).
++ * Default: IN/OUT ACTIVE_HIGH ([项目代号] direct wire); optocoupler boards use ACTIVE_LOW IN.
 + */
 +
 +#include <linux/delay.h>
@@ -1205,7 +1205,7 @@ index 0000000..68fefe9
 +
 +MODULE_DESCRIPTION("UIC GPIO pulse character device");
 +MODULE_LICENSE("GPL");
-+MODULE_AUTHOR("wangguanran");
++MODULE_AUTHOR("[同事]");
 diff --git a/kernel_platform/msm-kernel/include/uapi/linux/uic_pulse.h b/kernel_platform/msm-kernel/include/uapi/linux/uic_pulse.h
 new file mode 100644
 index 0000000..05988cf
@@ -1355,14 +1355,14 @@ index 0000000..a1d2e6b
 +  config, start, stop, reset, flush_event, output, event, started, in_raw
 +  per-field shortcuts: pulse_width_ms, interval_ms, debounce_ms, ...
 +
-+MT5205 example (POS MB: GPIO32 IN <-> GPIO33 OUT direct same-phase;
++[项目代号] example (POS MB: GPIO32 IN <-> GPIO33 OUT direct same-phase;
 +J1001.36/35, bias-pull-up on GPIO32):
 +
 +&soc {
 +	meig_pulse {
 +		compatible = "meig,gpio-pulse";
 +		pinctrl-names = "default";
-+		pinctrl-0 = <&mt5205_pulse_default>;
++		pinctrl-0 = <&[项目代号]_pulse_default>;
 +		status = "okay";
 +
 +		pulse@0 {
@@ -1379,7 +1379,7 @@ index 0000000..a1d2e6b
 +	};
 +};
 +
-+MT5205 direct-wire polarity (default runtime, no ioctl override):
++[项目代号] direct-wire polarity (default runtime, no ioctl override):
 +- IN:  ACTIVE_HIGH; idle physical low; counts physical high pulse width
 +- OUT: ACTIVE_HIGH; idle physical low; emit drives physical high pulse
 +
@@ -1398,11 +1398,11 @@ index 4b0d987..3d1654f 100755
 @@ -23,8 +23,35 @@
   * Assert nRST: echo 0 > value
   *
-  * MT5205 MDB-DB detect: GPIO14 gpio-keys KEY_F1
-+ * MT5205 Pulse: GPIO32 IN / GPIO33 OUT (direct same-phase, ACTIVE_HIGH)
+  * [项目代号] MDB-DB detect: GPIO14 gpio-keys KEY_F1
++ * [项目代号] Pulse: GPIO32 IN / GPIO33 OUT (direct same-phase, ACTIVE_HIGH)
   */
  &tlmm {
-+	mt5205_pulse_default: mt5205_pulse_default {
++	[项目代号]_pulse_default: [项目代号]_pulse_default {
 +		mux_in {
 +			pins = "gpio32";
 +			function = "gpio";
@@ -1428,7 +1428,7 @@ index 4b0d987..3d1654f 100755
 +		};
 +	};
 +
- 	mt5205_se_reset: mt5205_se_reset {
+ 	[项目代号]_se_reset: [项目代号]_se_reset {
  		mux {
  			pins = "gpio102";
 @@ -70,6 +97,25 @@
@@ -1438,7 +1438,7 @@ index 4b0d987..3d1654f 100755
 +	meig_pulse: meig_pulse {
 +		compatible = "meig,gpio-pulse";
 +		pinctrl-names = "default";
-+		pinctrl-0 = <&mt5205_pulse_default>;
++		pinctrl-0 = <&[项目代号]_pulse_default>;
 +		status = "okay";
 +
 +		pulse0: pulse@0 {

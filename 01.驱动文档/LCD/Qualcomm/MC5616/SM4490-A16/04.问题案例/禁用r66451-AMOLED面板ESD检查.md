@@ -2,7 +2,7 @@
 
 > **模块**: LCD | **厂商**: Qualcomm | **芯片**: SM4490 (parrot/QCM4490)
 > **平台**: SM4490-A16 (LA.VENDOR.1.0.R1) | **类型**: Bug
-> **Change**: #196185 | **作者**: zhourulei | **状态**: MERGED
+> **Change**: #196185 | **作者**: [同事] | **状态**: MERGED
 
 ## 基本信息
 
@@ -11,7 +11,7 @@
 | Change | #196185 |
 | 项目 | LA.VENDOR.1.0.R1 |
 | 分支 | master_Snapdragon_Premium_High_2021.SPF.2.0.2_MC5616 |
-| 作者 | zhourulei |
+| 作者 | [同事] |
 | 类型 | Bug（显示异常） |
 | 芯片 | SM4490（parrot/QCM4490） |
 | 平台 | SM4490-A16 |
@@ -149,7 +149,7 @@ r66451 AMOLED video 面板的 ESD 检查在 MC5616 平台误触发，导致驱�
 ## 补丁内容（完整粘贴，不截断）
 
 ```diff
-Subject: [PATCH] [MC5616][96455][Display]Disable ESD check for r66451 AMOLED video panel [Owner]zhourulei
+Subject: [PATCH] [MC5616][96455][Display]Disable ESD check for r66451 AMOLED video panel [Owner][同事]
 
 [Root Cause]
 	&dsi_r66451_amoled_video 面板节点默认使能 qcom,esd-check-enabled，驱动会按 panel-status-command 周期性读取 status 寄存器并可能触发 panel recovery。

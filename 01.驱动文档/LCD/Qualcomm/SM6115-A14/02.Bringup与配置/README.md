@@ -1,8 +1,8 @@
 # SM6115-A14 LCD Bringup 与配置
 
-> **模块**: LCD | **芯片**: SM6115 (scuba) | **平台**: SM6115-A14（LA.VENDOR.13.2.1 / MT5205）
+> **模块**: LCD | **芯片**: SM6115 (scuba) | **平台**: SM6115-A14（LA.VENDOR.13.2.1 / [项目代号]）
 
-## 1. 硬件接口对照表（MT5205 LCM）
+## 1. 硬件接口对照表（[项目代号] LCM）
 
 | 信号 | GPIO/资源 | 电平 | 说明 |
 |------|-----------|------|------|
@@ -18,20 +18,20 @@
 
 | 侧 | 文件（归档） | 说明 |
 |----|--------------|------|
-| AP | [[01.驱动文档/LCD/Qualcomm/SM6115-A14/91.源码与补丁索引/dt_config/scuba-sde-display-idp.dtsi\|scuba-sde-display-idp.dtsi]] | MT5205 显示装配（电源/面板/背光 PWM） |
+| AP | [[01.驱动文档/LCD/Qualcomm/SM6115-A14/91.源码与补丁索引/dt_config/scuba-sde-display-idp.dtsi\|scuba-sde-display-idp.dtsi]] | [项目代号] 显示装配（电源/面板/背光 PWM） |
 | AP | [[01.驱动文档/LCD/Qualcomm/SM6115-A14/91.源码与补丁索引/dt_config/dsi-panel-jd9365da-video.dtsi\|dsi-panel-jd9365da-video.dtsi]] | JD9365DA 面板与 init data |
-| AP | [[01.驱动文档/LCD/Qualcomm/SM6115-A14/91.源码与补丁索引/dt_config/bengal-sde-display-idp.dtsi\|bengal-sde-display-idp.dtsi]] | Bengal 参考板（td4330，无 MT5205 面板） |
+| AP | [[01.驱动文档/LCD/Qualcomm/SM6115-A14/91.源码与补丁索引/dt_config/bengal-sde-display-idp.dtsi\|bengal-sde-display-idp.dtsi]] | Bengal 参考板（td4330，无 [项目代号] 面板） |
 | AP | [[01.驱动文档/LCD/Qualcomm/SM6115-A14/91.源码与补丁索引/dt_config/bengal-sde-display-pinctrl.dtsi\|bengal-sde-display-pinctrl.dtsi]] | 已删除文件（父提交版本 437B） |
 | BP | [[01.驱动文档/LCD/Qualcomm/SM6115-A14/91.源码与补丁索引/kernel_driver/BOOT.XF.4.1/boot_images/QcomPkg/Settings/Panel/Panel_jd9365da_720p_vid.xml\|Panel_jd9365da_720p_vid.xml]] | UEFI init data |
 | BP | [[01.驱动文档/LCD/Qualcomm/SM6115-A14/91.源码与补丁索引/kernel_driver/BOOT.XF.4.1/boot_images/QcomPkg/SocPkg/AgattiPkg/LAA/Core.fdf\|Core.fdf]] | XBL FREEFORM 段（打包 Panel XML） |
-| BP | [[01.驱动文档/LCD/Qualcomm/SM6115-A14/91.源码与补丁索引/kernel_driver/BOOT.XF.4.1/boot_images/QcomPkg/SocPkg/AgattiPkg/Library/MDPPlatformLib/MDPPlatformLib.c\|MDPPlatformLib.c]] | 面板注册表（ODM_PROJECT_MT5205） |
+| BP | [[01.驱动文档/LCD/Qualcomm/SM6115-A14/91.源码与补丁索引/kernel_driver/BOOT.XF.4.1/boot_images/QcomPkg/SocPkg/AgattiPkg/Library/MDPPlatformLib/MDPPlatformLib.c\|MDPPlatformLib.c]] | 面板注册表（ODM_PROJECT_[项目代号]） |
 | BP | [[01.驱动文档/LCD/Qualcomm/SM6115-A14/91.源码与补丁索引/kernel_driver/BOOT.XF.4.1/boot_images/QcomPkg/SocPkg/AgattiPkg/Library/MDPPlatformLib/MDPPlatformLibPanelCommon.c\|MDPPlatformLibPanelCommon.c]] | PWM 背光初始化 |
 
 ## 3. DTS 配置要点（AP 侧）
 
 ```dts
-/* scuba-sde-display-idp.dtsi — MT5205 电源组 */
-dsi_panel_pwr_supply_mt5205: dsi_panel_pwr_supply_mt5205 {
+/* scuba-sde-display-idp.dtsi — [项目代号] 电源组 */
+dsi_panel_pwr_supply_[项目代号]: dsi_panel_pwr_supply_[项目代号] {
     qcom,panel-supply-entry@0 { qcom,supply-name = "vddio"; /* 1.8V, 62mA */ };
     qcom,panel-supply-entry@1 { qcom,supply-name = "avdd";  /* 2.8V, 100mA */ };
     qcom,panel-supply-entry@2 { qcom,supply-name = "avee";  /* 2.8V, 100mA */ };
@@ -39,7 +39,7 @@ dsi_panel_pwr_supply_mt5205: dsi_panel_pwr_supply_mt5205 {
 
 /* 面板节点（关键属性） */
 &dsi_jd9365da_video {
-    qcom,panel-supply-entries = <&dsi_panel_pwr_supply_mt5205>;
+    qcom,panel-supply-entries = <&dsi_panel_pwr_supply_[项目代号]>;
     qcom,mdss-dsi-bl-pmic-control-type = "bl_ctrl_pwm";
     pwms = <&pm2250_pwm3 0 0>;
     qcom,bl-pmic-pwm-period-usecs = <50>;        /* 20kHz */
@@ -50,19 +50,19 @@ dsi_panel_pwr_supply_mt5205: dsi_panel_pwr_supply_mt5205 {
 };
 ```
 
-> 注意：`qcom,panel-supply-entries` 引用在 scuba 侧定义；bengal 侧不承载 MT5205 面板。splash_region（scuba-sde-display.dtsi）为 0x5c000000 起 15MB cont_splash_region。
+> 注意：`qcom,panel-supply-entries` 引用在 scuba 侧定义；bengal 侧不承载 [项目代号] 面板。splash_region（scuba-sde-display.dtsi）为 0x5c000000 起 15MB cont_splash_region。
 
 ## 4. UEFI 配置要点（BP 侧）
 
 - 面板 XML：`QcomPkg/Settings/Panel/Panel_jd9365da_720p_vid.xml`，init data 命令类型 29/15，结束序列 `FF C8`；
 - Core.fdf：`FILE FREEFORM = 9bae75d9-... { SECTION UI/RAW = Panel_jd9365da_720p_vid.xml }`，缩进层级正确；
-- MDPPlatformLib.c：JD9365DA 条目 `PANEL_CREATE_ENTRY("dsi_jd9365da_720p_video", MDPPLATFORM_PANEL_JD9365DA_720P_VIDEO, "qcom,mdss_dsi_jd9365da_video:", ...)` 位于 `#if defined(ODM_PROJECT_MT5205)` 内；
-- 背光 PWM mux：MT5205 将 PM4125 GPIO2 mux 为 PWM SPECIAL_FUNCTION1（非 PMI632 GPIO6 WLED）——见 MDPPlatformLibPanelCommon.c 的 `#if defined(ODM_PROJECT_MT5205)` 分支。
+- MDPPlatformLib.c：JD9365DA 条目 `PANEL_CREATE_ENTRY("dsi_jd9365da_720p_video", MDPPLATFORM_PANEL_JD9365DA_720P_VIDEO, "qcom,mdss_dsi_jd9365da_video:", ...)` 位于 `#if defined(ODM_PROJECT_[项目代号])` 内；
+- 背光 PWM mux：[项目代号] 将 PM4125 GPIO2 mux 为 PWM SPECIAL_FUNCTION1（非 PMI632 GPIO6 WLED）——见 MDPPlatformLibPanelCommon.c 的 `#if defined(ODM_PROJECT_[项目代号])` 分支。
 
 ## 5. 编译命令
 
 ```bash
-# AP 侧（LA.VENDOR.13.2.1 / MT5205）
+# AP 侧（LA.VENDOR.13.2.1 / [项目代号]）
 ./prepare_vendor.sh bengal consolidate      # userdebug
 ./prepare_vendor.sh bengal gki              # user
 

@@ -1,8 +1,8 @@
 # SM6115-A14 GPIO Bringup 与配置
 
-> **模块**: GPIO | **芯片**: SM6115 (scuba) | **平台**: SM6115-A14（LA.VENDOR.13.2.1 / MT5205）
+> **模块**: GPIO | **芯片**: SM6115 (scuba) | **平台**: SM6115-A14（LA.VENDOR.13.2.1 / [项目代号]）
 
-## 1. 硬件接口 GPIO 对照表（MT5205）
+## 1. 硬件接口 GPIO 对照表（[项目代号]）
 
 | GPIO | 功能 | 方向 | 电平/极性 | 驱动/节点 | 说明 |
 |------|------|------|-----------|-----------|------|
@@ -34,9 +34,9 @@
 
 ```dts
 &tlmm {
-    mt5205_pulse_default: mt5205_pulse_default { /* GPIO32 IN pull-up / GPIO33 OUT 8mA */ };
-    mt5205_mdb_reset: mt5205_mdb_reset { /* GPIO36 output-high */ };
-    mt5205_mdb_db_detect: mt5205_mdb_db_detect { /* GPIO14 IN pull-up */ };
+    [项目代号]_pulse_default: [项目代号]_pulse_default { /* GPIO32 IN pull-up / GPIO33 OUT 8mA */ };
+    [项目代号]_mdb_reset: [项目代号]_mdb_reset { /* GPIO36 output-high */ };
+    [项目代号]_mdb_db_detect: [项目代号]_mdb_db_detect { /* GPIO14 IN pull-up */ };
 };
 
 &soc {
@@ -65,7 +65,7 @@ CONFIG_GPIO_USERSPACE=m
 ## 5. 编译命令
 
 ```bash
-# 平台：SM6115-A14 / MT5205，源码树 LA.VENDOR.13.2.1
+# 平台：SM6115-A14 / [项目代号]，源码树 LA.VENDOR.13.2.1
 # userdebug：consolidate 配置
 ./prepare_vendor.sh bengal consolidate
 # user：gki 配置

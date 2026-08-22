@@ -7,7 +7,7 @@
 | 项目 | 内容 |
 |------|------|
 | SoC | Qualcomm SM6115 (scuba) |
-| Android | A14 (LA.VENDOR.13.2.1 / MT5205 分支) |
+| Android | A14 (LA.VENDOR.13.2.1 / [项目代号] 分支) |
 | 内核 | msm-kernel 5.10 (KERNEL.PLATFORM.2.0) |
 | DT | qcom/proprietary/devicetree (scuba 系列 dtsi) |
 
@@ -77,7 +77,7 @@ CONFIG_EXTCON_USB_GPIO=m
 ## 编译命令
 
 ```bash
-# 134 源码树 MT5205 (LA.VENDOR.13.2.1)
+# 134 源码树 [项目代号] (LA.VENDOR.13.2.1)
 cd <tree>/kernel_platform
 # 编译内核（bengal 配置）
 source build/envsetup.sh

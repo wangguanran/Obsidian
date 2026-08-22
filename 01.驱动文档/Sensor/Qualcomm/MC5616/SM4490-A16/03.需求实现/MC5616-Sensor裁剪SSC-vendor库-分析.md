@@ -7,7 +7,7 @@
 | Change | #196014 |
 | 项目 | snapdragon-premium-high-2021-spf-2-0-2_amss_standard_oem_apq |
 | 分支 | master_Snapdragon_Premium_High_2021.SPF.2.0.2_MC5616 |
-| 作者 | zhourulei |
+| 作者 | [同事] |
 | 状态 | MERGED |
 | 类型 | 需求 (trim) |
 

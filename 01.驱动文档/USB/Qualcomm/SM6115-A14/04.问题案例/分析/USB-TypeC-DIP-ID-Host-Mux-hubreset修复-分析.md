@@ -5,7 +5,7 @@
 
 ## 技术背景
 
-MT5205 (SM6115/scuba) 硬件通过 DIP 开关在两条 USB 通路间选择：
+[项目代号] (SM6115/scuba) 硬件通过 DIP 开关在两条 USB 通路间选择：
 - **D1 (ID low)**：USB Host 模式，外接 USB HUB（HUB 的 5V 由 GPIO19/103 控制，复位由 GPIO108 控制）；
 - **D2 (ID high)**：Type-C 模式，交给标准 Type-C/eud 链路。
 
@@ -96,7 +96,7 @@ info->id_high_is_none = of_property_read_bool(np, "id-high-is-none");
 
 ## 与现有驱动架构的关系
 
-- `extcon-usb-gpio` 是内核主线通用驱动，本次为 MT5205 场景做了向后兼容的小扩展（可选属性），不影响主线行为；
+- `extcon-usb-gpio` 是内核主线通用驱动，本次为 [项目代号] 场景做了向后兼容的小扩展（可选属性），不影响主线行为；
 - `dwc3-msm-core` 是 Qualcomm 平台封装，`vbus-en-gpios` 与现有 `vbus_regulator` 逻辑并存（GPIO 优先，regulator 仍按原逻辑）；
 - 与 `pm2250_charger` 的 `usb_id_irq` 路径并行存在：ID 检测已改由 extcon 负责，charger 的 `usb_id_irq`（TLMM 89）保留但不再承担模式判定。
 

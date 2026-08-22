@@ -1,5 +1,5 @@
 #include "bengal-nfc-common.dtsi"
-#include "bengal-nfc-pinctrl-mt5611.dtsi"
+#include "bengal-nfc-pinctrl-custom.dtsi"
 #include <dt-bindings/clock/qcom,rpmcc.h>
 
 &nxp_nfc{

@@ -2,7 +2,7 @@
 
 > **模块**: GPIO | **厂商**: Qualcomm | **芯片**: SM6115 (scuba)
 > **平台**: SM6115-A14 (LA.VENDOR.13.2.1) | **类型**: 需求
-> **Change**: #195886 | **作者**: wangguanran | **状态**: MERGED
+> **Change**: #195886 | **作者**: [同事] | **状态**: MERGED
 
 ---
 
@@ -10,7 +10,7 @@
 
 | Change | 项目 | 分支 | 作者 | 类型 | 芯片 | 平台 | 模块 |
 |--------|------|------|------|------|------|------|------|
-| #195886 | LA.VENDOR.13.2.1 | MT5205 | wangguanran | 需求 | SM6115 (scuba) | SM6115-A14 | GPIO |
+| #195886 | LA.VENDOR.13.2.1 | [项目代号] | [同事] | 需求 | SM6115 (scuba) | SM6115-A14 | GPIO |
 
 ## 需求描述
 
@@ -19,7 +19,7 @@ MDB 小板（STM32F103）nRST 复位脚在空闲状态下没有稳定输出高�
 ## 环境
 
 - 芯片：SM6115 (scuba)
-- 平台：SM6115-A14（LA.VENDOR.13.2.1，MT5205 分支）
+- 平台：SM6115-A14（LA.VENDOR.13.2.1，[项目代号] 分支）
 - 设备：Scuba IOT IDP（overlay：scuba-iot-idp-overlay.dts）
 - 相关任务：Task 120572
 - 关联改动：#195883（UIC Pulse，同一 overlay 后续变更）、#195883 之前的 gpio-userspace 驱动（#195832 前后，SE_RESET/MDB_RESET default-high）
@@ -35,8 +35,8 @@ MDB 小板（STM32F103）nRST 复位脚在空闲状态下没有稳定输出高�
 1. **pinctrl-scuba.c**（+2/-2）：`scuba_reserved_gpios[]` 从 `0, 1, 2, 3, 14, 15, -1` 改为 `0, 1, 2, 3, 15, -1`，解除 GPIO14 保留（GPIO15 保持保留）。
 2. **scuba-iot-idp-overlay.dts**（+39/-2）：
    - 注释更新：GPIO36 MDB_RESET 说明改为 idle output-high；
-   - `mt5205_mdb_reset` 节点增加注释"无板级上拉，空闲输出高"（配置已含 `output-high`）；
-   - 新增 `mt5205_mdb_db_detect` pinctrl（GPIO14，drive-strength 2，bias-pull-up，input-enable）；
+   - `[项目代号]_mdb_reset` 节点增加注释"无板级上拉，空闲输出高"（配置已含 `output-high`）；
+   - 新增 `[项目代号]_mdb_db_detect` pinctrl（GPIO14，drive-strength 2，bias-pull-up，input-enable）；
    - 新增 `mdb_db_keys` gpio-keys 节点：GPIO14 低有效（GPIO_ACTIVE_LOW），上报 `KEY_F1`，debounce-interval 15ms，支持 wakeup。
 
 ## 修改文件清单
@@ -52,7 +52,7 @@ MDB 小板（STM32F103）nRST 复位脚在空闲状态下没有稳定输出高�
 
 ```c
 static const int scuba_reserved_gpios[] = {
-    /* MT5205: 16/17 for MDB UART; 14 released for MDB DET; 15 stays reserved */
+    /* [项目代号]: 16/17 for MDB UART; 14 released for MDB DET; 15 stays reserved */
     0, 1, 2, 3, 15, -1
 };
 ```
@@ -62,7 +62,7 @@ static const int scuba_reserved_gpios[] = {
 ```dts
 &tlmm {
     /* MDB STM32F103 nRST: idle output-high (no board pull-up on MB) */
-    mt5205_mdb_reset: mt5205_mdb_reset {
+    [项目代号]_mdb_reset: [项目代号]_mdb_reset {
         mux {
             pins = "gpio36";
             function = "gpio";
@@ -75,7 +75,7 @@ static const int scuba_reserved_gpios[] = {
         };
     };
 
-    mt5205_mdb_db_detect: mt5205_mdb_db_detect {
+    [项目代号]_mdb_db_detect: [项目代号]_mdb_db_detect {
         mux {
             pins = "gpio14";
             function = "gpio";
@@ -95,7 +95,7 @@ static const int scuba_reserved_gpios[] = {
         compatible = "gpio-keys";
         label = "mdb-db-keys";
         pinctrl-names = "default";
-        pinctrl-0 = <&mt5205_mdb_db_detect>;
+        pinctrl-0 = <&[项目代号]_mdb_db_detect>;
         status = "okay";
 
         mdb_db {
@@ -136,7 +136,7 @@ static const int scuba_reserved_gpios[] = {
 ## 补丁内容
 
 ```diff
-Subject: [PATCH] [MT5205][TaskID]120572[Description]MDB nRST output-high and GPIO14 DB detect key[Solution]idle mdb_reset output-high, unreserve GPIO14, gpio-keys KEY_F1[Owner]wangguanran
+Subject: [PATCH] [[项目代号]][TaskID]120572[Description]MDB nRST output-high and GPIO14 DB detect key[Solution]idle mdb_reset output-high, unreserve GPIO14, gpio-keys KEY_F1[Owner][同事]
 
 ---
 
@@ -148,9 +148,9 @@ index 0e24381..1d4a3e5 100644
  };
  
  static const int scuba_reserved_gpios[] = {
--		/* MT5205: release 16/17 for MDB SE5 UART (gpio14/15 stay reserved) */
+-		/* [项目代号]: release 16/17 for MDB SE5 UART (gpio14/15 stay reserved) */
 -		0, 1, 2, 3, 14, 15, -1
-+		/* MT5205: 16/17 for MDB UART; 14 released for MDB DET; 15 stays reserved */
++		/* [项目代号]: 16/17 for MDB UART; 14 released for MDB DET; 15 stays reserved */
 +		0, 1, 2, 3, 15, -1
  };
  
@@ -169,7 +169,7 @@ index 6c52b71..4b0d987 100755
  / {
 @@ -15,10 +16,13 @@
  /*
-  * MT5205 gpio-userspace exports
+  * [项目代号] gpio-userspace exports
   *   GPIO102 SE_RESET -> Secure Element (SE) NRST (active-low), default high
 - *   GPIO36  MDB_RESET  -> STM32F103 NRST (active-low), default high
 + *   GPIO36  MDB_RESET -> STM32F103 NRST (active-low), idle output-high
@@ -179,16 +179,16 @@ index 6c52b71..4b0d987 100755
 + * default-state: 0-low, 1-high, 2-input(high-Z)
 + * Assert nRST: echo 0 > value
 + *
-+ * MT5205 MDB-DB detect: GPIO14 gpio-keys KEY_F1
++ * [项目代号] MDB-DB detect: GPIO14 gpio-keys KEY_F1
   */
  &tlmm {
- 	mt5205_se_reset: mt5205_se_reset {
+ 	[项目代号]_se_reset: [项目代号]_se_reset {
 @@ -35,6 +39,7 @@
  		};
  	};
  
 +	/* MDB STM32F103 nRST: idle output-high (no board pull-up on MB) */
- 	mt5205_mdb_reset: mt5205_mdb_reset {
+ 	[项目代号]_mdb_reset: [项目代号]_mdb_reset {
  		mux {
  			pins = "gpio36";
 @@ -48,6 +53,20 @@
@@ -196,7 +196,7 @@ index 6c52b71..4b0d987 100755
  		};
  	};
 +
-+	mt5205_mdb_db_detect: mt5205_mdb_db_detect {
++	[项目代号]_mdb_db_detect: [项目代号]_mdb_db_detect {
 +		mux {
 +			pins = "gpio14";
 +			function = "gpio";
@@ -222,7 +222,7 @@ index 6c52b71..4b0d987 100755
 +		compatible = "gpio-keys";
 +		label = "mdb-db-keys";
 +		pinctrl-names = "default";
-+		pinctrl-0 = <&mt5205_mdb_db_detect>;
++		pinctrl-0 = <&[项目代号]_mdb_db_detect>;
 +		status = "okay";
 +
 +		mdb_db {

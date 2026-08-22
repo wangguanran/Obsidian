@@ -2,7 +2,7 @@
 
 > **模块**: UART | **厂商**: Qualcomm | **芯片**: scuba (SM6225)
 > **平台**: SM6225-A13 (LA.VENDOR.13.2.1) | **类型**: 需求 (feature)
-> **Change**: #196150 | **作者**: tengqi | **状态**: MERGED
+> **Change**: #196150 | **作者**: [同事] | **状态**: MERGED
 
 ---
 
@@ -120,7 +120,7 @@ cat /sys/kernel/debug/uart/*/info
 ## 补丁内容
 
 ```diff
-[PATCH] [MT5205][120574][uart][Description]fastboot oem uartdebug SE4 console/HS switch[Owner]tengqi
+[PATCH] [[项目代号]][120574][uart][Description]fastboot oem uartdebug SE4 console/HS switch[Owner][同事]
 
 diff --git a/kernel_platform/bootable/bootloader/edk2/QcomModulePkg/Include/Library/DeviceInfo.h b/kernel_platform/bootable/bootloader/edk2/QcomModulePkg/Include/Library/DeviceInfo.h
 index 3eff8cf..4fed12a 100644
@@ -178,7 +178,7 @@ index d85454c..4982591 100644
  };
  
  &qupv3_se3_4uart {
-+	/* MT5205: BT UART SE3 -> ttyHS0 (kept; scuba-bt also enables) */
++	/* [项目代号]: BT UART SE3 -> ttyHS0 (kept; scuba-bt also enables) */
  	status = "ok";
  };
 ```
@@ -256,7 +256,7 @@ index d85454c..4982591 100644
 
 | 日期 | 版本 | 描述 | 作者 |
 |-----|------|------|------|
-| 2024 | v1.0 | 初始文档创建 | wangguanran |
+| 2024 | v1.0 | 初始文档创建 | [同事] |
 
 ---
 

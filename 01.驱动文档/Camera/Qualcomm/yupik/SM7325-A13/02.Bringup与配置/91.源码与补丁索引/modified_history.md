@@ -10,7 +10,7 @@
 | Gerrit | 134 服务器，项目 LA.UM.9.14.1（源码不在本地） |
 | 分支 | master_LA.4.0_HXB_SNM932_PinMingTong_7a07b9e |
 | 作者 | kuangjincheng |
-| 提交者 | weirong |
+| 提交者 | [同事] |
 | 状态 | MERGED |
 | 类型 | Bug（boot failure） |
 | 提交标题 | [HXB_SNM932_PinMingTong][TaskID]120654[Description]device cannot boot[Solution]remove useless gpiotest dts |

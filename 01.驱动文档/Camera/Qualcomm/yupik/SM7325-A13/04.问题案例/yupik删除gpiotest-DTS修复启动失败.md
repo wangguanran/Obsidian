@@ -115,7 +115,7 @@ dtc -I dtb -O dts dtbo.img | grep -i gpiotest
 | Change-Id | #195900 |
 | 项目名 | LA.UM.9.14.1 |
 | 分支 | master_LA.4.0_HXB_SNM932_PinMingTong_7a07b9e |
-| 作者 | weirong（实际提交：[同事]） |
+| 作者 | [同事]（实际提交：[同事]） |
 | 状态 | MERGED |
 | 类型 | Bug（boot failure） |
 | 提交标题 | [HXB_SNM932_PinMingTong][TaskID]120654 device cannot boot - remove useless gpiotest dts |

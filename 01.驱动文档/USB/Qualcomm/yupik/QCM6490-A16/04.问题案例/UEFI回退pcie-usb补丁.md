@@ -2,7 +2,7 @@
 
 > **模块**: USB | **厂商**: Qualcomm | **芯片**: QCM6490 (yupik/Kodiak)
 > **平台**: QCM6490-A16 (rigle_linux_1.6) | **类型**: Bug
-> **Change**: #196565 | **作者**: lixianghui | **状态**: MERGED
+> **Change**: #196565 | **作者**: [同事] | **状态**: MERGED
 
 ## 基本信息
 
@@ -11,12 +11,12 @@
 | Change | #196565 |
 | 项目 | qualcomm-linux-spf-1-0_ap_standard_oem_nm-qimpsdk |
 | 分支 | rigle_linux_1.6 |
-| 作者 | lixianghui |
+| 作者 | [同事] |
 | 类型 | Bug（Revert：回退 pcie-usb qcom 补丁） |
 | 芯片 | Qualcomm QCM6490 (yupik/Kodiak) |
-| 平台 | QCM6490-A16（Rigel Linux / Ubuntu） |
+| 平台 | QCM6490-A16（[项目代号] Linux / Ubuntu） |
 | 模块 | USB（UEFI：XhciDxe / UsbBusDxe / PcieConfigLib / PmicLib / Core.fdf） |
-| 提交标题 | `Revert "[MC936_Linux][TaskID]113211[Description]pcie-usb qcom patch[Solution]do it.[owner]qianyiping"` |
+| 提交标题 | `Revert "[MC936_Linux][TaskID]113211[Description]pcie-usb qcom patch[Solution]do it.[owner][同事]"` |
 | 任务 | 对应原 Task 113211（回退对象） |
 
 ## 现象
@@ -102,7 +102,7 @@ python -u mg_build_tools/mg_build.py -v WP -t kodiak,QcomToolsPkg -v LAA -r RELE
 
 ```diff
 Subject: [PATCH] Revert "[MC936_Linux][TaskID]113211[Description]pcie-usb qcom
- patch[Solution]do it.[owner]qianyiping"
+ patch[Solution]do it.[owner][同事]"
 
 This reverts commit cc0e3a22b556267ac6fe62de9865d916a3f0ec6f.
 

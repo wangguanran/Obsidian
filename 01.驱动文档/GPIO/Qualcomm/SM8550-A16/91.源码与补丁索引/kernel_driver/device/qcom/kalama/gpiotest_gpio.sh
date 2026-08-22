@@ -1,0 +1,541 @@
+#!/vendor/bin/sh
+#DBG_UART_TX     -- GPIO_26
+#DBG_UART_RX    -- GPIO_27
+#pins = "gpio44", "gpio45";
+#gpio偏移 301
+#================================================================================
+# 按网表 [项目代号]_AUTO_ZB_SCH_V1.00_20260714.asc 重新适配 (loopback 矩阵)
+#   - 环回配对来源: 网表中每个串联电阻 R4xx 连接的两个 *_PIN_TEST 网络即一对环回脚
+#   - 92 个 SoC SM_GPIOxxx PIN_TEST 中: 42 对 SoC 环回, 8 个链尾/单端为单端输入
+#   - sysfs 编号 = SoC GPIO 号 + 301
+#   - 特殊功能块(稳压器/torch/RGB LED/SD-auto/ADC)不在网表 PIN_TEST 域内, 保持原样,
+#     需按 [项目代号] 硬件单独核实
+#--------------------------------------------------------------------------------
+# 环回对(SoC 号): 见下方 raw 参考; sysfs 号 = raw + 301
+# raw out: 2 7 13 16 31 48 52 65 67 70 71 72  88 107 119 121 124 127 128 140 152 154 155 161 164 166 170 171 174 175 176 178 179 180 182 186 192 194 195 198 201
+# raw in : 3 6 12  9 30 49 150 64 66 68 69 142 106 160 118 122 123 167 126 141 153 188 199 151  56 168 129 165 169 125 172 177 181 173 183 187 191 193 196 163 190
+#================================================================================
+ gpio_num1=(303 308 314 317 332 349 353 366 368 371 372 373  389 408 420 422 425 428 429 441 453 455 456 462 465 467 471 472 475 476 477 479 480 481 483 487 493 495 496 499 502  285  287  262  266 289  285)
+ gpio_num2=(304 307 313 310 331 350 451 365 367 369 370 443  407 461 419 423 424 468 427 442 454 489 500 452 357 469 430 466 470 426 473 478 482 474 484 488 492 494 497 464 491  286  288  261  267 255  283)
+# --------------------------------------------------------------------------------
+# 上两行末尾的 PMIC GPIO 段 (sysfs 号 <-> PMIC 器件/gpioN), 依据设备 /sys/kernel/debug/gpio:
+#   gpiochip7 251-256 pmk8550@0 | chip6 257-262 pm8550vs@6 | chip5 263-268 pm8550vs@4
+#   gpiochip2 281-288 pm8550ve_f@5 | chip1 289-300 pm8550@1   (SoC gpiochip0 从 301 起)
+#   环回对 (gpio_num1 out <-> gpio_num2 in):
+#     285(pm8550ve_f@5 gpio5,out) <-> 286(pm8550ve_f@5 gpio6,in)
+#     287(pm8550ve_f@5 gpio7,out) <-> 288(pm8550ve_f@5 gpio8,in)
+#     262(pm8550vs@6  gpio6,out) <-> 261(pm8550vs@6  gpio5,in)
+#     266(pm8550vs@4  gpio4,out) <-> 267(pm8550vs@4  gpio5,in)
+#     289(pm8550@1    gpio1,out) <-> 255(pmk8550@0   gpio5,in)
+#     285(pm8550ve_f@5 gpio5)     <-> 283(pm8550ve_f@5 gpio3)   # 已实测有效, 保留(285 在本段出现两次)
+#   另注: 网表中 PM8550_xx_GPIO_yy_PIN_TEST 各网络实际连到 SoC(U1)引脚+电阻,
+#         并非 PMIC 芯片 gpio; 若要严格按网表测, 需 SoC ballmap 将 U1.xx 映射为
+#         SoC GPIO 号(+301)后用 SoC sysfs 号替换本 PMIC 段, 当前沿用设备实测 PMIC 号。
+# --------------------------------------------------------------------------------
+#gpio_num3=(   )
+###
+# 按网表新增: SoC 链尾/单端脚(无环回伙伴), 作单端拉高/拉低验证
+# raw: 4 5 15 58 159 189 197 85  (sysfs = raw + 301)
+gpio_single_input_soc=(305 306 316 359  460 490 498  386)
+###
+# TODO(PMIC/PWM 环回, 待硬件接口确认): 网表另有 9 对非 sysfs 数字脚环回, 需用
+#   spmi/ADC 等专用接口测试, 暂未纳入:
+#     PM8550_GPIO_01 <-> PMK8550_GPIO_05 (R415)
+#     PM8550_E_GPIO_04 <-> PM8550_E_GPIO_05 (R416)
+#     PM8550_C_GPIO_03 <-> PM8550_C_GPIO_04 (R487)
+#     PM8550_C_GPIO_05 <-> PMU_C_GPIO_06 (R489)
+#     PM8550_G_GPIO_05 <-> PM8550_G_GPIO_06 (R440)
+#     PMU_F_GPIO_05 <-> PMU_F_GPIO_06 <-> PMU_F_GPIO_03 (R437/R438, 链)
+#     PMU_F_GPIO_07 <-> PMU_F_GPIO_08 (R439)
+#     PWM1 <-> PWM3 (R420)
+#     ECALL_SW_ZB_GPIO <-> SM_GPIO5 (R436)   # gpio5 已在 gpio_single_input_soc 单端验证
+#     AT10 无环回伙伴(仅 TVS/上拉), 需单端确认
+###
+# 以下为原板特殊功能单端测试(稳压器/torch/SD-auto)。按 [项目代号] 网表, 其中多数 sysfs 号
+# 已被环回矩阵占用(会造成同一 GPIO 被 export 两次), 故冲突项已禁用; 保留项需按
+# [项目代号] 实际外设核实。冲突禁用: 316/456/314/331/332/426-429/451/452
+#gpio_single_input1=(316)   # 冲突: 316=SoC GPIO15, 已在 gpio_single_input_soc
+#gpio_single_input2=(456)   # 冲突: 456=SoC GPIO155, 已在环回对(155,199)
+#gpio_single_input3=(315 314 331 332)   # 冲突: 314/331/332 已在环回矩阵; torch LED 需按新硬件核实
+#gpio_single_input4=(342  341 426 427 428 429 501  451 452 277 )   # 冲突: 426-429/451/452 已在环回矩阵
+gpio_single_input4=(342 341 501 277)   # 保留非冲突项(需按 [项目代号] 硬件核实)
+gpio_single_input6=(138)
+#gpio_num3=(   )
+###
+if [ "$1" = "gpio_test" ]
+then
+#####################create test report ##########################################
+	gpio_test_file="/mnt/vendor/persist/gpiotest/gpio_test.ini"
+	#meig_boot_mode=`cat /sys/iopartition/iopartition`
+	#dest_save_file="/data/data/[应用包名]/gpio_test.ini"
+	dest_save_file="/mnt/vendor/persist/gpiotest/gpio_test_final.ini"
+	test_result=1
+	####SLM550 need to test in normal mode,so close the ffbm-97 mode############
+	#meig_boot_mode_short=${meig_boot_mode:0:7}
+	#if [ "$meig_boot_mode_short" = "ffbm-97" ]
+	#then
+	if [ -f "$gpio_test_file" ]
+	then
+		 echo -n "" > "$gpio_test_file"
+	fi
+	if [ -f "$dest_save_file" ]; then
+		rm -f "$dest_save_file"
+	fi
+##################################################################################
+##################### All pin test start 01#########################################
+##################################################################################
+	echo gpioAllTest_PullUp
+	echo "[gpioAllTest_PullUp]" >> /mnt/vendor/persist/gpiotest/gpio_test.ini
+	for num1 in ${gpio_num1[@]}
+	do
+		echo $num1 > /sys/class/gpio/export
+		echo out > /sys/class/gpio/gpio$num1/direction		
+		echo 1 > /sys/class/gpio/gpio$num1/value
+	done
+	
+	for num2 in ${gpio_num2[@]}
+	do
+		echo $num2 > /sys/class/gpio/export
+		echo in > /sys/class/gpio/gpio$num2/direction		
+	done
+			
+	for out_dirval in ${gpio_num1[@]}
+	do		
+		echo gpio$out_dirval
+		out_pull_dirction=`cat /sys/class/gpio/gpio$((out_dirval))/direction`
+		echo $out_pull_dirction
+		out_pull_state=`cat /sys/class/gpio/gpio$((out_dirval))/value`
+		echo $out_pull_state
+		
+		if [[ $out_pull_dirction == out ]] && [[ $out_pull_state -eq 1 ]]
+		then
+			echo "gpio$out_dirval=true" >> /mnt/vendor/persist/gpiotest/gpio_test.ini
+		else
+			echo "gpio$out_dirval=false" >> /mnt/vendor/persist/gpiotest/gpio_test.ini
+			test_result=0
+		fi
+	done
+	
+	for in_dirval in ${gpio_num2[@]}
+	do		
+		echo gpio$in_dirval
+		in_pull_dirction=`cat /sys/class/gpio/gpio$((in_dirval))/direction`
+		echo $in_pull_dirction
+		in_pull_state=`cat /sys/class/gpio/gpio$((in_dirval))/value`
+		echo $in_pull_state
+		
+		if [[ $in_pull_dirction == in ]] && [[ $in_pull_state -eq  1 ]]
+		then	
+			echo "gpio$in_dirval=true" >> /mnt/vendor/persist/gpiotest/gpio_test.ini
+		else
+			echo "gpio$in_dirval=false" >> /mnt/vendor/persist/gpiotest/gpio_test.ini
+			test_result=0
+		fi
+	done
+	echo gpioAllTest_PullDown
+	echo "[gpioAllTest_PullDown]" >> /mnt/vendor/persist/gpiotest/gpio_test.ini
+	for number1 in ${gpio_num1[@]}
+	do
+		echo $number1 > /sys/class/gpio/export
+		echo out > /sys/class/gpio/gpio$number1/direction
+		echo 0 > /sys/class/gpio/gpio$number1/value
+	done
+	
+	for number2 in ${gpio_num2[@]}
+	do
+		echo $number2 > /sys/class/gpio/export
+		echo in > /sys/class/gpio/gpio$number2/direction	
+	done
+	
+	for out_direcval in ${gpio_num1[@]}
+	do		
+		echo gpio$out_direcval
+		out_down_dirction=`cat /sys/class/gpio/gpio$((out_direcval))/direction`
+		echo $out_down_dirction
+		out_down_state=`cat /sys/class/gpio/gpio$((out_direcval))/value`
+		echo $out_down_state
+		if [[ $out_down_dirction == out ]] && [[ $out_down_state -eq 0 ]]
+		then
+			echo "gpio$out_direcval=true" >> /mnt/vendor/persist/gpiotest/gpio_test.ini
+		else
+			echo "gpio$out_direcval=false" >> /mnt/vendor/persist/gpiotest/gpio_test.ini
+			test_result=0
+		fi
+	done
+	
+	for in_direcval in ${gpio_num2[@]}
+	do		
+		echo gpio$in_direcval
+		in_down_dirction=`cat /sys/class/gpio/gpio$((in_direcval))/direction`
+		echo $in_down_dirction
+		in_down_state=`cat /sys/class/gpio/gpio$((in_direcval))/value`
+		echo $in_down_state
+		if [[ $in_down_dirction == in ]] && [[ $in_down_state -eq 0 ]]
+		then
+			echo "gpio$in_direcval=true" >> /mnt/vendor/persist/gpiotest/gpio_test.ini
+		else
+			echo "gpio$in_direcval=false" >> /mnt/vendor/persist/gpiotest/gpio_test.ini
+			test_result=0
+		fi
+	done
+#######################按网表新增: SoC 单端脚(无环回伙伴)拉高/拉低验证##############
+	echo soc_single_input_PullUp
+	echo "[soc_single_input_PullUp]" >> /mnt/vendor/persist/gpiotest/gpio_test.ini
+	for snum in ${gpio_single_input_soc[@]}
+	do
+		echo $snum > /sys/class/gpio/export
+		echo out > /sys/class/gpio/gpio$snum/direction
+		echo 1 > /sys/class/gpio/gpio$snum/value
+	done
+	for sdirval in ${gpio_single_input_soc[@]}
+	do
+		echo gpio$sdirval
+		s_up_dirction=`cat /sys/class/gpio/gpio$((sdirval))/direction`
+		echo $s_up_dirction
+		s_up_state=`cat /sys/class/gpio/gpio$((sdirval))/value`
+		echo $s_up_state
+		if [[ $s_up_dirction == out ]] && [[ $s_up_state -eq 1 ]]
+		then
+			echo "gpio$sdirval=true" >> /mnt/vendor/persist/gpiotest/gpio_test.ini
+		else
+			echo "gpio$sdirval=false" >> /mnt/vendor/persist/gpiotest/gpio_test.ini
+			test_result=0
+		fi
+	done
+	echo soc_single_input_PullDown
+	echo "[soc_single_input_PullDown]" >> /mnt/vendor/persist/gpiotest/gpio_test.ini
+	for snum in ${gpio_single_input_soc[@]}
+	do
+		echo $snum > /sys/class/gpio/export
+		echo out > /sys/class/gpio/gpio$snum/direction
+		echo 0 > /sys/class/gpio/gpio$snum/value
+	done
+	for sdirval in ${gpio_single_input_soc[@]}
+	do
+		echo gpio$sdirval
+		s_dn_dirction=`cat /sys/class/gpio/gpio$((sdirval))/direction`
+		echo $s_dn_dirction
+		s_dn_state=`cat /sys/class/gpio/gpio$((sdirval))/value`
+		echo $s_dn_state
+		if [[ $s_dn_dirction == out ]] && [[ $s_dn_state -eq 0 ]]
+		then
+			echo "gpio$sdirval=true" >> /mnt/vendor/persist/gpiotest/gpio_test.ini
+		else
+			echo "gpio$sdirval=false" >> /mnt/vendor/persist/gpiotest/gpio_test.ini
+			test_result=0
+		fi
+	done
+#######################single_pin测试###########################################
+	echo single_pin_PullDown
+	echo "[single_pin_PullDown]" >> /mnt/vendor/persist/gpiotest/gpio_test.ini
+	for num1 in ${gpio_single_input1[@]}
+	do
+		mount  -t  debugfs  none  sys/kernel/debug
+		echo $num1 > /sys/class/gpio/export
+		echo out > /sys/class/gpio/gpio$num1/direction		
+		echo 1 > /sys/kernel/debug/regulator/17a00000.apps_rsc:drv@2:rpmh-regulator-ldob10-pm_humu_l10/enable
+	done
+	for out_dirval in ${gpio_single_input1[@]}
+	do		
+		echo gpio$out_dirval
+		out_pull_dirction=`cat /sys/class/gpio/gpio$((out_dirval))/direction`
+		echo $out_pull_dirction
+		out_pull_state=`cat /sys/class/gpio/gpio$((out_dirval))/value`
+		echo $out_pull_state
+		
+		if [[ $out_pull_dirction == out ]] && [[ $out_pull_state -eq 0 ]]
+		then
+			echo "gpio$out_dirval=true" >> /mnt/vendor/persist/gpiotest/gpio_test.ini
+		else
+			echo "gpio$out_dirval=false" >> /mnt/vendor/persist/gpiotest/gpio_test.ini
+			test_result=0
+		fi
+	done
+	for num2 in ${gpio_single_input2[@]}
+	do
+		echo $num2 > /sys/class/gpio/export
+		echo out > /sys/class/gpio/gpio$num2/direction		
+		echo 1 > /sys/kernel/debug/regulator/17a00000.apps_rsc:drv@2:rpmh-regulator-ldob2-pm_humu_l2/enable
+	done
+	for out_dirval in ${gpio_single_input2[@]}
+	do		
+		echo gpio$out_dirval
+		out_pull_dirction=`cat /sys/class/gpio/gpio$((out_dirval))/direction`
+		echo $out_pull_dirction
+		out_pull_state=`cat /sys/class/gpio/gpio$((out_dirval))/value`
+		echo $out_pull_state
+		
+		if [[ $out_pull_dirction == out ]] && [[ $out_pull_state -eq 0 ]]
+		then
+			echo "gpio$out_dirval=true" >> /mnt/vendor/persist/gpiotest/gpio_test.ini
+		else
+			echo "gpio$out_dirval=false" >> /mnt/vendor/persist/gpiotest/gpio_test.ini
+			test_result=0
+		fi
+	done
+	
+	for num3 in ${gpio_single_input3[@]}
+	do
+		echo $num3 > /sys/class/gpio/export
+		echo out > /sys/class/gpio/gpio$num3/direction		
+echo 10 > sys/class/leds/led\:torch_0/brightness
+echo 10 > sys/class/leds/led\:torch_1/brightness
+echo 10 > sys/class/leds/led\:torch_2/brightness
+echo 10 > sys/class/leds/led\:torch_3/brightness
+echo 1 > sys/class/leds/led\:switch_2/brightness
+	done
+	for out_dirval in ${gpio_single_input3[@]}
+	do		
+		echo gpio$out_dirval
+		out_pull_dirction=`cat /sys/class/gpio/gpio$((out_dirval))/direction`
+		echo $out_pull_dirction
+		out_pull_state=`cat /sys/class/gpio/gpio$((out_dirval))/value`
+		echo $out_pull_state
+		
+		if [[ $out_pull_dirction == out ]] && [[ $out_pull_state -eq 0 ]]
+		then
+			echo "gpio$out_dirval=true" >> /mnt/vendor/persist/gpiotest/gpio_test.ini
+		else
+			echo "gpio$out_dirval=false" >> /mnt/vendor/persist/gpiotest/gpio_test.ini
+			test_result=0
+		fi
+	done
+	for num4 in ${gpio_single_input4[@]}
+	do
+		echo $num4 > /sys/class/gpio/export
+		echo out > /sys/class/gpio/gpio$num4/direction		
+		echo 0 > /sys/class/gpio/gpio$num4/value
+	done
+	for out_dirval in ${gpio_single_input4[@]}
+	do		
+		echo gpio$out_dirval
+		out_pull_dirction=`cat /sys/class/gpio/gpio$((out_dirval))/direction`
+		echo $out_pull_dirction
+		out_pull_state=`cat /sys/class/gpio/gpio$((out_dirval))/value`
+		echo $out_pull_state
+		
+		if [[ $out_pull_dirction == out ]] && [[ $out_pull_state -eq 0 ]]
+		then
+			echo "gpio$out_dirval=true" >> /mnt/vendor/persist/gpiotest/gpio_test.ini
+		else
+			echo "gpio$out_dirval=false" >> /mnt/vendor/persist/gpiotest/gpio_test.ini
+			test_result=0
+		fi
+	done
+	for num6 in ${gpio_single_input6[@]}
+	do
+		chmod  777 /sys/devices/platform/soc/soc:meig_sd_and_sim_auto/sdcard_auto
+		echo 0 > /sys/devices/platform/soc/soc:meig_sd_and_sim_auto/sdcard_auto
+	done
+	for out_dirval in ${gpio_single_input6[@]}
+	do		
+		echo gpio$out_dirval
+		out_pull_state=`cat /sys/devices/platform/soc/soc:meig_sd_and_sim_auto/sdcard_auto`
+		echo $out_pull_state
+		
+		if [[ $out_pull_state -eq 0 ]]
+		then
+			echo "gpio$out_dirval=true" >> /mnt/vendor/persist/gpiotest/gpio_test.ini
+		else
+			echo "gpio$out_dirval=false" >> /mnt/vendor/persist/gpiotest/gpio_test.ini
+			test_result=0
+		fi
+	done
+	echo single_pin_PullUp
+	echo "[single_pin_PullUp]" >> /mnt/vendor/persist/gpiotest/gpio_test.ini
+	for num1 in ${gpio_single_input1[@]}
+	do
+		echo $num1 > /sys/class/gpio/export
+		echo out > /sys/class/gpio/gpio$num1/direction		
+		echo 0 > /sys/kernel/debug/regulator/17a00000.apps_rsc:drv@2:rpmh-regulator-ldob10-pm_humu_l10/enable
+		echo 1 > /sys/class/gpio/gpio$num1/value
+	done
+	for out_dirval in ${gpio_single_input1[@]}
+	do		
+		echo gpio$out_dirval
+		out_pull_dirction=`cat /sys/class/gpio/gpio$((out_dirval))/direction`
+		echo $out_pull_dirction
+		out_pull_state=`cat /sys/class/gpio/gpio$((out_dirval))/value`
+		echo $out_pull_state
+		
+		if [[ $out_pull_dirction == out ]] && [[ $out_pull_state -eq 1 ]]
+		then
+			echo "gpio$out_dirval=true" >> /mnt/vendor/persist/gpiotest/gpio_test.ini
+		else
+			echo "gpio$out_dirval=false" >> /mnt/vendor/persist/gpiotest/gpio_test.ini
+			test_result=0
+		fi
+	done
+	
+	
+	for num1 in ${gpio_single_input2[@]}
+	do
+		echo $num2 > /sys/class/gpio/export
+		echo out > /sys/class/gpio/gpio$num2/direction		
+		echo 0 > /sys/kernel/debug/regulator/17a00000.apps_rsc:drv@2:rpmh-regulator-ldob2-pm_humu_l2/enable
+		echo 1 > /sys/class/gpio/gpio$num2/value
+	done
+	for out_dirval in ${gpio_single_input2[@]}
+	do		
+		echo gpio$out_dirval
+		out_pull_dirction=`cat /sys/class/gpio/gpio$((out_dirval))/direction`
+		echo $out_pull_dirction
+		out_pull_state=`cat /sys/class/gpio/gpio$((out_dirval))/value`
+		echo $out_pull_state
+		
+		if [[ $out_pull_dirction == out ]] && [[ $out_pull_state -eq 1 ]]
+		then
+			echo "gpio$out_dirval=true" >> /mnt/vendor/persist/gpiotest/gpio_test.ini
+		else
+			echo "gpio$out_dirval=false" >> /mnt/vendor/persist/gpiotest/gpio_test.ini
+			test_result=0
+		fi
+	done
+	
+	
+	for num3 in ${gpio_single_input3[@]}
+	do
+		echo $num3 > /sys/class/gpio/export
+		echo out > /sys/class/gpio/gpio$num3/direction		
+echo 0 > sys/class/leds/led\:torch_0/brightness
+echo 0 > sys/class/leds/led\:torch_1/brightness
+echo 0 > sys/class/leds/led\:torch_2/brightness
+echo 0 > sys/class/leds/led\:torch_3/brightness
+echo 0 > sys/class/leds/led\:switch_2/brightness
+		echo 1 > /sys/class/gpio/gpio$num3/value
+	done
+	for out_dirval in ${gpio_single_input3[@]}
+	do		
+		echo gpio$out_dirval
+		out_pull_dirction=`cat /sys/class/gpio/gpio$((out_dirval))/direction`
+		echo $out_pull_dirction
+		out_pull_state=`cat /sys/class/gpio/gpio$((out_dirval))/value`
+		echo $out_pull_state
+		
+		if [[ $out_pull_dirction == out ]] && [[ $out_pull_state -eq 1 ]]
+		then
+			echo "gpio$out_dirval=true" >> /mnt/vendor/persist/gpiotest/gpio_test.ini
+		else
+			echo "gpio$out_dirval=false" >> /mnt/vendor/persist/gpiotest/gpio_test.ini
+			test_result=0
+		fi
+	done
+	for num4 in ${gpio_single_input4[@]}
+	do
+		echo $num4 > /sys/class/gpio/export
+		echo out > /sys/class/gpio/gpio$num4/direction		
+		echo 1 > /sys/class/gpio/gpio$num4/value
+	done
+	for out_dirval in ${gpio_single_input4[@]}
+	do		
+		echo gpio$out_dirval
+		out_pull_dirction=`cat /sys/class/gpio/gpio$((out_dirval))/direction`
+		echo $out_pull_dirction
+		out_pull_state=`cat /sys/class/gpio/gpio$((out_dirval))/value`
+		echo $out_pull_state
+		
+		if [[ $out_pull_dirction == out ]] && [[ $out_pull_state -eq 1 ]]
+		then
+			echo "gpio$out_dirval=true" >> /mnt/vendor/persist/gpiotest/gpio_test.ini
+		else
+			echo "gpio$out_dirval=false" >> /mnt/vendor/persist/gpiotest/gpio_test.ini
+			test_result=0
+		fi
+	done
+	for num6 in ${gpio_single_input6[@]}
+	do
+		chmod  777 /sys/devices/platform/soc/soc:meig_sd_and_sim_auto/sdcard_auto
+		echo 1 > /sys/devices/platform/soc/soc:meig_sd_and_sim_auto/sdcard_auto
+	done
+	for out_dirval in ${gpio_single_input6[@]}
+	do		
+		echo gpio$out_dirval
+		out_pull_state=`cat /sys/devices/platform/soc/soc:meig_sd_and_sim_auto/sdcard_auto`
+		echo $out_pull_state
+		
+		if [[ $out_pull_state -eq 1 ]]
+		then
+			echo "gpio$out_dirval=true" >> /mnt/vendor/persist/gpiotest/gpio_test.ini
+		else
+			echo "gpio$out_dirval=false" >> /mnt/vendor/persist/gpiotest/gpio_test.ini
+			test_result=0
+		fi
+	done
+#######################single_pin测试###########################################	
+	####################################### TEST FOR PM8550 gpio ############################
+			echo "[ADCTest]" >> /mnt/vendor/persist/gpiotest/gpio_test.ini
+                pm8550_gpio2=`cat /sys/devices/platform/soc/c42d000.qcom,spmi/spmi-0/0-00/c42d000.qcom,spmi:qcom,pmk8550@0:vadc@9000/iio:device0/in_voltage_pm8550_gpio2_adc_input`
+                pm8550_gpio12=`cat /sys/devices/platform/soc/c42d000.qcom,spmi/spmi-0/0-00/c42d000.qcom,spmi:qcom,pmk8550@0:vadc@9000/iio:device0/in_voltage_pm8550_gpio12_adc_input`
+		if [ $pm8550_gpio2 -lt 1900000 ] && [ $pm8550_gpio2 -ge 0 ]
+		then
+				echo pm8550_gpio2---true
+				echo "pm8550_gpio2=true" >> /mnt/vendor/persist/gpiotest/gpio_test.ini
+		else
+				echo pm8550_gpio2---false
+				echo "pm8550_gpio2=false" >> /mnt/vendor/persist/gpiotest/gpio_test.ini
+				test_result=0
+		fi
+		if [ $pm8550_gpio12 -lt 1800000 ] && [ $pm8550_gpio12 -ge 0 ]
+		then
+				echo pm8550_gpio12---true
+				echo "pm8550_gpio12=true" >> /mnt/vendor/persist/gpiotest/gpio_test.ini
+		else
+				echo pm8550_gpio12---false
+				echo "pm8550_gpio12=false" >> /mnt/vendor/persist/gpiotest/gpio_test.ini
+				test_result=0
+		fi
+			echo "[LEDTest]" >> /mnt/vendor/persist/gpiotest/gpio_test.ini
+		echo 318 > /sys/class/gpio/export
+		echo out > /sys/class/gpio/gpio318/direction		
+		echo 0 > sys/class/leds/blue/brightness
+		echo 1 > /sys/class/gpio/gpio318/value
+		out_pull_dirction=`cat /sys/class/gpio/gpio318/direction`
+		echo $out_pull_dirction
+		out_pull_state=`cat /sys/class/gpio/gpio318/value`
+		echo $out_pull_state
+		
+		if [[ $out_pull_dirction == out ]] && [[ $out_pull_state -eq 1 ]]
+		then
+			echo "gpio318=true" >> /mnt/vendor/persist/gpiotest/gpio_test.ini
+		else
+			echo "gpio318=false" >> /mnt/vendor/persist/gpiotest/gpio_test.ini
+			test_result=0
+		fi
+		echo 318 > /sys/class/gpio/export
+		echo out > /sys/class/gpio/gpio318/direction		
+		echo 255 > sys/class/leds/blue/brightness
+		echo gpio318
+		out_pull_dirction=`cat /sys/class/gpio/gpio318/direction`
+		echo $out_pull_dirction
+		out_pull_state=`cat /sys/class/gpio/gpio318/value`
+		echo $out_pull_state
+		
+		if [[ $out_pull_dirction == out ]] && [[ $out_pull_state -eq 0 ]]
+		then
+			echo "gpio318=true" >> /mnt/vendor/persist/gpiotest/gpio_test.ini
+		else
+			echo "gpio318=false" >> /mnt/vendor/persist/gpiotest/gpio_test.ini
+			test_result=0
+		fi
+		# 注: green(gpio389)/red(gpio317) LED 测试已移除, 因 389/317 已纳入环回矩阵
+		#     (389<->407, 317<->310), 重复 export 会 busy/覆盖方向, 使环回结果不可信。
+		#     其环回验证由上方 gpioAllTest 段完成; blue(gpio318) 不在矩阵, 保留 LED 测试。
+		
+		
+####################################### TEST FOR ADC ############################
+	echo "[final_result]" >> /mnt/vendor/persist/gpiotest/gpio_test.ini
+	if [[ $test_result == 1 ]]
+	then
+		echo "test_result=true" >> /mnt/vendor/persist/gpiotest/gpio_test.ini
+	else
+		echo "test_result=false" >> /mnt/vendor/persist/gpiotest/gpio_test.ini
+	fi
+	#cp /mnt/vendor/persist/gpiotest/gpio_test.ini /data/data/[应用包名]/
+	cp /mnt/vendor/persist/gpiotest/gpio_test.ini /mnt/vendor/persist/gpiotest/gpio_test_final.ini
+	chmod 0744 /mnt/vendor/persist/gpiotest/gpio_test_final.ini
+	#chown system:system /data/data/[应用包名]/gpio_test.ini
+	#echo 1 > sys/devices/soc/soc:gpio_default_exchange/gpio_default_ex
+#fi
+fi
+
+

@@ -1,7 +1,7 @@
 # 修改历史
 
 > **模块**: UART | **厂商**: Qualcomm | **芯片**: scuba (SM6225)
-> **平台**: SM6225-A13 (LA.VENDOR.13.2.1) | **分支**: MT5205
+> **平台**: SM6225-A13 (LA.VENDOR.13.2.1) | **分支**: [项目代号]
 
 ---
 
@@ -17,11 +17,11 @@
 |------|-----|
 | Change | #196150 |
 | 任务 | 120574 |
-| 标题 | [MT5205][120574][uart] fastboot oem uartdebug SE4 console/HS switch |
-| 作者 | tengqi |
+| 标题 | [[项目代号]][120574][uart] fastboot oem uartdebug SE4 console/HS switch |
+| 作者 | [同事] |
 | 状态 | MERGED |
 | 类型 | 需求 (feature) |
-| 分支 | MT5205 |
+| 分支 | [项目代号] |
 
 ### 涉及文件
 
@@ -45,7 +45,7 @@
 
 | 提交 | 描述 | 作者 |
 |------|------|------|
-| `1a96e40e9f50` | [MT5205][TaskID]118750/118744 config gpio69/70 gpio16/17 as uart (前置依赖) | zhaonannan |
+| `1a96e40e9f50` | [[项目代号]][TaskID]118750/118744 config gpio69/70 gpio16/17 as uart (前置依赖) | [同事] |
 | `223bd95b8dcc` | IOT_High_Mid_2024.SPF.1.0 FC 0.0.008.0 (基线) | - |
 
 ---

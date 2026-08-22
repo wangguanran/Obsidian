@@ -7,7 +7,7 @@
 | 项目 | 内容 |
 |------|------|
 | SoC | Qualcomm SM6225 (khaje) |
-| Android | A14 (LA.VENDOR.13.2.1 / master_IOT_High_Mid_2024.SPF.1.0_MT5825) |
+| Android | A14 (LA.VENDOR.13.2.1 / master_IOT_High_Mid_2024.SPF.1.0_[项目代号]) |
 | 内核 | msm-kernel 5.10 |
 | 充电器 | SMB5 (pm6125/pm7250b) |
 
@@ -30,7 +30,7 @@
 
 ## DTS 配置要点
 
-POGO 相关 GPIO 与 charger 节点由既有 MT5825 DT 配置，本补丁（#195273）不涉及 DTS 改动，仅修改 smb5-lib.c。
+POGO 相关 GPIO 与 charger 节点由既有 [项目代号] DT 配置，本补丁（#195273）不涉及 DTS 改动，仅修改 smb5-lib.c。
 
 充电器节点 DT 结构（参考）：
 
@@ -52,7 +52,7 @@ CONFIG_PMIC5_SMB5=y
 ## 编译命令
 
 ```bash
-# 134 源码树 MT5825 (LA.VENDOR.13.2.1)
+# 134 源码树 [项目代号] (LA.VENDOR.13.2.1)
 cd <tree>/kernel_platform
 # 编译内核
 ./build.sh -k msm-kernel    # 或平台既有编译脚本

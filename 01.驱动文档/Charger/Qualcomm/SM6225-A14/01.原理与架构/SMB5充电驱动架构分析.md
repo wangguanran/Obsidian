@@ -19,7 +19,7 @@ SMB5 充电器 (pm6125_charger)
    └─ 温度监测 (adc_tm, skin_therm 等)
 ```
 
-## POGO / Dock 路径（MT5825 定制）
+## POGO / Dock 路径（[项目代号] 定制）
 
 POGO 接口（背夹/Dock）由 smb5-lib 中 `smblib_pogo_*` 系列函数处理，关键信号：
 

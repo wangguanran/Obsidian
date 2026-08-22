@@ -2,7 +2,7 @@
 
 > **模块**: GPIO | **厂商**: Qualcomm | **芯片**: SM8550 (kalama)
 > **平台**: SM8550-A16 (LA.VENDOR.13.2.9) | **类型**: 需求
-> **Change**: #197519（Task 120144） | **作者**: zhaoqian | **状态**: MERGED
+> **Change**: #197519（Task 120144） | **作者**: [同事] | **状态**: MERGED
 
 ---
 
@@ -10,13 +10,13 @@
 
 | Change | 项目 | 分支 | 作者 | 类型 | 芯片 | 平台 | 模块 |
 |--------|------|------|------|------|------|------|------|
-| #197519 | LA.VENDOR.13.2.9 | SRM969_A16_AutoTest | zhaoqian | 需求 | SM8550 (kalama) | SM8550-A16 | GPIO |
+| #197519 | LA.VENDOR.13.2.9 | [项目代号]_A16_AutoTest | [同事] | 需求 | SM8550 (kalama) | SM8550-A16 | GPIO |
 
 ## 需求描述
 
-SRM969 平台（kalama/SM8550，Android 16 产测分支）需要 GPIO 全引脚自动化测试能力，用于产线对 SoC GPIO 与 PMIC GPIO 的功能验证。原脚本 `SRM965_gpio.sh` 面向 SRM965 项目，引脚表与 SRM969 实际布局不符，且测试逻辑存在缺陷（部分 LED 引脚重复 export 导致环回结果不可信）。需求为：
+[项目代号] 平台（kalama/SM8550，Android 16 产测分支）需要 GPIO 全引脚自动化测试能力，用于产线对 SoC GPIO 与 PMIC GPIO 的功能验证。原脚本 `gpiotest_gpio.sh` 面向 [项目代号] 项目，引脚表与 [项目代号] 实际布局不符，且测试逻辑存在缺陷（部分 LED 引脚重复 export 导致环回结果不可信）。需求为：
 
-1. 将 GPIO 测试脚本从 SRM965 适配到 SRM969（重命名 + 更新引脚表）
+1. 将 GPIO 测试脚本从 [项目代号] 适配到 [项目代号]（重命名 + 更新引脚表）
 2. 保留全引脚成对环回测试（out/in 互测）、单引脚分组测试、PMIC ADC 电压检测、LED 点亮验证
 3. 修正测试逻辑：移除已纳入环回矩阵的 green/red LED 重复测试，避免 export busy 干扰结果
 
@@ -24,11 +24,11 @@ SRM969 平台（kalama/SM8550，Android 16 产测分支）需要 GPIO 全引脚�
 
 ### 1. 脚本重命名与引脚表更新
 
-`SRM965_gpio.sh` → `SRM969_gpio.sh`（RENAMED，+105/-72），引脚表按 SRM969 网表更新：
+`gpiotest_gpio.sh` → `gpiotest_gpio.sh`（RENAMED，+105/-72），引脚表按 [项目代号] 网表更新：
 
 - `gpio_num1`/`gpio_num2`：成对环回测试引脚（out/in 互测），新增 PM8550VE/PMK8550 系列 PMIC GPIO 项
 - `gpio_single_input1/2/3/4/6`：单引脚分组（含 SD 卡自动检测 `sdcard_auto` 节点）
-- 删除注释掉的旧引脚表与 SRM965 遗留引用
+- 删除注释掉的旧引脚表与 [项目代号] 遗留引用
 
 ### 2. 测试逻辑修正
 
@@ -38,16 +38,16 @@ SRM969 平台（kalama/SM8550，Android 16 产测分支）需要 GPIO 全引脚�
 
 ### 3. 构建与启动集成
 
-- `AndroidBoard.mk`：`LOCAL_MODULE` 从 `SRM965_gpio.sh` 改为 `SRM969_gpio.sh`
+- `AndroidBoard.mk`：`LOCAL_MODULE` 从 `gpiotest_gpio.sh` 改为 `gpiotest_gpio.sh`
 - `kalama.mk`：`PRODUCT_PACKAGES` 同步更新
-- `init.target.rc`：`service meig_gpio_test` 脚本路径更新为 `SRM969_gpio.sh gpio_test`
+- `init.target.rc`：`service meig_gpio_test` 脚本路径更新为 `gpiotest_gpio.sh gpio_test`
 
 ## 修改文件清单
 
 | 文件 | 变更 | 说明 |
 |------|------|------|
-| device/qcom/kalama/AndroidBoard.mk | MODIFIED (+1/-1) | LOCAL_MODULE 改为 SRM969_gpio.sh |
-| device/qcom/kalama/SRM969_gpio.sh | RENAMED (+105/-72) | 由 SRM965_gpio.sh 重命名并适配 |
+| device/qcom/kalama/AndroidBoard.mk | MODIFIED (+1/-1) | LOCAL_MODULE 改为 gpiotest_gpio.sh |
+| device/qcom/kalama/gpiotest_gpio.sh | RENAMED (+105/-72) | 由 gpiotest_gpio.sh 重命名并适配 |
 | device/qcom/kalama/init.target.rc | MODIFIED (+1/-1) | meig_gpio_test service 脚本名更新 |
 | device/qcom/kalama/kalama.mk | MODIFIED (+1/-1) | PRODUCT_PACKAGES 脚本名更新 |
 
@@ -58,7 +58,7 @@ SRM969 平台（kalama/SM8550，Android 16 产测分支）需要 GPIO 全引脚�
 ```makefile
 #for gpiotest
 include $(CLEAR_VARS)
-LOCAL_MODULE       := SRM969_gpio.sh
+LOCAL_MODULE       := gpiotest_gpio.sh
 LOCAL_MODULE_TAGS  := optional
 LOCAL_MODULE_CLASS := ETC
 LOCAL_SRC_FILES    := $(LOCAL_MODULE)
@@ -67,15 +67,15 @@ LOCAL_SRC_FILES    := $(LOCAL_MODULE)
 ### kalama.mk（产品包集成）
 
 ```makefile
-PRODUCT_PACKAGES += SRM969_gpio.sh \
-    SRM965_key_mount.sh \
-    SRM965_thermal_grasp.sh
+PRODUCT_PACKAGES += gpiotest_gpio.sh \
+    [项目代号]_key_mount.sh \
+    [项目代号]_thermal_grasp.sh
 ```
 
 ### init.target.rc（产测服务）
 
 ```rc
-service meig_gpio_test /vendor/bin/sh /vendor/bin/SRM969_gpio.sh gpio_test
+service meig_gpio_test /vendor/bin/sh /vendor/bin/gpiotest_gpio.sh gpio_test
     class late_start
     user root
     group root system
@@ -93,7 +93,7 @@ adb shell start meig_gpio_test
 
 # 方式二：直接执行（root）
 adb root
-adb shell /vendor/bin/sh /vendor/bin/SRM969_gpio.sh gpio_test
+adb shell /vendor/bin/sh /vendor/bin/gpiotest_gpio.sh gpio_test
 ```
 
 ### 预期结果
@@ -116,7 +116,7 @@ adb shell cat /mnt/vendor/persist/gpiotest/gpio_test_final.ini
 ## 补丁内容
 
 ```diff
-Subject: [PATCH] [SRM969][TaskID]120144[Description]add gpiotest[Solution]modify gpiotest[Owner]wanghao_sh
+Subject: [PATCH] [[项目代号]][TaskID]120144[Description]add gpiotest[Solution]modify gpiotest[Owner]wanghao_sh
 ---
 
 diff --git a/device/qcom/kalama/AndroidBoard.mk b/device/qcom/kalama/AndroidBoard.mk
@@ -127,15 +127,15 @@ index 79c0414..5d45891 100644
  #----------------------------------------------------------------------
  #for gpiotest
  include $(CLEAR_VARS)
--LOCAL_MODULE       := SRM965_gpio.sh
-+LOCAL_MODULE       := SRM969_gpio.sh
+-LOCAL_MODULE       := gpiotest_gpio.sh
++LOCAL_MODULE       := gpiotest_gpio.sh
  LOCAL_MODULE_TAGS  := optional
  LOCAL_MODULE_CLASS := ETC
  LOCAL_SRC_FILES    := $(LOCAL_MODULE)
-diff --git a/device/qcom/kalama/SRM965_gpio.sh b/device/qcom/kalama/SRM965_gpio.sh
+diff --git a/device/qcom/kalama/gpiotest_gpio.sh b/device/qcom/kalama/gpiotest_gpio.sh
 deleted file mode 100755
 index c588f5d..0000000
---- a/device/qcom/kalama/SRM965_gpio.sh
+--- a/device/qcom/kalama/gpiotest_gpio.sh
 +++ /dev/null
 @@ -1,508 +0,0 @@
 -#!/vendor/bin/sh
@@ -161,10 +161,10 @@ index c588f5d..0000000
 -#####################create test report ##########################################
 -	gpio_test_file="/mnt/vendor/persist/gpiotest/gpio_test.ini"
 -	#meig_boot_mode=`cat /sys/iopartition/iopartition`
--	#dest_save_file="/data/data/com.meigsmart.meigrs32/gpio_test.ini"
+-	#dest_save_file="/data/data/[应用包名]/gpio_test.ini"
 -	dest_save_file="/mnt/vendor/persist/gpiotest/gpio_test_final.ini"
 -	test_result=1
--	####SLM550 need to test in normal mode,so close the ffbm-97 mode############
+-	####[项目代号] need to test in normal mode,so close the ffbm-97 mode############
 -	#meig_boot_mode_short=${meig_boot_mode:0:7}
 -	#if [ "$meig_boot_mode_short" = "ffbm-97" ]
 -	#then
@@ -638,19 +638,19 @@ index c588f5d..0000000
 -	else
 -		echo "test_result=false" >> /mnt/vendor/persist/gpiotest/gpio_test.ini
 -	fi
--	#cp /mnt/vendor/persist/gpiotest/gpio_test.ini /data/data/com.meigsmart.meigrs32/
+-	#cp /mnt/vendor/persist/gpiotest/gpio_test.ini /data/data/[应用包名]/
 -	cp /mnt/vendor/persist/gpiotest/gpio_test.ini /mnt/vendor/persist/gpiotest/gpio_test_final.ini
 -	chmod 0744 /mnt/vendor/persist/gpiotest/gpio_test_final.ini
--	#chown system:system /data/data/com.meigsmart.meigrs32/gpio_test.ini
+-	#chown system:system /data/data/[应用包名]/gpio_test.ini
 -	#echo 1 > sys/devices/soc/soc:gpio_default_exchange/gpio_default_ex
 -#fi
 -fi
 -
-diff --git a/device/qcom/kalama/SRM969_gpio.sh b/device/qcom/kalama/SRM969_gpio.sh
+diff --git a/device/qcom/kalama/gpiotest_gpio.sh b/device/qcom/kalama/gpiotest_gpio.sh
 new file mode 100755
 index 0000000..4786a3f
 --- /dev/null
-+++ b/device/qcom/kalama/SRM969_gpio.sh
++++ b/device/qcom/kalama/gpiotest_gpio.sh
 @@ -0,0 +1,541 @@
 +#!/vendor/bin/sh
 +#DBG_UART_TX     -- GPIO_26
@@ -658,12 +658,12 @@ index 0000000..4786a3f
 +#pins = "gpio44", "gpio45";
 +#gpio偏移 301
 +#================================================================================
-+# 按网表 SRM969_AUTO_ZB_SCH_V1.00_20260714.asc 重新适配 (loopback 矩阵)
++# 按网表 [项目代号]_AUTO_ZB_SCH_V1.00_20260714.asc 重新适配 (loopback 矩阵)
 +#   - 环回配对来源: 网表中每个串联电阻 R4xx 连接的两个 *_PIN_TEST 网络即一对环回脚
 +#   - 92 个 SoC SM_GPIOxxx PIN_TEST 中: 42 对 SoC 环回, 8 个链尾/单端为单端输入
 +#   - sysfs 编号 = SoC GPIO 号 + 301
 +#   - 特殊功能块(稳压器/torch/RGB LED/SD-auto/ADC)不在网表 PIN_TEST 域内, 保持原样,
-+#     需按 SRM969 硬件单独核实
++#     需按 [项目代号] 硬件单独核实
 +#--------------------------------------------------------------------------------
 +# 环回对(SoC 号): 见下方 raw 参考; sysfs 号 = raw + 301
 +# raw out: 2 7 13 16 31 48 52 65 67 70 71 72  88 107 119 121 124 127 128 140 152 154 155 161 164 166 170 171 174 175 176 178 179 180 182 186 192 194 195 198 201
@@ -705,14 +705,14 @@ index 0000000..4786a3f
 +#     ECALL_SW_ZB_GPIO <-> SM_GPIO5 (R436)   # gpio5 已在 gpio_single_input_soc 单端验证
 +#     AT10 无环回伙伴(仅 TVS/上拉), 需单端确认
 +###
-+# 以下为原板特殊功能单端测试(稳压器/torch/SD-auto)。按 SRM969 网表, 其中多数 sysfs 号
++# 以下为原板特殊功能单端测试(稳压器/torch/SD-auto)。按 [项目代号] 网表, 其中多数 sysfs 号
 +# 已被环回矩阵占用(会造成同一 GPIO 被 export 两次), 故冲突项已禁用; 保留项需按
-+# SRM969 实际外设核实。冲突禁用: 316/456/314/331/332/426-429/451/452
++# [项目代号] 实际外设核实。冲突禁用: 316/456/314/331/332/426-429/451/452
 +#gpio_single_input1=(316)   # 冲突: 316=SoC GPIO15, 已在 gpio_single_input_soc
 +#gpio_single_input2=(456)   # 冲突: 456=SoC GPIO155, 已在环回对(155,199)
 +#gpio_single_input3=(315 314 331 332)   # 冲突: 314/331/332 已在环回矩阵; torch LED 需按新硬件核实
 +#gpio_single_input4=(342  341 426 427 428 429 501  451 452 277 )   # 冲突: 426-429/451/452 已在环回矩阵
-+gpio_single_input4=(342 341 501 277)   # 保留非冲突项(需按 SRM969 硬件核实)
++gpio_single_input4=(342 341 501 277)   # 保留非冲突项(需按 [项目代号] 硬件核实)
 +gpio_single_input6=(138)
 +#gpio_num3=(   )
 +###
@@ -721,10 +721,10 @@ index 0000000..4786a3f
 +#####################create test report ##########################################
 +	gpio_test_file="/mnt/vendor/persist/gpiotest/gpio_test.ini"
 +	#meig_boot_mode=`cat /sys/iopartition/iopartition`
-+	#dest_save_file="/data/data/com.meigsmart.meigrs32/gpio_test.ini"
++	#dest_save_file="/data/data/[应用包名]/gpio_test.ini"
 +	dest_save_file="/mnt/vendor/persist/gpiotest/gpio_test_final.ini"
 +	test_result=1
-+	####SLM550 need to test in normal mode,so close the ffbm-97 mode############
++	####[项目代号] need to test in normal mode,so close the ffbm-97 mode############
 +	#meig_boot_mode_short=${meig_boot_mode:0:7}
 +	#if [ "$meig_boot_mode_short" = "ffbm-97" ]
 +	#then
@@ -1184,10 +1184,10 @@ index 0000000..4786a3f
 +	else
 +		echo "test_result=false" >> /mnt/vendor/persist/gpiotest/gpio_test.ini
 +	fi
-+	#cp /mnt/vendor/persist/gpiotest/gpio_test.ini /data/data/com.meigsmart.meigrs32/
++	#cp /mnt/vendor/persist/gpiotest/gpio_test.ini /data/data/[应用包名]/
 +	cp /mnt/vendor/persist/gpiotest/gpio_test.ini /mnt/vendor/persist/gpiotest/gpio_test_final.ini
 +	chmod 0744 /mnt/vendor/persist/gpiotest/gpio_test_final.ini
-+	#chown system:system /data/data/com.meigsmart.meigrs32/gpio_test.ini
++	#chown system:system /data/data/[应用包名]/gpio_test.ini
 +	#echo 1 > sys/devices/soc/soc:gpio_default_exchange/gpio_default_ex
 +#fi
 +fi
@@ -1201,8 +1201,8 @@ index 65a4875..e41f2a5 100755
      disabled
      oneshot
  #for gpiotest
--service meig_gpio_test /vendor/bin/sh /vendor/bin/SRM965_gpio.sh gpio_test
-+service meig_gpio_test /vendor/bin/sh /vendor/bin/SRM969_gpio.sh gpio_test
+-service meig_gpio_test /vendor/bin/sh /vendor/bin/gpiotest_gpio.sh gpio_test
++service meig_gpio_test /vendor/bin/sh /vendor/bin/gpiotest_gpio.sh gpio_test
      class late_start
      user root
      group root system 
@@ -1213,20 +1213,20 @@ index 720df08..8d5d677 100644
 @@ -254,7 +254,7 @@
  PRODUCT_BRAND := qti
  PRODUCT_MODEL := Kalama for arm64
- KERNEL_CONFIG := srm965_AutoTest
--PRODUCT_PACKAGES += SRM965_gpio.sh \
-+PRODUCT_PACKAGES += SRM969_gpio.sh \
-     SRM965_key_mount.sh \
-     SRM965_thermal_grasp.sh
+ KERNEL_CONFIG := [项目代号]_AutoTest
+-PRODUCT_PACKAGES += gpiotest_gpio.sh \
++PRODUCT_PACKAGES += gpiotest_gpio.sh \
+     [项目代号]_key_mount.sh \
+     [项目代号]_thermal_grasp.sh
 ```
 
 ## 补丁验证
 
-⚠️ **无法验证，源码树不可用**：项目 `LA.VENDOR.13.2.9`（SRM969）在 134 服务器 `134 服务器 workspace/` 下不存在，无法执行 `git apply --check`。补丁文件已归档至 [[01.驱动文档/GPIO/Qualcomm/SM8550-A16/91.源码与补丁索引/patches/197519.patch|197519.patch]]。
+⚠️ **无法验证，源码树不可用**：项目 `LA.VENDOR.13.2.9`（[项目代号]）在 134 服务器 `134 服务器 workspace/` 下不存在，无法执行 `git apply --check`。补丁文件已归档至 [[01.驱动文档/GPIO/Qualcomm/SM8550-A16/91.源码与补丁索引/patches/197519.patch|197519.patch]]。
 
 ## 源码归档
 
-> ⚠️ **源码文件不在本地归档**。项目 `LA.VENDOR.13.2.9`（SRM969）在 134 服务器上没有源码树，仅归档了 patch 文件本身。补丁修改的 4 个文件（AndroidBoard.mk / SRM969_gpio.sh / init.target.rc / kalama.mk）均为 device/qcom/kalama/ 下产品配置与脚本，如需获取源码可通过 Gerrit 拉取补丁（[[01.驱动文档/GPIO/Qualcomm/SM8550-A16/91.源码与补丁索引/patches/197519.patch|197519.patch]]）或查看补丁 diff 重建。
+> ⚠️ **源码文件不在本地归档**。项目 `LA.VENDOR.13.2.9`（[项目代号]）在 134 服务器上没有源码树，仅归档了 patch 文件本身。补丁修改的 4 个文件（AndroidBoard.mk / gpiotest_gpio.sh / init.target.rc / kalama.mk）均为 device/qcom/kalama/ 下产品配置与脚本，如需获取源码可通过 Gerrit 拉取补丁（[[01.驱动文档/GPIO/Qualcomm/SM8550-A16/91.源码与补丁索引/patches/197519.patch|197519.patch]]）或查看补丁 diff 重建。
 
 ### 补丁文件归档路径
 
@@ -1237,7 +1237,7 @@ index 720df08..8d5d677 100644
 | 文件 | 完整路径 | 说明 |
 |------|----------|------|
 | [[01.驱动文档/GPIO/Qualcomm/SM8550-A16/91.源码与补丁索引/patches/197519.patch\|197519.patch]] | 01.驱动文档/GPIO/Qualcomm/SM8550-A16/91.源码与补丁索引/patches/197519.patch | 完整补丁（已清理 From/Date/Change-Id） |
-| device/qcom/kalama/SRM969_gpio.sh | LA.VENDOR.13.2.9（远程，134 无源码树） | GPIO 全引脚测试脚本（重命名自 SRM965_gpio.sh） |
+| device/qcom/kalama/gpiotest_gpio.sh | LA.VENDOR.13.2.9（远程，134 无源码树） | GPIO 全引脚测试脚本（重命名自 gpiotest_gpio.sh） |
 | device/qcom/kalama/AndroidBoard.mk | LA.VENDOR.13.2.9（远程） | LOCAL_MODULE 定义 |
 | device/qcom/kalama/init.target.rc | LA.VENDOR.13.2.9（远程） | meig_gpio_test service |
 | device/qcom/kalama/kalama.mk | LA.VENDOR.13.2.9（远程） | PRODUCT_PACKAGES 集成 |

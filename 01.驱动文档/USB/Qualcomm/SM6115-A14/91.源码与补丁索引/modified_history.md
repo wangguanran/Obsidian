@@ -2,7 +2,7 @@
 
 ## Change #196403 (2026-08)
 
-- 提交: `[MT5205][120577][usb][Description]USB Type-C DIP ID host mux hubreset[Owner]tengqi`
+- 提交: `[[项目代号]][120577][usb][Description]USB Type-C DIP ID host mux hubreset[Owner][同事]`
 - 涉及文件:
   - `kernel_platform/msm-kernel/arch/arm64/configs/vendor/bengal_GKI.config` (+1/-0)
   - `kernel_platform/msm-kernel/drivers/extcon/extcon-usb-gpio.c` (+27/-3)

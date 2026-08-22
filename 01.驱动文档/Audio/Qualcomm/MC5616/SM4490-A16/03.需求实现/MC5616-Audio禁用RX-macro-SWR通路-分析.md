@@ -6,7 +6,7 @@
 |------|------|
 | Change | #196025 |
 | 标题 | [MC5616][93821][Audio] Disable RX macro/SWR path, drop VA always-on |
-| 作者 | zhourulei |
+| 作者 | [同事] |
 | 类型 | 需求 (power optimization) |
 | 芯片 | MC5616 (parrot/QCM4490) |
 | 平台 | SM4490-A16 |

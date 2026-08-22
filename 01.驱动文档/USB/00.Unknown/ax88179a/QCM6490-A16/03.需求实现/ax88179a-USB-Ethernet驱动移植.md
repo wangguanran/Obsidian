@@ -6,20 +6,20 @@
 |------|------|
 | Change | #196024 |
 | 项目 | meigla/kernel/qcom |
-| 分支 | Develop_QCM6490.LA.6.0_VENDOR_QCOM_Platform_Elo_Rigel |
-| 作者 | qianyiping |
+| 分支 | Develop_QCM6490.LA.6.0_VENDOR_QCOM_Platform_Elo_[项目代号] |
+| 作者 | [同事] |
 | 状态 | MERGED |
 | 类型 | 需求 (bring up) |
 | 芯片 | ASIX ax88179a |
-| 平台 | QCM6490 (Rigel) / Android 16 |
+| 平台 | QCM6490 ([项目代号]) / Android 16 |
 | 模块 | USB Ethernet |
 
-在 Rigel 平台 (QCM6490) 上移植 ASIX ax88179a USB Ethernet 驱动，支持基于 USB 接口的有线网络功能。该驱动由 ASIX 官方提供，支持 ax88179a 和 ax88179_178a 两款芯片，包含 PTP 时间同步功能。
+在 [项目代号] 平台 (QCM6490) 上移植 ASIX ax88179a USB Ethernet 驱动，支持基于 USB 接口的有线网络功能。该驱动由 ASIX 官方提供，支持 ax88179a 和 ax88179_178a 两款芯片，包含 PTP 时间同步功能。
 
 ## 补丁内容
 
 ```diff
-[PATCH] [RIGEL_A16][TaskID]120099[Description]ax88179a bring up in Rigel A16[owner]qianyiping
+[PATCH] [[项目代号]_A16][TaskID]120099[Description]ax88179a bring up in [项目代号] A16[owner][同事]
 
 diff --git a/configs/lahaina_consolidate.bzl b/configs/lahaina_consolidate.bzl
 index 794089f..d1ea01a 100644
@@ -138,7 +138,7 @@ CONFIG_USB_USBNET=y
 
 | 项目 | 内容 |
 |------|------|
-| 平台 | Rigel (QCM6490) |
+| 平台 | [项目代号] (QCM6490) |
 | Android 版本 | A16 |
 | 硬件 | ASIX ax88179a USB 3.0 to Gigabit Ethernet 适配器 |
 
@@ -263,12 +263,12 @@ drivers/net/usb/ax_usb_nic/
 
 ## 补充：内核 common 侧排除通用驱动绑定（#196763）
 
-**Change**: #196763 | **项目**: meigla/kernel/common | **分支**: Develop_QCM6490.LA.6.0_VENDOR_QCOM_Platform_Elo_Rigel | **作者**: qianyiping | **状态**: MERGED
+**Change**: #196763 | **项目**: meigla/kernel/common | **分支**: Develop_QCM6490.LA.6.0_VENDOR_QCOM_Platform_Elo_[项目代号] | **作者**: [同事] | **状态**: MERGED
 **任务**: Task 120099（与 #196024 同一任务，合并归档）
 
 ### 需求描述
 
-Rigel A16 上内核 `kernel/common` 的通用网络驱动会与 vendor 的 `ax_usb_nic` 驱动**竞争绑定** AX88179/178A 设备：
+[项目代号] A16 上内核 `kernel/common` 的通用网络驱动会与 vendor 的 `ax_usb_nic` 驱动**竞争绑定** AX88179/178A 设备：
 
 - `drivers/net/usb/ax88179_178a.c`（内核自带版本）通过 `driver_info` 绑定 0x0b95:0x1790 / 0x178a；
 - `drivers/net/usb/cdc_ncm.c` 的通用 CDC-NCM 匹配也可能命中（AX88179 支持 NCM 接口）。

@@ -43,6 +43,6 @@ UEFI（BOOT.MXF.1.0.c1，EDK2 派生）中 USB 与 PCIe 子系统：
 
 ## 与现有驱动架构的关系
 
-UEFI 驱动与 Linux 内核驱动是两套独立实现（EDK2 vs kernel/drivers）。该 revert 只影响 UEFI 侧 USB/PCIe/PMIC 行为；与内核侧 USB 驱动（如 dwc3）无直接耦合，但 UEFI 枚举结果会影响 OS 引导设备顺序。Rigel Linux（Ubuntu）平台后续如需 pcie-usb 能力，建议拆分为小粒度补丁重新评审。
+UEFI 驱动与 Linux 内核驱动是两套独立实现（EDK2 vs kernel/drivers）。该 revert 只影响 UEFI 侧 USB/PCIe/PMIC 行为；与内核侧 USB 驱动（如 dwc3）无直接耦合，但 UEFI 枚举结果会影响 OS 引导设备顺序。[项目代号] Linux（Ubuntu）平台后续如需 pcie-usb 能力，建议拆分为小粒度补丁重新评审。
 
 _Author: wangguanran_

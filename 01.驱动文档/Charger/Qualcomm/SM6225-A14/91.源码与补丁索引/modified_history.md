@@ -2,7 +2,7 @@
 
 ## Change #195273 (2026-08)
 
-- 提交: `[MT5825][TaskID]119595[Description]When the dock is connected to the host, the charging function will be affected[owner]qianyiping`
+- 提交: `[[项目代号]][TaskID]119595[Description]When the dock is connected to the host, the charging function will be affected[owner][同事]`
 - 涉及文件:
   - `kernel_platform/msm-kernel/drivers/power/supply/qcom/smb5-lib.c` (+26/-4)
 - 补丁验证: ✅ 可干净应用（REST API 父提交文件内容重建验证）

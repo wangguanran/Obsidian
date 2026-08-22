@@ -9,12 +9,12 @@ SM6115 平台 GPIO 子系统由四层构成：
 1. **TLMM pinctrl 驱动**（`drivers/pinctrl/qcom/pinctrl-scuba.c`）：管理引脚复用（mux）、上下拉/驱动强度（config）与保留引脚（reserved）；
 2. **GPIO 控制器**（gpiolib + msm gpio chip）：提供 gpiod 抽象，供各驱动与 DTS 引用；
 3. **消费方驱动**：meig_gpio_pulse（UIC 脉冲字符设备）、gpio-userspace（复位脚 sysfs 导出）、gpio-keys（按键）；
-4. **DT overlay**（scuba-iot-idp-overlay.dts）：MT5205 项目引脚功能分配与 pinctrl 状态定义。
+4. **DT overlay**（scuba-iot-idp-overlay.dts）：[项目代号] 项目引脚功能分配与 pinctrl 状态定义。
 
 ## pinctrl-scuba.c 关键点
 
-- `scuba_reserved_gpios[]`：定义不可被普通 GPIO 请求的保留引脚。MT5205 现状：`0, 1, 2, 3, 15, -1`（GPIO14 已释放给 MDB DET，GPIO16/17 已释放给 MDB UART）；
-- 引脚复用数据表（scuba_pinctrl 等）由高通基线生成，MT5205 仅在保留列表上做裁剪。
+- `scuba_reserved_gpios[]`：定义不可被普通 GPIO 请求的保留引脚。[项目代号] 现状：`0, 1, 2, 3, 15, -1`（GPIO14 已释放给 MDB DET，GPIO16/17 已释放给 MDB UART）；
+- 引脚复用数据表（scuba_pinctrl 等）由高通基线生成，[项目代号] 仅在保留列表上做裁剪。
 
 ## meig_gpio_pulse 驱动架构（/dev/uic_pulse）
 
@@ -62,13 +62,13 @@ GPIO32 脉冲 → IRQ → debounce(2ms) → 宽度在 [10,500]ms 且未 stuck �
 
 ## gpio-userspace 驱动
 
-`drivers/misc/gpio-userspace.c`：将 DT 中配置的 GPIO 导出为 `/sys/class/gpio_userspace/<label>/value`，default-state（0-low/1-high/2-input）。MT5205 使用：
+`drivers/misc/gpio-userspace.c`：将 DT 中配置的 GPIO 导出为 `/sys/class/gpio_userspace/<label>/value`，default-state（0-low/1-high/2-input）。[项目代号] 使用：
 
 - se_reset（GPIO102，默认高）、mdb_reset（GPIO36，空闲输出高）——均低有效复位脚。
 
 ## DT overlay 引脚分配要点（scuba-iot-idp-overlay.dts）
 
-- pinctrl 状态：`mt5205_se_reset`、`mt5205_mdb_reset`（output-high）、`mt5205_mdb_db_detect`（GPIO14 输入 pull-up）、`mt5205_pulse_default`（GPIO32 输入 pull-up / GPIO33 输出 8mA）；
+- pinctrl 状态：`[项目代号]_se_reset`、`[项目代号]_mdb_reset`（output-high）、`[项目代号]_mdb_db_detect`（GPIO14 输入 pull-up）、`[项目代号]_pulse_default`（GPIO32 输入 pull-up / GPIO33 输出 8mA）；
 - 根节点：`model = "Qualcomm Technologies, Inc. Scuba IOT IDP"`（实机为 Scuba IOT IDP，不是 Bengal）；
 - overlay 以 `/plugin/` 方式编译，节点挂在 &tlmm / &soc 下。
 

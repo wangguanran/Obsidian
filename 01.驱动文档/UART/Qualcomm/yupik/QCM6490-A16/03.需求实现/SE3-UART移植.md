@@ -5,13 +5,13 @@
 **状态：已合入**
 **来源：** Gerrit Change 195829 / 195831 / 195834（同一 TaskID 120615/120616）
 **项目：** meigla/platform/vendor/qcom-opensource/devicetree / qcm6490-la-6-0_amss_standard_oem
-**分支：** Develop_QCM6490.LA.6.0_VENDOR_QCOM_Platform_Elo_Rigel / master_meig
-**作者：** 赵前
+**分支：** Develop_QCM6490.LA.6.0_VENDOR_QCOM_Platform_Elo_[项目代号] / master_meig
+**作者：** [同事]
 **合入时间：** 2026-08-15
 
 ## 需求描述
 
-在 Rigel_A16 平台（QCM6490）上移植 SE3 UART 功能，包括：
+在 [项目代号]_A16 平台（QCM6490）上移植 SE3 UART 功能，包括：
 
 1. **SE3 UART 引脚配置和总线命名**（#195829）：在 DTS 中配置 SE3 UART 对应的 pinctrl、QUPv3 节点和总线别名，使能 SE3 串口功能。
 2. **默认使能外部 UART**（#195831）：在多个产品 overlay 中默认开启外部 UART 功能。
@@ -22,7 +22,7 @@
 - SoC：QCM6490（yupikp）
 - Android 版本：A16
 - 内核：Linux 6.0
-- 平台：[项目代号：Rigel_A16 / Elo_Rigel]
+- 平台：[项目代号：[项目代号]_A16 / Elo_[项目代号]]
 
 ## 方案
 

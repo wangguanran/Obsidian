@@ -3,7 +3,7 @@
 ## 平台概况
 
 - **SoC**: Qualcomm SM8550（kalama）
-- **Android**: 16（SRM969_A16_AutoTest 产测分支）
+- **Android**: 16（[项目代号]_A16_AutoTest 产测分支）
 - **GPIO 体系**:
   - SoC TLMM GPIO：系统 GPIO 偏移约 300~500+（含 PMIC 扩展）
   - PMIC GPIO：PM8550 系列（PM8550VE/PM8550VW/PM8550VS/PMK8550），经 SPMI 访问
@@ -15,7 +15,7 @@
 产测 APK/工具
    │ start meig_gpio_test (init service, late_start, root)
    ▼
-/vendor/bin/SRM969_gpio.sh gpio_test
+/vendor/bin/gpiotest_gpio.sh gpio_test
    │ echo N > /sys/class/gpio/export
    │ echo out/in > /sys/class/gpio/gpioN/direction
    │ echo 0/1 > /sys/class/gpio/gpioN/value

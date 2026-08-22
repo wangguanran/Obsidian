@@ -5,7 +5,7 @@
 - **Change**: #196025
 - **项目**: LA.VENDOR.1.0.R1
 - **分支**: master_Snapdragon_Premium_High_2021.SPF.2.0.2_MC5616
-- **作者**: zhourulei
+- **作者**: [同事]
 - **状态**: MERGED
 - **类型**: 需求 (降功耗优化)
 - **类型**: 需求 (power optimization)
@@ -146,7 +146,7 @@ tinycap /data/record.wav
 ## 补丁内容
 
 ```diff
-[PATCH] [MC5616][93821][Audio] Disable RX macro/SWR path, drop VA always-on [Owner]zhourulei
+[PATCH] [MC5616][93821][Audio] Disable RX macro/SWR path, drop VA always-on [Owner][同事]
 
 diff --git a/vendor/qcom/opensource/audio-kernel/asoc/codecs/lpass-cdc/lpass-cdc-rx-macro.c b/vendor/qcom/opensource/audio-kernel/asoc/codecs/lpass-cdc/lpass-cdc-rx-macro.c
 index 058154b..543e672 100644
@@ -326,7 +326,7 @@ index e5e178b..9341cd9 100755
 | `parrot-audio-qrd.dtsi` | [[04.问题案例/源码归档/parrot-audio-qrd.dtsi\\|parrot-audio-qrd.dtsi]] | 补丁前基线，32行，来自 134 HEAD |
 | 归档索引 | [[04.问题案例/源码归档/README.md\\|README.md]] | 含 commit 历史、补丁验证状态 |
 
-- **134 仓库**: `/home3/wangguanran/workspace/MC5616/LA.VENDOR.1.0.R1` (HEAD `6ebcb463ebb`)
+- **134 仓库**: `/home3/[同事]/workspace/MC5616/LA.VENDOR.1.0.R1` (HEAD `6ebcb463ebb`)
 - **分支**: `master_Snapdragon_Premium_High_2021.SPF.2.0.2_MC5616`
 - **补丁状态**: Gerrit #196025 MERGED，134 仓库 **未合入**
 

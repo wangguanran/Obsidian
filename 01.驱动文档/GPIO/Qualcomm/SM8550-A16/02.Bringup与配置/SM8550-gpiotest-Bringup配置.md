@@ -6,7 +6,7 @@
 
 - **型号**: Qualcomm SM8550（kalama）
 - **厂商**: Qualcomm
-- **功能**: 旗舰 SoC，产测分支 SRM969_A16_AutoTest
+- **功能**: 旗舰 SoC，产测分支 [项目代号]_A16_AutoTest
 
 ## 平台信息
 
@@ -17,8 +17,8 @@
 
 | 配置项 | 位置 | 说明 |
 |--------|------|------|
-| 脚本打包 | device/qcom/kalama/AndroidBoard.mk | LOCAL_MODULE := SRM969_gpio.sh |
-| 产品集成 | device/qcom/kalama/kalama.mk | PRODUCT_PACKAGES += SRM969_gpio.sh |
+| 脚本打包 | device/qcom/kalama/AndroidBoard.mk | LOCAL_MODULE := gpiotest_gpio.sh |
+| 产品集成 | device/qcom/kalama/kalama.mk | PRODUCT_PACKAGES += gpiotest_gpio.sh |
 | init 服务 | device/qcom/kalama/init.target.rc | service meig_gpio_test（late_start/disabled/oneshot） |
 | 结果路径 | /mnt/vendor/persist/gpiotest/gpio_test_final.ini | 测试结果 |
 
@@ -27,7 +27,7 @@
 ```bash
 adb shell start meig_gpio_test
 # 或
-adb root && adb shell /vendor/bin/sh /vendor/bin/SRM969_gpio.sh gpio_test
+adb root && adb shell /vendor/bin/sh /vendor/bin/gpiotest_gpio.sh gpio_test
 ```
 
 ## 参考资料

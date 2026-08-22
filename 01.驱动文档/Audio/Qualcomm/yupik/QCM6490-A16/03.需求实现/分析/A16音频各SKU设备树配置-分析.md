@@ -1,7 +1,7 @@
-# 分析：Rigel A16 音频各 SKU 设备树配置
+# 分析：[项目代号] A16 音频各 SKU 设备树配置
 
 **版本号：v1.0**
-**对应文档：** [[01.驱动文档/Audio/Qualcomm/yupik/QCM6490-A16/03.需求实现/Rigel-A16音频各SKU设备树配置.md|Rigel-A16音频各SKU设备树配置]]
+**对应文档：** [[01.驱动文档/Audio/Qualcomm/yupik/QCM6490-A16/03.需求实现/A16音频各SKU设备树配置.md|A16音频各SKU设备树配置]]
 
 ## 技术背景
 
@@ -38,6 +38,6 @@ Qualcomm yupik（QCM6490）平台音频使用 ASoC 框架：
 
 ## 与现有驱动架构的关系
 
-该提交是设备树层配置，与内核 ASoC 驱动（machine/bolero/wsa883x）解耦；同一 yupik 平台的其它项目（如 MC937 相机、Rigel 系列）可复用该 overlay 模式。与既有 QCM6490-A16 平台的差异主要体现在 SKU 级音频通路裁剪。
+该提交是设备树层配置，与内核 ASoC 驱动（machine/bolero/wsa883x）解耦；同一 yupik 平台的其它项目（如 MC937 相机、[项目代号] 系列）可复用该 overlay 模式。与既有 QCM6490-A16 平台的差异主要体现在 SKU 级音频通路裁剪。
 
 _Author: wangguanran_

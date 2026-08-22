@@ -2,7 +2,7 @@
 
 ## Change #196282 (2026-08-18 归档)
 
-- 提交: [MC5617][TaskID]118650[Description]Add a feature that speaker and handset can play at the same time.[owner]weirong
+- 提交: [MC5617][TaskID]118650[Description]Add a feature that speaker and handset can play at the same time.[owner][同事]
 - 涉及文件:
   - `vendor/qcom/opensource/audio-hal/primary-hal/configs/parrot/parrot.mk`（+5/−0，新增 `persist.vendor.audio.media.spk_rcv_dual=false`）
   - `vendor/qcom/opensource/audio-hal/primary-hal/hal/core/platform/Platform.cpp`（+52/−0，新增 `maybeAppendHandsetForMediaSpkRcvDual()`）

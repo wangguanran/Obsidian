@@ -2,11 +2,11 @@
 
 ## 目录说明
 
-本目录存放 ax88179a USB Ethernet 驱动移植的原始源码，与 `patches/196024.patch`（Gerrit Change #196024，RIGEL_A16）配对。
+本目录存放 ax88179a USB Ethernet 驱动移植的原始源码，与 `patches/196024.patch`（Gerrit Change #196024，[项目代号]_A16）配对。
 
 ## 文件来源
 
-源码从 134 服务器 Rigel A16 源码树检索归档：
+源码从 134 服务器 [项目代号] A16 源码树检索归档：
 
 ```
 [内网路径]/LA.VENDOR.16.2.1/kernel_platform/soc-repo/

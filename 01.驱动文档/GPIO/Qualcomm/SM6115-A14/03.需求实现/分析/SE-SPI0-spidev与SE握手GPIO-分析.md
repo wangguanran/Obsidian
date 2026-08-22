@@ -22,13 +22,13 @@ QUPv3（Qualcomm Universal Peripheral）SE0 是 AP 侧的一组复用串行引�
 - `scuba_reserved_gpios[]` 从 `0,1,2,3,15,-1` 收窄到 `15,-1`。GPIO0~3 释放给 SE0 SPI；GPIO15 保持保留（MDB 用途预留）。释放后，SE0 SPI 的 `pinctrl-0`（qupv3_se0_spi 节点）才能正常请求引脚。
 
 ### scuba-iot-idp-overlay.dts
-- 新增握手 GPIO pinctrl：`mt5205_se_ack`（GPIO37 输出低）、`mt5205_se_rdy`（GPIO63 输入高阻），并入 `gpio-userspace` 节点 pinctrl-0；
+- 新增握手 GPIO pinctrl：`[项目代号]_se_ack`（GPIO37 输出低）、`[项目代号]_se_rdy`（GPIO63 输入高阻），并入 `gpio-userspace` 节点 pinctrl-0；
 - `se-ack`/`se-rdy` 子节点：`default-state` 0（输出低）/2（输入 high-Z）；
 - `&qupv3_se0_spi`：`status="ok"`、10MHz、`qcom,disable-autosuspend`（Secure MCU 通信不允许 runtime suspend 打断），`spidev@0` 使用 `qcom,spi-msm-codec-slave` 这个 spidev 白名单内的 compatible（否则 spidev 拒绝 probe）；
 - 显式禁用 `qupv3_se0_i2c` 与 `qupv3_se0_4uart`：SE0 同一时刻只能一种协议，防止 DT 层面功能冲突。
 
-### QUPAC_Access_MT5205.c（TZ 侧，新增 215 行）
-- 复制自平台模板并做产品化裁剪，`ODM_PROJECT_MT5205` 条件编译：
+### QUPAC_Access.c（TZ 侧，新增 215 行）
+- 复制自平台模板并做产品化裁剪，`ODM_PROJECT_[项目代号]` 条件编译：
   - SE0 → SPI FIFO AC_HLOS：核心改动，TZ 释放 SE0 SPI 给 HLOS；
   - SE1 → UART_4W（GPIO69/70）：本板 RS232 需求（非默认 I2C）；
   - SE5 → UART_4W（GPIO16/17）：MDB UART（非默认 SPI Fingerprint，且原为 AC_TZ）；

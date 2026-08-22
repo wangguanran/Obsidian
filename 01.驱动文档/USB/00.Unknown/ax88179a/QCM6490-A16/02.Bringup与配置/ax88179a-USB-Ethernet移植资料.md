@@ -5,7 +5,7 @@
 ## 芯片信息
 
 - **芯片**：ASIX ax88179a（USB 3.0/2.0 Gigabit Ethernet 控制器）
-- **平台**：QCM6490（Rigel）/ Android 16
+- **平台**：QCM6490（[项目代号]）/ Android 16
 - **支持型号**：ax88179a、ax88179_178a（含 PTP 时间同步）
 
 ## 硬件接口

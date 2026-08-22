@@ -9,7 +9,7 @@
 源码从 134 服务器 MC5616（sm7325 平台）AMSS 源码树检索归档（2026-08-20）：
 
 ```
-/home3/wangguanran/workspace/MC5616/snapdragon-premium-high-2021-spf-2-0-2_amss_standard_oem_apq/ADSP.HT.5.7/
+/home3/[同事]/workspace/MC5616/snapdragon-premium-high-2021-spf-2-0-2_amss_standard_oem_apq/ADSP.HT.5.7/
 ```
 
 ## 文件索引

@@ -2,7 +2,7 @@
 
 > **模块**: Camera | **厂商**: Qualcomm | **芯片**: yupik (QCM6490)
 > **平台**: QCM6490-A16 (meigla camera-devicetree) | **类型**: Bug
-> **Change**: #196280 | **作者**: zhaoqian | **状态**: MERGED
+> **Change**: #196280 | **作者**: [同事] | **状态**: MERGED
 
 ---
 
@@ -12,11 +12,11 @@
 |------|------|
 | Change | #196280 |
 | 项目仓库 | meigla/platform/vendor/opensource/camera-devicetree |
-| 分支 | Develop_QCM6490.LA.6.0_VENDOR_QCOM_Platform_Elo_Rigel |
+| 分支 | Develop_QCM6490.LA.6.0_VENDOR_QCOM_Platform_Elo_[项目代号] |
 | 禅道任务 | Task 120725 |
-| 作者 | zhaoqian |
+| 作者 | [同事] |
 | 芯片 | Qualcomm QCM6490 (yupik) |
-| 平台 | QCM6490-A16（Rigel 系列） |
+| 平台 | QCM6490-A16（[项目代号] 系列） |
 | 模块 | Camera (CCI I2C) |
 
 ## 现象
@@ -100,7 +100,7 @@ GPIO73/74（CCI2 的 I2C 数据/时钟）被占用后与其他外设（或复用
 ## 补丁内容
 
 ```diff
-Subject: [PATCH] [MC937][TaskID]120725[Description]camera not working[solution]release gpio73\gpio74[owner]wangzhiwen
+Subject: [PATCH] [MC937][TaskID]120725[Description]camera not working[solution]release gpio73\gpio74[owner][同事]
 
 diff --git a/937/pvt/yupik-camera-937-pvt.dtsi b/937/pvt/yupik-camera-937-pvt.dtsi
 index b6becc4..4369524 100644

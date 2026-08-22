@@ -5,7 +5,7 @@
 
 ## 技术背景
 
-MT5825 (SM6225/khaje) 设备支持 POGO 接口连接 Dock。Dock 提供 USB host 功能（通过板载 HUB），同时设备需要继续通过 DCIN 充电。
+[项目代号] (SM6225/khaje) 设备支持 POGO 接口连接 Dock。Dock 提供 USB host 功能（通过板载 HUB），同时设备需要继续通过 DCIN 充电。
 
 SMB5 充电器有两种 VBUS 输出路径：
 - **OTG_EN 路径**：充电器自身 boost 输出 5V（`smblib_notify_usb_host()` 内部会打开 OTG 并通知 USB 控制器）；
@@ -78,7 +78,7 @@ pogo IRQ → smblib_pogo_irq_back_det_delayed_work()
 
 ## 与现有驱动架构的关系
 
-- 本次改动仅影响 `smblib_pogo_*` 这一条定制路径，属 MT5825 平台特有逻辑（`[POGO_USB]` 日志前缀）；
+- 本次改动仅影响 `smblib_pogo_*` 这一条定制路径，属 [项目代号] 平台特有逻辑（`[POGO_USB]` 日志前缀）；
 - `smblib_notify_extcon_props` / `extcon_set_state_sync` 为 smb5-lib 既有机制，复用而无新增接口；
 - 与 [[01.驱动文档/Charger/Qualcomm/SM6225-A14/01.原理与架构/SMB5充电驱动架构分析.md|SMB5 充电驱动架构]] 中描述的 extcon 通知链一致：充电器作为 extcon provider，dwc3 为 consumer。
 

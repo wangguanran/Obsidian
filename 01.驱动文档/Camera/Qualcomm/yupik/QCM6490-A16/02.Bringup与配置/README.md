@@ -1,6 +1,6 @@
 # QCM6490-A16 (yupik) Camera 平台移植资料
 
-> 平台：QCM6490 (yupik) / Android 16 | 项目：MC937（Rigel 系列）| 内核树：meigla kernel (LA.6.0)
+> 平台：QCM6490 (yupik) / Android 16 | 项目：MC937（[项目代号] 系列）| 内核树：meigla kernel (LA.6.0)
 
 ## 硬件接口
 
@@ -19,7 +19,7 @@
 
 ## 配置说明
 
-- camera devicetree 仓库：`meigla/platform/vendor/opensource/camera-devicetree`（分支 `Develop_QCM6490.LA.6.0_VENDOR_QCOM_Platform_Elo_Rigel`）
+- camera devicetree 仓库：`meigla/platform/vendor/opensource/camera-devicetree`（分支 `Develop_QCM6490.LA.6.0_VENDOR_QCOM_Platform_Elo_[项目代号]`）
 - 产品文件：`937/pvt/yupik-camera-937-pvt.dtsi`
 - CCI1 节点已释放 CCI2（GPIO73/74），仅保留 CCI3（GPIO75/76）
 

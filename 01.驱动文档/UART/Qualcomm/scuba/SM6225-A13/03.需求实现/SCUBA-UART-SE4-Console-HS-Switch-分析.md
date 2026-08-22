@@ -12,11 +12,11 @@
 |------|------|
 | Change | #196150 |
 | 项目 | LA.VENDOR.13.2.1 |
-| 分支 | MT5205 |
-| 作者 | tengqi |
+| 分支 | [项目代号] |
+| 作者 | [同事] |
 | 状态 | MERGED |
 | 类型 | 需求 (feature) |
-| 标题 | [MT5205][120574][uart] fastboot oem uartdebug SE4 console/HS switch |
+| 标题 | [[项目代号]][120574][uart] fastboot oem uartdebug SE4 console/HS switch |
 
 ### 摘要
 

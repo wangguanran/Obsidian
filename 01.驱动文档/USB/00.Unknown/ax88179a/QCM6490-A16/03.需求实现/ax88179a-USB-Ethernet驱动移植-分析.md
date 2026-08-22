@@ -5,12 +5,12 @@
 | 分析项 | 内容 |
 |--------|------|
 | Change-Id | #196024 |
-| 标题 | ax88179a bring up in Rigel A16 |
-| 作者 | qianyiping |
+| 标题 | ax88179a bring up in [项目代号] A16 |
+| 作者 | [同事] |
 | 类型 | 需求 (bring up) |
 | 状态 | MERGED |
-| 分支 | Develop_QCM6490.LA.6.0_VENDOR_QCOM_Platform_Elo_Rigel |
-| 平台 | QCM6490 (Rigel) / Android 16 |
+| 分支 | Develop_QCM6490.LA.6.0_VENDOR_QCOM_Platform_Elo_[项目代号] |
+| 平台 | QCM6490 ([项目代号]) / Android 16 |
 
 ## 变更范围
 

@@ -2,7 +2,7 @@
 
 > **模块**: Charger | **厂商**: Qualcomm | **芯片**: SDM660
 > **平台**: SDM660-A14 | **类型**: 需求
-> **Change**: #195420 | **作者**: qianyiping | **状态**: MERGED
+> **Change**: #195420 | **作者**: [同事] | **状态**: MERGED
 
 ## 基本信息
 
@@ -11,7 +11,7 @@
 | Change | #195420 |
 | 项目 | LA.UM.10.2.1 |
 | 分支 | master_MT568 |
-| 作者 | qianyiping |
+| 作者 | [同事] |
 | 类型 | 需求（新增客户 API） |
 | 芯片 | Qualcomm SDM660 |
 | 平台 | SDM660-A14（MT578，Android 14） |

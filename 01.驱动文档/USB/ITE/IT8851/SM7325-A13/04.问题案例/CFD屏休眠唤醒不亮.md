@@ -6,7 +6,7 @@
 **来源：** Gerrit Change 195129
 **项目：** LA.UM.9.14.1
 **分支：** master_LA.4.0_MT912
-**作者：** 赵前
+**作者：** [同事]
 **合入时间：** 2026-08-15
 
 ## 现象
@@ -61,10 +61,10 @@ IT8851 作为 Type-C 控制器，负责检测 USB 插入方向、协商 PD 协�
 
 ```
 commit fc207b938710c3754b95116e14428ed7b78e60d3
-Author: 赵前 <zhaoqian@example.com>
+Author: [同事] <[同事]@example.com>
 Date:   [日期]
 
-    [RIG5EM-3701][120301]Addressing the issue of the CFD screen occasionally not lighting up after suspend/resume[owner]zhaoqian
+    [RIG5EM-3701][120301]Addressing the issue of the CFD screen occasionally not lighting up after suspend/resume[owner][同事]
 
 diff --git a/kernel/msm-5.4/drivers/meig-tools/it8851.c b/kernel/msm-5.4/drivers/meig-tools/it8851.c
 index 0000000..0000000

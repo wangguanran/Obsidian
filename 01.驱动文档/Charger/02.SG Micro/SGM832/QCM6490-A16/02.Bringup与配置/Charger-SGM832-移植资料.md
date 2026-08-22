@@ -22,6 +22,6 @@
 
 ## 相关提交
 
-- #196751（Rigel A16 bring up sgm832 + cash）
+- #196751（[项目代号] A16 bring up sgm832 + cash）
 
 _Author: wangguanran_

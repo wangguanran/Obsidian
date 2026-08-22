@@ -7,7 +7,7 @@
 
 高通 SDE 显示框架的背光控制支持 `bl_ctrl_pwm` 模式：由 PMIC 的 PWM 通道产生 PWM 驱动背光 IC。`qcom,bl-pmic-pwm-period-usecs` 定义 PWM 周期（us），周期越小频率越高。人耳可听范围约 20Hz~20kHz，10kHz 的 PWM 与电感/陶瓷电容耦合后可能产生可闻噪声，因此显示类产品通常要求 PWM 频率 ≥ 20kHz（部分要求 25kHz+）。
 
-MT5205 背光 PWM 通道为 PM2250 PWM3（`pm2250_pwm3`），面板为 st7701s 与 jd9365da 两块 720p 屏，均通过 `dsi_panel_pwr_supply_mt5205` 电源组与 `bl_ctrl_pwm` 控制。
+[项目代号] 背光 PWM 通道为 PM2250 PWM3（`pm2250_pwm3`），面板为 st7701s 与 jd9365da 两块 720p 屏，均通过 `dsi_panel_pwr_supply_[项目代号]` 电源组与 `bl_ctrl_pwm` 控制。
 
 ## 代码改动分析
 
@@ -20,7 +20,7 @@ MT5205 背光 PWM 通道为 PM2250 PWM3（`pm2250_pwm3`），面板为 st7701s �
 
 ## 潜在风险
 
-- 背光 IC 的 PWM 输入频率上限：若背光 IC 内部滤波器或使能逻辑对 20kHz 响应不佳，亮度曲线可能偏移；MT5205 实测无异常。
+- 背光 IC 的 PWM 输入频率上限：若背光 IC 内部滤波器或使能逻辑对 20kHz 响应不佳，亮度曲线可能偏移；[项目代号] 实测无异常。
 - duty 精度：周期减半后，同分辨率下步进精度降低（50us/4095 级 ≈ 12.2ns/级），对高精度调光有轻微影响，常规使用无感知。
 - 仅修改 scuba 侧：bengal-sde-display-idp.dtsi（参考板）仍为 100us，若后续复用 Bengal 参考配置需同步评估。
 

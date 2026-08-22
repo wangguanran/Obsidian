@@ -6,10 +6,10 @@
 |------|------|
 | **Change** | #196025 |
 | **标题** | [MC5616][93821][Audio] Disable RX macro/SWR path, drop VA always-on |
-| **作者** | zhourulei |
+| **作者** | [同事] |
 | **状态** | MERGED (Gerrit) / 未合入 134 仓库 |
 | **归档日期** | 2026-08-18 |
-| **源码来源** | 134 服务器 (`/home3/wangguanran/workspace/MC5616/LA.VENDOR.1.0.R1`) |
+| **源码来源** | 134 服务器 (`/home3/[同事]/workspace/MC5616/LA.VENDOR.1.0.R1`) |
 | **134 HEAD** | `6ebcb463ebb` — V13 compilation script update |
 
 ## 文件清单
@@ -44,7 +44,7 @@ c2094387615 SPF 2.0.1 baseline
 
 ### parrot-audio-overlay.dtsi
 ```
-6d0a4964b8e [114574] audio bring up speaker for cat1 (weirong)
+6d0a4964b8e [114574] audio bring up speaker for cat1 ([同事])
 d27849eab23 [96634/96633] audio bring up speaker and mic
 100851c1c85 [NULL] bring up sound card — remove wcd and wsa
 c2094387615 SPF 2.0.1 baseline
@@ -52,7 +52,7 @@ c2094387615 SPF 2.0.1 baseline
 
 ### parrot-audio-qrd.dtsi
 ```
-8267868a5c6 [114575] audio bring up mic for cat1 (weirong)
+8267868a5c6 [114575] audio bring up mic for cat1 ([同事])
 d27849eab23 [96634/96633] audio bring up speaker and mic
 100851c1c85 [NULL] bring up sound card — remove wcd and wsa
 c2094387615 SPF 2.0.1 baseline

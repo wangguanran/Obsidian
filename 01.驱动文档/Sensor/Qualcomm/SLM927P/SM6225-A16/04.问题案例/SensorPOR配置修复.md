@@ -6,7 +6,7 @@
 **来源：** Gerrit Change 195840
 **项目：** iot-high-mid-2024-spf-3-0_amss_standard_oem
 **分支：** master_meig
-**作者：** 赵前
+**作者：** [同事]
 **合入时间：** 2026-08-15
 
 ## 现象

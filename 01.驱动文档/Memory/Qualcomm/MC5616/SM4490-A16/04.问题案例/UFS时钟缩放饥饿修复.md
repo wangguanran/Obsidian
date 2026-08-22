@@ -2,7 +2,7 @@
 
 > **模块**: Memory | **厂商**: Qualcomm | **芯片**: MC5616 (SM4490/parrot)
 > **平台**: SM4490-A16 (LA.VENDOR.1.0.R1) | **类型**: Bug
-> **Change**: #197041 | **作者**: zhourulei | **状态**: MERGED
+> **Change**: #197041 | **作者**: [同事] | **状态**: MERGED
 
 ---
 
@@ -10,7 +10,7 @@
 
 | Change | 项目 | 分支 | 作者 | 类型 | 芯片 | 平台 | 模块 |
 |--------|------|------|------|------|------|------|------|
-| #197041 | LA.VENDOR.1.0.R1 | master_Snapdragon_Premium_High_2021.SPF.2.0.2_MC5616 | zhourulei | Bug | SM4490 (parrot) | SM4490-A16 | Memory/UFS |
+| #197041 | LA.VENDOR.1.0.R1 | master_Snapdragon_Premium_High_2021.SPF.2.0.2_MC5616 | [同事] | Bug | SM4490 (parrot) | SM4490-A16 | Memory/UFS |
 
 ## 现象
 

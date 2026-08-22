@@ -2,7 +2,7 @@
 
 ## Change #196185 (2026-08-18 归档)
 
-- 提交: [MC5616][96455][Display]Disable ESD check for r66451 AMOLED video panel [Owner]zhourulei
+- 提交: [MC5616][96455][Display]Disable ESD check for r66451 AMOLED video panel [Owner][同事]
 - 涉及文件:
   - `vendor/qcom/proprietary/display-devicetree/display/parrot-sde-display-common.dtsi`（+1/−1，注释 `&dsi_r66451_amoled_video` 节点 `qcom,esd-check-enabled`）
 - 补丁验证: ✅ 可干净应用（134 源码树直接 git apply --check）

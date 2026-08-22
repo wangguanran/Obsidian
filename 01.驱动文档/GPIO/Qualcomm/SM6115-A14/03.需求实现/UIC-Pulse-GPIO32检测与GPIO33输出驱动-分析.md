@@ -37,11 +37,11 @@ Linux 侧实现此类脉冲检测的常用组合是 GPIO IRQ + hrtimer（高精�
 
 ### 3. bindings/misc/meig,gpio-pulse.txt（+85 行，新文件）
 
-binding 文档：compatible、channel 子节点属性（label/in-gpios/out-gpios/debounce-us/min-width-us/max-width-us/default-emit-us/meig,in-active-high/meig,mask-irq-on-emit/pinctrl）、运行时参数、ioctl/sysfs 说明、MT5205 直连示例与极性说明。
+binding 文档：compatible、channel 子节点属性（label/in-gpios/out-gpios/debounce-us/min-width-us/max-width-us/default-emit-us/meig,in-active-high/meig,mask-irq-on-emit/pinctrl）、运行时参数、ioctl/sysfs 说明、[项目代号] 直连示例与极性说明。
 
 ### 4. scuba-iot-idp-overlay.dts（+46/-0）
 
-新增 `mt5205_pulse_default` pinctrl（GPIO32 输入 + bias-pull-up、GPIO33 输出 drive-strength 8 + output-low）与 `meig_pulse` 节点（in-gpios GPIO32 + meig,in-active-high、out-gpios GPIO33、debounce 2000us、min 10ms、max 500ms、default-emit 50ms）。
+新增 `[项目代号]_pulse_default` pinctrl（GPIO32 输入 + bias-pull-up、GPIO33 输出 drive-strength 8 + output-low）与 `meig_pulse` 节点（in-gpios GPIO32 + meig,in-active-high、out-gpios GPIO33、debounce 2000us、min 10ms、max 500ms、default-emit 50ms）。
 
 ### 5. Kconfig / Makefile / bengal_GKI.config
 

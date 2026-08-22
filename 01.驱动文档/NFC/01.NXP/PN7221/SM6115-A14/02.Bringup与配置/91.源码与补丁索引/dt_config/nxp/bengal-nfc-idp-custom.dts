@@ -1,7 +1,7 @@
 /dts-v1/;
 /plugin/;
 
-#include "bengal-nfc-mt5611.dtsi"
+#include "bengal-nfc.dtsi"
 / {
 	model = "Qualcomm Technologies, Inc. BENGAL IDP";
 	compatible = "qcom,bengal-idp", "qcom,bengal";

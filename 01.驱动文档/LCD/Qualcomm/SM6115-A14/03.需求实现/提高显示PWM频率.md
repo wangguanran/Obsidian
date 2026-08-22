@@ -2,7 +2,7 @@
 
 > **模块**: LCD | **厂商**: Qualcomm | **芯片**: SM6115 (scuba)
 > **平台**: SM6115-A14 (LA.VENDOR.13.2.1) | **类型**: 需求
-> **Change**: #196443 | **作者**: lixianghui | **状态**: MERGED
+> **Change**: #196443 | **作者**: [同事] | **状态**: MERGED
 
 ---
 
@@ -10,7 +10,7 @@
 
 | Change | 项目 | 分支 | 作者 | 类型 | 芯片 | 平台 | 模块 |
 |--------|------|------|------|------|------|------|------|
-| #196443 | LA.VENDOR.13.2.1 | MT5205 | lixianghui | 需求 | SM6115 (scuba) | SM6115-A14 | LCD |
+| #196443 | LA.VENDOR.13.2.1 | [项目代号] | [同事] | 需求 | SM6115 (scuba) | SM6115-A14 | LCD |
 
 ## 需求描述
 
@@ -54,7 +54,7 @@ qcom,mdss-dsi-bl-max-level = <4095>;
 ## 补丁内容
 
 ```diff
-Subject: [PATCH]  [MT5205][TaskID]120699[Description]Increase the display PWM frequency[Owner]lixianghui
+Subject: [PATCH]  [[项目代号]][TaskID]120699[Description]Increase the display PWM frequency[Owner][同事]
 
 ---
 
@@ -63,7 +63,7 @@ index 627d415..124a383 100755
 --- a/vendor/qcom/proprietary/display-devicetree/display/scuba-sde-display-idp.dtsi
 +++ b/vendor/qcom/proprietary/display-devicetree/display/scuba-sde-display-idp.dtsi
 @@ -112,7 +112,7 @@
- 	qcom,panel-supply-entries = <&dsi_panel_pwr_supply_mt5205>;
+ 	qcom,panel-supply-entries = <&dsi_panel_pwr_supply_[项目代号]>;
  	qcom,mdss-dsi-bl-pmic-control-type = "bl_ctrl_pwm";
  	pwms = <&pm2250_pwm3 0 0>;
 -	qcom,bl-pmic-pwm-period-usecs = <100>;
@@ -72,7 +72,7 @@ index 627d415..124a383 100755
  	qcom,mdss-dsi-bl-max-level = <4095>;
  	qcom,platform-te-gpio = <&tlmm 81 0>;
 @@ -136,7 +136,7 @@
- 	qcom,panel-supply-entries = <&dsi_panel_pwr_supply_mt5205>;
+ 	qcom,panel-supply-entries = <&dsi_panel_pwr_supply_[项目代号]>;
  	qcom,mdss-dsi-bl-pmic-control-type = "bl_ctrl_pwm";
  	pwms = <&pm2250_pwm3 0 0>;
 -	qcom,bl-pmic-pwm-period-usecs = <100>;

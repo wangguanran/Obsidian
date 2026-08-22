@@ -47,7 +47,7 @@ GPIO 请求由 camera devicetree 解析（`qcom-camera-cci` 驱动 / camera prob
 ## 与现有驱动架构的关系
 
 - 本修改属于 camera-devicetree 仓库（`meigla/platform/vendor/opensource/camera-devicetree`），与 kernel 内的 `drivers/media/platform/qcom/camera` 配合
-- 同类问题在 MC937 项目由 Rigel 平台（QCM6490）设计 -> 若其他 yupik 系产品使用相同 base，需检查是否有同样的 CCI2/CCI3 误占用
+- 同类问题在 MC937 项目由 [项目代号] 平台（QCM6490）设计 -> 若其他 yupik 系产品使用相同 base，需检查是否有同样的 CCI2/CCI3 误占用
 - 与 [[01.驱动文档/Camera/Qualcomm/yupik/QCM6490-A16/01.原理与架构/Camera-CCI驱动架构分析.md|Camera-CCI驱动架构分析]] 中的 CCI 引脚映射表关联
 
 _Author: wangguanran_

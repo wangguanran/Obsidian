@@ -5,7 +5,7 @@
 
 ## 技术背景
 
-MT5205 主板上 MDB 小板以 STM32F103 作为主控，其 nRST（低有效复位）由 AP 侧 GPIO36（mdb_reset）控制。MDB 小板在主板上无上拉电阻，若 AP 不主动驱动高电平，nRST 浮空将导致主控复位状态不确定，因此 pinctrl 必须 `output-high` 钳位。
+[项目代号] 主板上 MDB 小板以 STM32F103 作为主控，其 nRST（低有效复位）由 AP 侧 GPIO36（mdb_reset）控制。MDB 小板在主板上无上拉电阻，若 AP 不主动驱动高电平，nRST 浮空将导致主控复位状态不确定，因此 pinctrl 必须 `output-high` 钳位。
 
 DB（Dispenser/外设）检测通过 GPIO14 实现：DB 插入时拉低 GPIO14，AP 需以 gpio-keys 方式上报按键事件（KEY_F1），支持 wakeup。此前 GPIO14 被 scuba pinctrl 的 reserved 列表占用，无法作为普通 GPIO 使用，必须先解除保留。
 
@@ -22,8 +22,8 @@ DB（Dispenser/外设）检测通过 GPIO14 实现：DB 插入时拉低 GPIO14�
 ### 2. devicetree/qcom/scuba-iot-idp-overlay.dts（+39/-2）
 
 - **注释更新**：GPIO36 MDB_RESET 说明改为"idle output-high"，并注明 Assert nRST 方式（echo 0 > value）。
-- **mt5205_mdb_reset 节点**：保持 `output-high` 配置不变（该配置由更早的 gpio-userspace 引入，#195886 仅补充注释说明"无板级上拉"的根因）。
-- **新增 mt5205_mdb_db_detect pinctrl**：GPIO14 复用为 gpio 功能，drive-strength 2，bias-pull-up（空闲高），input-enable。
+- **[项目代号]_mdb_reset 节点**：保持 `output-high` 配置不变（该配置由更早的 gpio-userspace 引入，#195886 仅补充注释说明"无板级上拉"的根因）。
+- **新增 [项目代号]_mdb_db_detect pinctrl**：GPIO14 复用为 gpio 功能，drive-strength 2，bias-pull-up（空闲高），input-enable。
 - **新增 mdb_db_keys 节点**：gpio-keys 驱动，label "mdb-db-keys"，`gpios = <&tlmm 14 GPIO_ACTIVE_LOW>`（低有效：插入拉低 → 触发），`linux,code = <KEY_F1>`，debounce-interval 15ms，`gpio-key,wakeup` 支持唤醒。
 
 注释特别说明：scuba.dtsi 里已有 gpio_keys 节点但无 phandle，无法在其上扩展，故新建独立节点。

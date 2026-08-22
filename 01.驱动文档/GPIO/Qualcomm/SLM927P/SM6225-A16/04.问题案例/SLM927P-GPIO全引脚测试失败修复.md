@@ -5,7 +5,7 @@
 **Gerrit Change**：#195832
 **项目**：LA.VENDOR.13.2.1
 **分支**：master_IOT_High_Mid_2024.SPF.3.0_SLM927x_SLM550x
-**作者**：zhaoqian（实际解决：wanghao_sh）
+**作者**：[同事]（实际解决：wanghao_sh）
 **芯片平台**：SLM927P（基于 khaje/SM6225）
 **SoC-Android**：SM6225-A16
 **模块**：GPIO
@@ -219,7 +219,7 @@ index 11bc8d0..cabf108 100755
 
 ### 源码归档状态
 
-**归档来源**：134服务器 `/home3/wangguanran/workspace/MT5205/LA.VENDOR.13.2.1`（分支 `gerrit/MT5205`）
+**归档来源**：134服务器 `/home3/[同事]/workspace/[项目代号]/LA.VENDOR.13.2.1`（分支 `gerrit/[项目代号]`）
 
 | 文件 | 134状态 | 归档状态 |
 |------|---------|---------|
@@ -239,9 +239,9 @@ index 11bc8d0..cabf108 100755
 |--------|------|------|
 | 脚本文件存在性 | ❌ 失败 | `SLM927P_gpio.sh` 在134 repo中不存在 |
 | DTS上下文匹配 | ❌ 失败 | `khaje.dtsi` 缺少 `qupv3_se5_4uart` 段，patch无法定位上下文 |
-| 整体可应用性 | ❌ 失败 | 补丁无法直接应用到当前 `gerrit/MT5205` 分支 |
+| 整体可应用性 | ❌ 失败 | 补丁无法直接应用到当前 `gerrit/[项目代号]` 分支 |
 
-**结论**：补丁 #195832 是基于134 repo的上游/客户定制分支创建的，无法直接应用到当前 `gerrit/MT5205` 分支。需要先合并/同步包含 `qupv3_se5_4uart` 配置和 `SLM927P_gpio.sh` 文件的上游变更。
+**结论**：补丁 #195832 是基于134 repo的上游/客户定制分支创建的，无法直接应用到当前 `gerrit/[项目代号]` 分支。需要先合并/同步包含 `qupv3_se5_4uart` 配置和 `SLM927P_gpio.sh` 文件的上游变更。
 
 ### 移植文档检查
 

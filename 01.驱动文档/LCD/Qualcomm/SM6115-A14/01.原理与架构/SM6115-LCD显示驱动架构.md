@@ -12,21 +12,21 @@ AP 侧（Android/Kernel）
     ├── sde_dsi / dsi_host（DSI 控制器）
     ├── panel 驱动（由 dsi-panel-*.dtsi 描述）
     │     ├── qcom,mdss-dsi-on-command（init data，长写/短写）
-    │     ├── power rails：dsi_panel_pwr_supply_mt5205（vddio/avdd/avee）
+    │     ├── power rails：dsi_panel_pwr_supply_[项目代号]（vddio/avdd/avee）
     │     └── 背光：bl_ctrl_pwm（PM2250 PWM3，周期 50us）
     └── DT 装配：scuba-sde-display-idp.dtsi / bengal-sde-display-idp.dtsi
 
 BP 侧（UEFI XBL）
   MDPPlatformLib（AgattiPkg）
-    ├── MDPPlatformLib.c：PANEL_CREATE_ENTRY 面板注册表（ODM_PROJECT_MT5205 条件编译）
+    ├── MDPPlatformLib.c：PANEL_CREATE_ENTRY 面板注册表（ODM_PROJECT_[项目代号] 条件编译）
     ├── MDPPlatformLibPanelCommon.c：PWM 背光初始化（PMIC GPIO mux）
     └── Panel_*.xml（QcomPkg/Settings/Panel/）：UEFI init data，经 Core.fdf FREEFORM 段打包
 ```
 
 ## 分层结构（AP 侧）
 
-1. **DT 层**：`scuba-sde-display-idp.dtsi`（MT5205 装配，电源组/面板节点/背光 PWM）、`dsi-panel-jd9365da-video.dtsi`（面板时序 + on-command）、`bengal-sde-display-idp.dtsi`（参考板，保持 td4330）；
-2. **电源层**：regulator-fixed（display_panel_vddio/avdd/avee）+ `dsi_panel_pwr_supply_mt5205` 供应组（supply-name vddio/avdd/avee，post-on-sleep 10ms）；
+1. **DT 层**：`scuba-sde-display-idp.dtsi`（[项目代号] 装配，电源组/面板节点/背光 PWM）、`dsi-panel-jd9365da-video.dtsi`（面板时序 + on-command）、`bengal-sde-display-idp.dtsi`（参考板，保持 td4330）；
+2. **电源层**：regulator-fixed（display_panel_vddio/avdd/avee）+ `dsi_panel_pwr_supply_[项目代号]` 供应组（supply-name vddio/avdd/avee，post-on-sleep 10ms）；
 3. **panel 驱动层**：SDE panel 驱动解析 dtsi 中 `qcom,mdss-dsi-on-command`，通过 DSI host 发送 init 序列；读 TE（GPIO81）与复位脚（GPIO82）；
 4. **背光层**：`qcom,mdss-dsi-bl-pmic-control-type = "bl_ctrl_pwm"` + `pwms = <&pm2250_pwm3 0 0>` + `qcom,bl-pmic-pwm-period-usecs`（周期，50us=20kHz），亮度 1~4095。
 
@@ -46,13 +46,13 @@ BP 侧（UEFI XBL）
 
 | 函数/宏 | 作用 |
 |---------|------|
-| PANEL_CREATE_ENTRY(name, id, dt_compat, ...) | 面板注册表；MT5205 的 st7701s/jd9365da 条目用 `#if defined(ODM_PROJECT_MT5205)` 保护 |
-| MDPPlatformGetPanelPwmPmicInfo（PanelCommon） | 获取背光 PWM PMIC 信息；MT5205 分支将 PM4125 GPIO2 mux 为 PWM SPECIAL_FUNCTION1 |
+| PANEL_CREATE_ENTRY(name, id, dt_compat, ...) | 面板注册表；[项目代号] 的 st7701s/jd9365da 条目用 `#if defined(ODM_PROJECT_[项目代号])` 保护 |
+| MDPPlatformGetPanelPwmPmicInfo（PanelCommon） | 获取背光 PWM PMIC 信息；[项目代号] 分支将 PM4125 GPIO2 mux 为 PWM SPECIAL_FUNCTION1 |
 
 ## DT 装配差异：bengal vs scuba
 
-- `bengal-sde-display-idp.dtsi`：高通参考板配置，默认 td4330，MT5205 项目不再包含 MT5205 面板/pinctrl（#196371 回退）；
-- `scuba-sde-display-idp.dtsi`：MT5205 实际装配（st7701s + jd9365da），电源组与背光 PWM 定义于此；
+- `bengal-sde-display-idp.dtsi`：高通参考板配置，默认 td4330，[项目代号] 项目不再包含 [项目代号] 面板/pinctrl（#196371 回退）；
+- `scuba-sde-display-idp.dtsi`：[项目代号] 实际装配（st7701s + jd9365da），电源组与背光 PWM 定义于此；
 - `bengal-sde-display-pinctrl.dtsi` 已删除（TE pinctrl 由 scuba 侧管理）。
 
 ## 参考

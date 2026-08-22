@@ -5,8 +5,8 @@
 **状态：已合入**
 **来源：** Gerrit Change 195827
 **项目：** meigla/platform/vendor/qcom/lahaina612
-**分支：** Develop_QCM6490.LA.6.0_VENDOR_QCOM_Platform_Elo_Rigel
-**作者：** 赵前
+**分支：** Develop_QCM6490.LA.6.0_VENDOR_QCOM_Platform_Elo_[项目代号]
+**作者：** [同事]
 **合入时间：** 2026-08-15
 
 ## 现象
@@ -17,7 +17,7 @@
 
 - SoC：QCM6490（yupikp）
 - 内核：Linux 6.0
-- 平台：[项目代号：Rigel_A16 / Elo_Rigel]
+- 平台：[项目代号：[项目代号]_A16 / Elo_[项目代号]]
 
 ## 根因分析
 
@@ -82,7 +82,7 @@
 
 ## 源码归档
 
-- 源码暂未归档（远程 134 源码树搜索超时，文件位于 Gerrit 仓库 `meigla/platform/vendor/qcom/lahaina612`，分支 `Develop_QCM6490.LA.6.0_VENDOR_QCOM_Platform_Elo_Rigel`）
+- 源码暂未归档（远程 134 源码树搜索超时，文件位于 Gerrit 仓库 `meigla/platform/vendor/qcom/lahaina612`，分支 `Develop_QCM6490.LA.6.0_VENDOR_QCOM_Platform_Elo_[项目代号]`）
 
 ## 引用文件索引
 

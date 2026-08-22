@@ -2,7 +2,7 @@
 
 > **模块**: LCD | **厂商**: Qualcomm | **芯片**: SM6225 (Kamorta)
 > **平台**: SM6225-A16 (iot-high-mid-2024-spf-3-0) | **类型**: Bug
-> **Change**: #196388 | **作者**: weirong | **状态**: MERGED
+> **Change**: #196388 | **作者**: [同事] | **状态**: MERGED
 
 ## 基本信息
 
@@ -11,7 +11,7 @@
 | Change | #196388 |
 | 项目 | iot-high-mid-2024-spf-3-0_amss_standard_oem |
 | 分支 | master_meig |
-| 作者 | weirong（提交标题署名 shenbaotao） |
+| 作者 | [同事]（提交标题署名 shenbaotao） |
 | 类型 | Bug（PM8008 LDO5/6/7 输出电压异常） |
 | 芯片 | Qualcomm SM6225 (Kamorta) |
 | 平台 | SM6225-A16（项目代号 HXB_SLM927M_TianBo） |

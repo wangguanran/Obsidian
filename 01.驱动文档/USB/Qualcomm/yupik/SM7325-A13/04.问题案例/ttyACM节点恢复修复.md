@@ -2,7 +2,7 @@
 
 > **模块**: USB | **厂商**: Qualcomm | **芯片**: SM7325 (yupik)
 > **平台**: SM7325-A13 (LA.UM.9.14.1) | **类型**: Bug
-> **Change**: #196525 | **作者**: zhourulei | **状态**: MERGED
+> **Change**: #196525 | **作者**: [同事] | **状态**: MERGED
 
 ## 基本信息
 
@@ -11,12 +11,12 @@
 | Change | #196525 |
 | 项目 | LA.UM.9.14.1 |
 | 分支 | master_LA.4.0_MC9371 |
-| 作者 | zhourulei |
+| 作者 | [同事] |
 | 类型 | Bug（usbfs 释放接口后 ttyACM 节点不恢复） |
 | 芯片 | Qualcomm SM7325 (yupik) |
 | 平台 | SM7325-A13（LA.UM.9.14.1，项目代号 MC9371） |
 | 模块 | USB（cdc-acm 串口 / usbfs 用户态 USB） |
-| 提交标题 | `[MC9371][121129][USB] Restore ttyACM after usbfs release[Owner]zhourulei` |
+| 提交标题 | `[MC9371][121129][USB] Restore ttyACM after usbfs release[Owner][同事]` |
 | 任务 | Task 121129 |
 
 ## 现象
@@ -118,7 +118,7 @@ if (usb_dev->descriptor.idProduct == 0x55da &&
 ## 补丁内容
 
 ```diff
-Subject: [PATCH] [MC9371][121129][USB] Restore ttyACM after usbfs release[Owner]zhourulei
+Subject: [PATCH] [MC9371][121129][USB] Restore ttyACM after usbfs release[Owner][同事]
 
 [Root Cause]
 	App 对 WCH(1a86:55da) 先 open(/dev/ttyACM11) 再 usbfs DISCONNECT_CLAIM，cdc_acm 被拆掉后节点消失。

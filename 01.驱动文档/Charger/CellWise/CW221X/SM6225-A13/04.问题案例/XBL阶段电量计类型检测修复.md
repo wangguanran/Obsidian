@@ -6,7 +6,7 @@
 **来源：** Gerrit Change 194966
 **项目：** qualcomm-css-mid-2022-la-spf-1-0_amss_standard_oem
 **分支：** master_meig
-**作者：** 魏荣
+**作者：** [同事]
 **合入时间：** 2026-08-12
 
 ## 现象
@@ -68,7 +68,7 @@ CW221X 系列电量计芯片包含多个型号（如 CW2215、CW2217 等），�
 
 ```
 commit f6fb1aa366cd7f3f2b5ea21792bb8fe380fdee42
-Author: 魏荣 <weirong@example.com>
+Author: [同事] <[同事]@example.com>
 Date:   [日期]
 
     [HXB_SLM927_YunZhuoKeJi][MeigLink]0028908[Description]Fix incorrect fuel gauge type detection in XBL stage[Solution]fix it[Owner]chenminghui

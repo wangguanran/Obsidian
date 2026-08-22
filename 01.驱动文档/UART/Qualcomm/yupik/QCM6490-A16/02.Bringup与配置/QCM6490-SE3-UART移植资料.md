@@ -5,7 +5,7 @@
 ## 芯片信息
 
 - **芯片**：Qualcomm QCM6490（yupikp）
-- **平台**：QCM6490-A16（Rigel_A16 / Elo_Rigel），Linux 6.0
+- **平台**：QCM6490-A16（[项目代号]_A16 / Elo_[项目代号]），Linux 6.0
 - **功能**：SE3 UART 引脚配置、默认使能外部 UART、TZ QUP 访问控制
 
 ## 硬件接口

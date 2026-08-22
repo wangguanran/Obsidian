@@ -2,7 +2,7 @@
 
 > **模块**: Charger | **厂商**: Qualcomm | **芯片**: SM6225 (khaje)
 > **平台**: SM6225-A14 (LA.VENDOR.13.2.1) | **类型**: Bug
-> **Change**: #195273 | **作者**: qianyiping | **状态**: MERGED
+> **Change**: #195273 | **作者**: [同事] | **状态**: MERGED
 
 ## 基本信息
 
@@ -10,13 +10,13 @@
 |------|------|
 | Change | #195273 |
 | 项目 | LA.VENDOR.13.2.1 |
-| 分支 | master_IOT_High_Mid_2024.SPF.1.0_MT5825 |
-| 作者 | qianyiping |
+| 分支 | master_IOT_High_Mid_2024.SPF.1.0_[项目代号] |
+| 作者 | [同事] |
 | 类型 | Bug（Dock 连接影响充电功能） |
 | 芯片 | Qualcomm SM6225 (khaje) |
 | 平台 | SM6225-A14 (LA.VENDOR.13.2.1) |
 | 模块 | Charger (smb5-lib POGO/Dock) |
-| 提交标题 | `[MT5825][TaskID]119595[Description]When the dock is connected to the host, the charging function will be affected[owner]qianyiping` |
+| 提交标题 | `[[项目代号]][TaskID]119595[Description]When the dock is connected to the host, the charging function will be affected[owner][同事]` |
 | 任务 | Task 119595 |
 
 ## 现象
@@ -89,7 +89,7 @@ Dock host 模式下不再打开充电器 OTG_EN（避免与 DCIN 输入互斥）
 ## 补丁内容
 
 ```diff
-Subject: [PATCH] [MT5825][TaskID]119595[Description]When the dock is connected to the host, the charging function will be affected[owner]qianyiping
+Subject: [PATCH] [[项目代号]][TaskID]119595[Description]When the dock is connected to the host, the charging function will be affected[owner][同事]
 
 ---
 diff --git a/kernel_platform/msm-kernel/drivers/power/supply/qcom/smb5-lib.c b/kernel_platform/msm-kernel/drivers/power/supply/qcom/smb5-lib.c

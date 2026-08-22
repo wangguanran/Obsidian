@@ -4,7 +4,7 @@
 
 ## 平台概述
 
-在 Rigel 平台（QCM6490）上移植 ASIX ax88179a USB Ethernet 驱动，提供基于 USB 接口的有线网络：
+在 [项目代号] 平台（QCM6490）上移植 ASIX ax88179a USB Ethernet 驱动，提供基于 USB 接口的有线网络：
 
 ```
 应用层 (TCP/IP 协议栈)

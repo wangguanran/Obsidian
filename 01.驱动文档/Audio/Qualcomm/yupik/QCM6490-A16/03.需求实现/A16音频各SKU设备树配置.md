@@ -1,8 +1,8 @@
-# Rigel A16 音频各 SKU 设备树配置
+# [项目代号] A16 音频各 SKU 设备树配置
 
 > **模块**: Audio | **厂商**: Qualcomm | **芯片**: QCM6490 (yupik/lahaina)
 > **平台**: QCM6490-A16 (Develop_QCM6490.LA.6.0) | **类型**: 需求
-> **Change**: #196739 | **作者**: weirong | **状态**: MERGED
+> **Change**: #196739 | **作者**: [同事] | **状态**: MERGED
 
 ## 基本信息
 
@@ -10,18 +10,18 @@
 |------|------|
 | Change | #196739 |
 | 项目 | meigla/platform/vendor/qcom/opensource/audio-devicetree |
-| 分支 | Develop_QCM6490.LA.6.0_VENDOR_QCOM_Platform_Elo_Rigel |
-| 作者 | weirong |
-| 类型 | 需求（Rigel A16 各 SKU 音频设备树配置） |
+| 分支 | Develop_QCM6490.LA.6.0_VENDOR_QCOM_Platform_Elo_[项目代号] |
+| 作者 | [同事] |
+| 类型 | 需求（[项目代号] A16 各 SKU 音频设备树配置） |
 | 芯片 | Qualcomm QCM6490 (yupik/lahaina) |
 | 平台 | QCM6490-A16 |
 | 模块 | Audio（audio-devicetree / yupik_snd / bolero / WSA / DMIC） |
-| 提交标题 | `[119404][rigel_A16][Audio]modify devicetree for Rigel A16 SKUs[Owner]weirong` |
+| 提交标题 | `[119404][[项目代号]_A16][Audio]modify devicetree for [项目代号] A16 SKUs[Owner][同事]` |
 | 任务 | Task 119404 |
 
 ## 需求描述
 
-Rigel A16 项目包含多个 SKU（MC933 / MC934 / MC936 / MC937 / MC938 / MC9392），各 SKU 硬件差异（扬声器通路、DMIC 数量与位置、是否带 WSA 功放、是否使用 SWR 接口）需要分别落到音频设备树 overlay 中。本次提交为各 SKU 补齐：
+[项目代号] A16 项目包含多个 SKU（MC933 / MC934 / MC936 / MC937 / [项目代号] / MC9392），各 SKU 硬件差异（扬声器通路、DMIC 数量与位置、是否带 WSA 功放、是否使用 SWR 接口）需要分别落到音频设备树 overlay 中。本次提交为各 SKU 补齐：
 
 - `qcom,model` 声卡名（`lahaina-yupikidp-mcXXX-snd-card`）
 - MIC BIAS 供电 GPIO（`vcc-micbias1-gpio` = TLMM 96，`vcc-micbias2-gpio` = TLMM 97）
@@ -34,7 +34,7 @@ Rigel A16 项目包含多个 SKU（MC933 / MC934 / MC936 / MC937 / MC938 / MC939
 
 ## 方案
 
-按 SKU 维护独立 overlay 文件，公共配置放 `yupik-iot-audio-overlay.dtsi`，每个 SKU overlay 内仅描述差异；编译清单（`Kbuild`）只保留实际生产的 dtbo。MC933/MC936/MC937/MC938/MC9392 为 WSA+DMIC 通路变体，MC934 为去 WSA（SWR 改普通 GPIO）变体。
+按 SKU 维护独立 overlay 文件，公共配置放 `yupik-iot-audio-overlay.dtsi`，每个 SKU overlay 内仅描述差异；编译清单（`Kbuild`）只保留实际生产的 dtbo。MC933/MC936/MC937/[项目代号]/MC9392 为 WSA+DMIC 通路变体，MC934 为去 WSA（SWR 改普通 GPIO）变体。
 
 ## 修改文件清单
 
@@ -45,7 +45,7 @@ Rigel A16 项目包含多个 SKU（MC933 / MC934 / MC936 / MC937 / MC938 / MC939
 | [[01.驱动文档/Audio/Qualcomm/yupik/QCM6490-A16/91.源码与补丁索引/dt_config/yupik-audio-overlay-mc934.dtsi\|yupik-audio-overlay-mc934.dtsi]] | +48/-6 | 无 WSA 变体：bolero num-macros=3、wsa_macro/wsa883x disabled、VA/RX 去 SWR |
 | [[01.驱动文档/Audio/Qualcomm/yupik/QCM6490-A16/91.源码与补丁索引/dt_config/yupik-audio-overlay-mc936.dtsi\|yupik-audio-overlay-mc936.dtsi]] | +30/-3 | 同 MC933 模式 |
 | [[01.驱动文档/Audio/Qualcomm/yupik/QCM6490-A16/91.源码与补丁索引/dt_config/yupik-audio-overlay-mc937.dtsi\|yupik-audio-overlay-mc937.dtsi]] | +30/-3 | 同 MC933 模式 |
-| [[01.驱动文档/Audio/Qualcomm/yupik/QCM6490-A16/91.源码与补丁索引/dt_config/yupik-audio-overlay-mc938.dtsi\|yupik-audio-overlay-mc938.dtsi]] | +28/-3 | 同 MC933 模式 |
+| [[01.驱动文档/Audio/Qualcomm/yupik/QCM6490-A16/91.源码与补丁索引/dt_config/yupik-audio-overlay.dtsi\|yupik-audio-overlay.dtsi]] | +28/-3 | 同 MC933 模式 |
 | [[01.驱动文档/Audio/Qualcomm/yupik/QCM6490-A16/91.源码与补丁索引/dt_config/yupik-audio-overlay-mc9392.dtsi\|yupik-audio-overlay-mc9392.dtsi]] | +30/-3 | 同 MC933 模式 |
 | [[01.驱动文档/Audio/Qualcomm/yupik/QCM6490-A16/91.源码与补丁索引/dt_config/yupik-iot-audio-overlay.dtsi\|yupik-iot-audio-overlay.dtsi]] | 1 行 | `qcom,ext-disp-audio-rx = <0>` |
 
@@ -117,13 +117,13 @@ dtbo-y += kera-audio.dtbo \
 
 ## 结论
 
-通过按 SKU 拆分 overlay 并补齐 model/micbias/audio-routing，Rigel A16 各 SKU 音频通路（WSA 扬声器 + 4 路 DMIC）在设备树层配置完成；MC934 走无 WSA 精简通路。公共层关闭 ext-disp-audio-rx，避免未接 HDMI 音频时的错误路由。
+通过按 SKU 拆分 overlay 并补齐 model/micbias/audio-routing，[项目代号] A16 各 SKU 音频通路（WSA 扬声器 + 4 路 DMIC）在设备树层配置完成；MC934 走无 WSA 精简通路。公共层关闭 ext-disp-audio-rx，避免未接 HDMI 音频时的错误路由。
 
 ## 补丁内容
 
 ```diff
-Subject: [PATCH] [119404][rigel_A16][Audio]modify devicetree for Rigel A16
- SKUs[Owner]weirong
+Subject: [PATCH] [119404][[项目代号]_A16][Audio]modify devicetree for [项目代号] A16
+ SKUs[Owner][同事]
 
 ---
  Kbuild                          |  4 +--
@@ -131,7 +131,7 @@ Subject: [PATCH] [119404][rigel_A16][Audio]modify devicetree for Rigel A16
  yupik-audio-overlay-mc934.dtsi  | 48 +++++++++++++++++++++++++++------
  yupik-audio-overlay-mc936.dtsi  | 30 ++++++++++++++++++---
  yupik-audio-overlay-mc937.dtsi  | 30 ++++++++++++++++++---
- yupik-audio-overlay-mc938.dtsi  | 28 ++++++++++++++++---
+ yupik-audio-overlay.dtsi  | 28 ++++++++++++++++---
  yupik-audio-overlay-mc9392.dtsi | 30 ++++++++++++++++++---
  yupik-iot-audio-overlay.dtsi    |  2 +-
  8 files changed, 171 insertions(+), 31 deletions(-)
@@ -391,15 +391,15 @@ index 48bd7c7..fbdbb8d 100755
 +		"VA DMIC3", "Digital Mic3",
 +		"VA DMIC3", "VCC MIC BIAS1";
  };
-diff --git a/yupik-audio-overlay-mc938.dtsi b/yupik-audio-overlay-mc938.dtsi
+diff --git a/yupik-audio-overlay.dtsi b/yupik-audio-overlay.dtsi
 index 48bd7c7..54b889e 100755
---- a/yupik-audio-overlay-mc938.dtsi
-+++ b/yupik-audio-overlay-mc938.dtsi
+--- a/yupik-audio-overlay.dtsi
++++ b/yupik-audio-overlay.dtsi
 @@ -18,6 +18,7 @@
  };
  
  &yupik_snd {
-+	qcom,model = "lahaina-yupikidp-mc938-snd-card";
++	qcom,model = "lahaina-yupikidp-[项目代号]-snd-card";
      qcom,wcd-disabled = <1>;
      asoc-codec  = <&stub_codec>, <&bolero>,
                      //<&wcd937x_codec>,
@@ -538,7 +538,7 @@ index 352ddb1..ff07e93 100644
 | [[01.驱动文档/Audio/Qualcomm/yupik/QCM6490-A16/91.源码与补丁索引/dt_config/yupik-audio-overlay-mc934.dtsi\|yupik-audio-overlay-mc934.dtsi]] | audio-devicetree/yupik-audio-overlay-mc934.dtsi | MC934 SKU（无 WSA） |
 | [[01.驱动文档/Audio/Qualcomm/yupik/QCM6490-A16/91.源码与补丁索引/dt_config/yupik-audio-overlay-mc936.dtsi\|yupik-audio-overlay-mc936.dtsi]] | audio-devicetree/yupik-audio-overlay-mc936.dtsi | MC936 SKU 音频 overlay |
 | [[01.驱动文档/Audio/Qualcomm/yupik/QCM6490-A16/91.源码与补丁索引/dt_config/yupik-audio-overlay-mc937.dtsi\|yupik-audio-overlay-mc937.dtsi]] | audio-devicetree/yupik-audio-overlay-mc937.dtsi | MC937 SKU 音频 overlay |
-| [[01.驱动文档/Audio/Qualcomm/yupik/QCM6490-A16/91.源码与补丁索引/dt_config/yupik-audio-overlay-mc938.dtsi\|yupik-audio-overlay-mc938.dtsi]] | audio-devicetree/yupik-audio-overlay-mc938.dtsi | MC938 SKU 音频 overlay |
+| [[01.驱动文档/Audio/Qualcomm/yupik/QCM6490-A16/91.源码与补丁索引/dt_config/yupik-audio-overlay.dtsi\|yupik-audio-overlay.dtsi]] | audio-devicetree/yupik-audio-overlay.dtsi | [项目代号] SKU 音频 overlay |
 | [[01.驱动文档/Audio/Qualcomm/yupik/QCM6490-A16/91.源码与补丁索引/dt_config/yupik-audio-overlay-mc9392.dtsi\|yupik-audio-overlay-mc9392.dtsi]] | audio-devicetree/yupik-audio-overlay-mc9392.dtsi | MC9392 SKU 音频 overlay |
 | [[01.驱动文档/Audio/Qualcomm/yupik/QCM6490-A16/91.源码与补丁索引/dt_config/yupik-iot-audio-overlay.dtsi\|yupik-iot-audio-overlay.dtsi]] | audio-devicetree/yupik-iot-audio-overlay.dtsi | 公共音频 overlay |
 | [[01.驱动文档/Audio/Qualcomm/yupik/QCM6490-A16/91.源码与补丁索引/patches/196739.patch\|196739.patch]] | 91.源码与补丁索引/patches/ | 补丁（已清隐私） |

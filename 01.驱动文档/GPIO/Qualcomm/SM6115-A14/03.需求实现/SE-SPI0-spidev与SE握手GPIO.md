@@ -2,7 +2,7 @@
 
 > **模块**: GPIO | **厂商**: Qualcomm | **芯片**: SM6115 (scuba)
 > **平台**: SM6115-A14 (LA.VENDOR.13.2.1) | **类型**: 需求
-> **Change**: #195885 + #197063（Task 118732 合并 2 个 Change） | **作者**: wangguanran | **状态**: MERGED
+> **Change**: #195885 + #197063（Task 118732 合并 2 个 Change） | **作者**: [同事] | **状态**: MERGED
 
 ---
 
@@ -10,8 +10,8 @@
 
 | Change | 项目 | 分支 | 作者 | 类型 | 芯片 | 平台 | 模块 |
 |--------|------|------|------|------|------|------|------|
-| #195885 | LA.VENDOR.13.2.1 | MT5205 | wangguanran | 需求 | SM6115 (scuba) | SM6115-A14 | GPIO/SPI |
-| #197063 | iot-high-mid-2024-spf-1-0_amss_standard_oem | master_meig | wangguanran | 需求 | SM6115 (scuba) | SM6115-A14 | TZ QUP 访问控制 |
+| #195885 | LA.VENDOR.13.2.1 | [项目代号] | [同事] | 需求 | SM6115 (scuba) | SM6115-A14 | GPIO/SPI |
+| #197063 | iot-high-mid-2024-spf-1-0_amss_standard_oem | master_meig | [同事] | 需求 | SM6115 (scuba) | SM6115-A14 | TZ QUP 访问控制 |
 
 ## 需求描述
 
@@ -24,7 +24,7 @@ Secure MCU（STM32U585）需要经 QUP SE0 SPI（10MHz）与 AP 通信，用于�
 ## 环境
 
 - 芯片：SM6115 (scuba)
-- 平台：SM6115-A14（LA.VENDOR.13.2.1，MT5205 分支）
+- 平台：SM6115-A14（LA.VENDOR.13.2.1，[项目代号] 分支）
 - 设备：Scuba IOT IDP（overlay：scuba-iot-idp-overlay.dts）
 - Secure MCU：STM32U585（SE_RESET = GPIO102，见已有归档）
 - 相关任务：Task 118732（SE SPI 通信链路）
@@ -37,14 +37,14 @@ Secure MCU（STM32U585）需要经 QUP SE0 SPI（10MHz）与 AP 通信，用于�
 1. **bengal_GKI.config**（+1）：使能 `CONFIG_SPI_SPIDEV=m`，提供 spidev 用户态接口；
 2. **pinctrl-scuba.c**（+2/-2）：`scuba_reserved_gpios[]` 从 `0, 1, 2, 3, 15, -1` 改为 `15, -1`，释放 GPIO0~3 给 SE0 SPI；
 3. **scuba-iot-idp-overlay.dts**（+70）：
-   - 新增 `mt5205_se_ack`（GPIO37，output-low，bias-disable）与 `mt5205_se_rdy`（GPIO63，input-enable，bias-disable）pinctrl 节点；
+   - 新增 `[项目代号]_se_ack`（GPIO37，output-low，bias-disable）与 `[项目代号]_se_rdy`（GPIO63，input-enable，bias-disable）pinctrl 节点；
    - gpio_userspace 节点新增 `se-ack`（default-state 0）与 `se-rdy`（default-state 2）子节点；
    - `&qupv3_se0_spi` 使能：`spi-max-frequency = <10000000>`、`qcom,disable-autosuspend`，新增 `spidev@0`（compatible `qcom,spi-msm-codec-slave`，spidev 内建 dummy）；
    - 禁用冲突的 `&qupv3_se0_i2c` 与 `&qupv3_se0_4uart`。
 
 ### TZ 侧（#197063，AMSS/TrustZone QUP 访问控制）
 
-新增 `QUPAC_Access_MT5205.c`（产品级 QUPAC overlay，`ODM_PROJECT_MT5205` 条件编译）：
+新增 `QUPAC_Access.c`（产品级 QUPAC overlay，`ODM_PROJECT_[项目代号]` 条件编译）：
 
 - **SE0**：`QUPV3_PROTOCOL_SPI` + `QUPV3_MODE_FIFO` + `AC_HLOS`（bAllowFifo=TRUE）→ HLOS 获得 SE0 SPI 访问权；
 - **SE1**：本平台配成 `UART_4W`（GPIO69/70 RS232），替代默认 I2C；
@@ -59,7 +59,7 @@ Secure MCU（STM32U585）需要经 QUP SE0 SPI（10MHz）与 AP 通信，用于�
 | 1 | [[01.驱动文档/GPIO/Qualcomm/SM6115-A14/91.源码与补丁索引/kernel_driver/bengal_GKI.config\|bengal_GKI.config]] | +1 | 使能 CONFIG_SPI_SPIDEV=m |
 | 2 | [[01.驱动文档/GPIO/Qualcomm/SM6115-A14/91.源码与补丁索引/kernel_driver/pinctrl-scuba.c\|pinctrl-scuba.c]] | +2/-2 | scuba_reserved_gpios 释放 GPIO0-3 |
 | 3 | [[01.驱动文档/GPIO/Qualcomm/SM6115-A14/91.源码与补丁索引/dt_config/scuba-iot-idp-overlay-195885.dts\|scuba-iot-idp-overlay-195885.dts]] | +70 | SE0 SPI spidev + se_ack/se_rdy 握手 GPIO |
-| 4 | [[01.驱动文档/GPIO/Qualcomm/SM6115-A14/91.源码与补丁索引/kernel_driver/TZ.XF.5.1/trustzone_images/core/settings/buses/qup_accesscontrol/qupv3/config/agatti/QUPAC_Access_MT5205.c\|QUPAC_Access_MT5205.c]] | +215（新增） | TZ 释放 SE0 SPI 给 HLOS（AC_HLOS） |
+| 4 | [[01.驱动文档/GPIO/Qualcomm/SM6115-A14/91.源码与补丁索引/kernel_driver/TZ.XF.5.1/trustzone_images/core/settings/buses/qup_accesscontrol/qupv3/config/agatti/QUPAC_Access.c\|QUPAC_Access.c]] | +215（新增） | TZ 释放 SE0 SPI 给 HLOS（AC_HLOS） |
 
 ## 配置方式
 
@@ -73,7 +73,7 @@ CONFIG_SPI_SPIDEV=m
 
 ```c
 static const int scuba_reserved_gpios[] = {
-    /* MT5205: 0-3 released for SE0 SPI; 16/17 MDB UART; 14 MDB DET; 15 stays reserved */
+    /* [项目代号]: 0-3 released for SE0 SPI; 16/17 MDB UART; 14 MDB DET; 15 stays reserved */
     15, -1
 };
 ```
@@ -106,7 +106,7 @@ se-rdy { label = "se_rdy"; gpios = <&tlmm 63 GPIO_ACTIVE_HIGH>; default-state = 
 
 ### 4. TZ QUPAC（AMSS 侧）
 
-- 使能 `ODM_PROJECT_MT5205` 宏后编译 TrustZone 镜像（QUPAC_Access_MT5205.c 生效）；
+- 使能 `ODM_PROJECT_[项目代号]` 宏后编译 TrustZone 镜像（QUPAC_Access.c 生效）；
 - SE0 权限行：`{ QUPV3_0_SE0, QUPV3_PROTOCOL_SPI, QUPV3_MODE_FIFO, AC_HLOS, TRUE, TRUE, TRUE }`。
 
 ## 验证方式
@@ -132,9 +132,9 @@ se-rdy { label = "se_rdy"; gpios = <&tlmm 63 GPIO_ACTIVE_HIGH>; default-state = 
 ### 补丁 1/2：#195885（AP 侧 kernel + DT）
 
 ```diff
-Subject: [PATCH] [MT5205][TaskID]118732[Description]enable SE SPI0 spidev and
+Subject: [PATCH] [[项目代号]][TaskID]118732[Description]enable SE SPI0 spidev and
  handshake GPIOs [Solution]overlay SE0 10MHz dummy spidev, unreserve GPIO0-3,
- export GPIO37/63/102 [Owner]wangguanran
+ export GPIO37/63/102 [Owner][同事]
 
 ---
  .../arm64/configs/vendor/bengal_GKI.config    |  1 +
@@ -162,9 +162,9 @@ index 1d4a3e5d7cf..28d2a3a7d06 100644
  };
  
  static const int scuba_reserved_gpios[] = {
--		/* MT5205: 16/17 for MDB UART; 14 released for MDB DET; 15 stays reserved */
+-		/* [项目代号]: 16/17 for MDB UART; 14 released for MDB DET; 15 stays reserved */
 -		0, 1, 2, 3, 15, -1
-+		/* MT5205: 0-3 released for SE0 SPI; 16/17 MDB UART; 14 MDB DET; 15 stays reserved */
++		/* [项目代号]: 0-3 released for SE0 SPI; 16/17 MDB UART; 14 MDB DET; 15 stays reserved */
 +		15, -1
  };
  
@@ -175,7 +175,7 @@ index 3d1654f1658..e985688633f 100755
 +++ b/kernel_platform/qcom/proprietary/devicetree/qcom/scuba-iot-idp-overlay.dts
 @@ -16,6 +16,8 @@
  /*
-  * MT5205 gpio-userspace exports
+  * [项目代号] gpio-userspace exports
   *   GPIO102 SE_RESET -> Secure Element (SE) NRST (active-low), default high
 + *   GPIO37  se_ack   -> Secure MCU ACK (output, bias-disable)
 + *   GPIO63  se_rdy   -> Secure MCU RDY (input, bias-disable)
@@ -187,7 +187,7 @@ index 3d1654f1658..e985688633f 100755
  	};
  
 +	/* Secure MCU ACK to SP */
-+	mt5205_se_ack: mt5205_se_ack {
++	[项目代号]_se_ack: [项目代号]_se_ack {
 +		mux {
 +			pins = "gpio37";
 +			function = "gpio";
@@ -202,7 +202,7 @@ index 3d1654f1658..e985688633f 100755
 +	};
 +
 +	/* Secure MCU RDY from SP */
-+	mt5205_se_rdy: mt5205_se_rdy {
++	[项目代号]_se_rdy: [项目代号]_se_rdy {
 +		mux {
 +			pins = "gpio63";
 +			function = "gpio";
@@ -217,15 +217,15 @@ index 3d1654f1658..e985688633f 100755
 +	};
 +
  	/* MDB STM32F103 nRST: idle output-high (no board pull-up on MB) */
- 	mt5205_mdb_reset: mt5205_mdb_reset {
+ 	[项目代号]_mdb_reset: [项目代号]_mdb_reset {
  		mux {
 @@ -120,7 +152,8 @@
  		compatible = "gpio-userspace";
  		status = "okay";
  		pinctrl-names = "default";
--		pinctrl-0 = <&mt5205_se_reset &mt5205_mdb_reset>;
-+		pinctrl-0 = <&mt5205_se_reset &mt5205_se_ack &mt5205_se_rdy
-+			      &mt5205_mdb_reset>;
+-		pinctrl-0 = <&[项目代号]_se_reset &[项目代号]_mdb_reset>;
++		pinctrl-0 = <&[项目代号]_se_reset &[项目代号]_se_ack &[项目代号]_se_rdy
++			      &[项目代号]_mdb_reset>;
  
  		se-reset {
  			label = "se_reset";
@@ -253,7 +253,7 @@ index 3d1654f1658..e985688633f 100755
  	};
  };
 +
-+/* MT5205 Secure MCU STM32U585: SE0 SPI0 GPIO0~3 @ 10MHz, no runtime sleep.
++/* [项目代号] Secure MCU STM32U585: SE0 SPI0 GPIO0~3 @ 10MHz, no runtime sleep.
 + * spidev@0 uses qcom,spi-msm-codec-slave dummy compatible from drivers/spi/spidev.c.
 + */
 +&qupv3_se0_spi {
@@ -284,20 +284,20 @@ index 3d1654f1658..e985688633f 100755
 ### 补丁 2/2：#197063（TZ QUPAC）
 
 ```diff
-Subject: [PATCH] [MT5205][TaskID]118732[Description]release QUP SE0 SPI to
- HLOS for Secure MCU[Solution]add QUPAC_Access_MT5205 product overlay with SE0
- FIFO AC_HLOS[Owner]wangguanran
+Subject: [PATCH] [[项目代号]][TaskID]118732[Description]release QUP SE0 SPI to
+ HLOS for Secure MCU[Solution]add QUPAC_Access_[项目代号] product overlay with SE0
+ FIFO AC_HLOS[Owner][同事]
 
 ---
- .../qupv3/config/agatti/QUPAC_Access_MT5205.c | 215 ++++++++++++++++++
+ .../qupv3/config/agatti/QUPAC_Access.c | 215 ++++++++++++++++++
  1 file changed, 215 insertions(+)
- create mode 100644 TZ.XF.5.1/trustzone_images/core/settings/buses/qup_accesscontrol/qupv3/config/agatti/QUPAC_Access_MT5205.c
+ create mode 100644 TZ.XF.5.1/trustzone_images/core/settings/buses/qup_accesscontrol/qupv3/config/agatti/QUPAC_Access.c
 
-diff --git a/TZ.XF.5.1/trustzone_images/core/settings/buses/qup_accesscontrol/qupv3/config/agatti/QUPAC_Access_MT5205.c b/TZ.XF.5.1/trustzone_images/core/settings/buses/qup_accesscontrol/qupv3/config/agatti/QUPAC_Access_MT5205.c
+diff --git a/TZ.XF.5.1/trustzone_images/core/settings/buses/qup_accesscontrol/qupv3/config/agatti/QUPAC_Access.c b/TZ.XF.5.1/trustzone_images/core/settings/buses/qup_accesscontrol/qupv3/config/agatti/QUPAC_Access.c
 new file mode 100644
 index 0000000000..9e5567066a
 --- /dev/null
-+++ b/TZ.XF.5.1/trustzone_images/core/settings/buses/qup_accesscontrol/qupv3/config/agatti/QUPAC_Access_MT5205.c
++++ b/TZ.XF.5.1/trustzone_images/core/settings/buses/qup_accesscontrol/qupv3/config/agatti/QUPAC_Access.c
 @@ -0,0 +1,215 @@
 +//===========================================================================
 +//
@@ -339,7 +339,7 @@ index 0000000000..9e5567066a
 +  /*PeriphID,    ProtocolID,             Mode,             NsOwner,        bAllowFifo, bLoad, bModExcl  */
 +  { QUPV3_0_SE0, QUPV3_PROTOCOL_SPI,     QUPV3_MODE_FIFO,  AC_HLOS,        TRUE,       TRUE,  TRUE  }, // NFC eSE
 +/* <!--! modify this to set gpio69 70 as 4 wire uart start */
-+#if defined(ODM_PROJECT_MT5205)
++#if defined(ODM_PROJECT_[项目代号])
 +  { QUPV3_0_SE1, QUPV3_PROTOCOL_UART_4W, QUPV3_MODE_FIFO,  AC_HLOS,        TRUE,       TRUE,  FALSE }, // RS232 UART GPIO69/70
 +/* modify this to set gpio69 70 as 4 wire uart stop --> */
 +#else
@@ -348,7 +348,7 @@ index 0000000000..9e5567066a
 +  { QUPV3_0_SE2, QUPV3_PROTOCOL_I2C,     QUPV3_MODE_GSI,   AC_HLOS,        FALSE,      TRUE,  FALSE }, // Legacy Touch
 +  { QUPV3_0_SE3, QUPV3_PROTOCOL_UART_4W, QUPV3_MODE_FIFO,  AC_HLOS,        TRUE,       TRUE,  FALSE }, // BT HCI
 +  { QUPV3_0_SE4, QUPV3_PROTOCOL_UART_2W, QUPV3_MODE_FIFO,  AC_HLOS,        TRUE,       FALSE, FALSE }, // Debug UART
-+#if defined(ODM_PROJECT_MT5205)
++#if defined(ODM_PROJECT_[项目代号])
 +  { QUPV3_0_SE5, QUPV3_PROTOCOL_UART_4W, QUPV3_MODE_FIFO,  AC_HLOS,        TRUE,       TRUE,  FALSE }, // MDB UART GPIO16/17
 +#else
 +  { QUPV3_0_SE5, QUPV3_PROTOCOL_SPI,     QUPV3_MODE_GSI,   AC_TZ,          FALSE,      TRUE,  TRUE  }, // Fingerprint
@@ -534,7 +534,7 @@ index 0000000000..9e5567066a
 | kernel_driver/ | bengal_GKI.config | 合并后版本（含 SPI_SPIDEV） |
 | kernel_driver/ | pinctrl-scuba.c | 合并后版本（GPIO0-3 已释放） |
 | dt_config/ | scuba-iot-idp-overlay-195885.dts | #195885 时点 overlay 快照 |
-| kernel_driver/ | TZ.XF.5.1/.../QUPAC_Access_MT5205.c | TZ QUPAC 新增文件（保留原相对路径） |
+| kernel_driver/ | TZ.XF.5.1/.../QUPAC_Access.c | TZ QUPAC 新增文件（保留原相对路径） |
 | patches/ | 195885.patch、197063.patch | 本任务全部补丁 |
 
 ## 引用文件索引
@@ -544,7 +544,7 @@ index 0000000000..9e5567066a
 | [[01.驱动文档/GPIO/Qualcomm/SM6115-A14/91.源码与补丁索引/kernel_driver/bengal_GKI.config\|bengal_GKI.config]] | `kernel_platform/msm-kernel/arch/arm64/configs/vendor/bengal_GKI.config` | CONFIG_SPI_SPIDEV=m |
 | [[01.驱动文档/GPIO/Qualcomm/SM6115-A14/91.源码与补丁索引/kernel_driver/pinctrl-scuba.c\|pinctrl-scuba.c]] | `kernel_platform/msm-kernel/drivers/pinctrl/qcom/pinctrl-scuba.c` | reserved 列表释放 GPIO0-3 |
 | [[01.驱动文档/GPIO/Qualcomm/SM6115-A14/91.源码与补丁索引/dt_config/scuba-iot-idp-overlay-195885.dts\|scuba-iot-idp-overlay-195885.dts]] | `kernel_platform/qcom/proprietary/devicetree/qcom/scuba-iot-idp-overlay.dts` | #195885 时点版本（spidev + 握手 GPIO） |
-| [[01.驱动文档/GPIO/Qualcomm/SM6115-A14/91.源码与补丁索引/kernel_driver/TZ.XF.5.1/trustzone_images/core/settings/buses/qup_accesscontrol/qupv3/config/agatti/QUPAC_Access_MT5205.c\|QUPAC_Access_MT5205.c]] | `TZ.XF.5.1/trustzone_images/core/settings/buses/qup_accesscontrol/qupv3/config/agatti/` | SE0 SPI AC_HLOS 释放 |
+| [[01.驱动文档/GPIO/Qualcomm/SM6115-A14/91.源码与补丁索引/kernel_driver/TZ.XF.5.1/trustzone_images/core/settings/buses/qup_accesscontrol/qupv3/config/agatti/QUPAC_Access.c\|QUPAC_Access.c]] | `TZ.XF.5.1/trustzone_images/core/settings/buses/qup_accesscontrol/qupv3/config/agatti/` | SE0 SPI AC_HLOS 释放 |
 | [[01.驱动文档/GPIO/Qualcomm/SM6115-A14/91.源码与补丁索引/patches/195885.patch\|195885.patch]] | Gerrit #195885 | AP 侧补丁 |
 | [[01.驱动文档/GPIO/Qualcomm/SM6115-A14/91.源码与补丁索引/patches/197063.patch\|197063.patch]] | Gerrit #197063 | TZ QUPAC 补丁 |
 

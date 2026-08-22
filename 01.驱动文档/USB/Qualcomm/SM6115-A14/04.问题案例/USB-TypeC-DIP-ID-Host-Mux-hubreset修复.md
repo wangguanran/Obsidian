@@ -2,7 +2,7 @@
 
 > **模块**: USB | **厂商**: Qualcomm | **芯片**: SM6115 (scuba)
 > **平台**: SM6115-A14 (LA.VENDOR.13.2.1) | **类型**: Bug
-> **Change**: #196403 | **作者**: tengqi | **状态**: MERGED
+> **Change**: #196403 | **作者**: [同事] | **状态**: MERGED
 
 ## 基本信息
 
@@ -10,18 +10,18 @@
 |------|------|
 | Change | #196403 |
 | 项目 | LA.VENDOR.13.2.1 |
-| 分支 | MT5205 |
-| 作者 | tengqi |
+| 分支 | [项目代号] |
+| 作者 | [同事] |
 | 类型 | Bug（USB Type-C DIP ID host mux hubreset 修复） |
 | 芯片 | Qualcomm SM6115 (scuba) |
 | 平台 | SM6115-A14 (LA.VENDOR.13.2.1) |
 | 模块 | USB (extcon / dwc3 / devicetree) |
-| 提交标题 | `[MT5205][120577][usb][Description]USB Type-C DIP ID host mux hubreset[Owner]tengqi` |
+| 提交标题 | `[[项目代号]][120577][usb][Description]USB Type-C DIP ID host mux hubreset[Owner][同事]` |
 | 任务 | Task 120577 |
 
 ## 现象
 
-MT5205 项目使用 DIP 开关（D1/D2）在「USB Host（通过 HUB）」与「Type-C」两种模式间切换硬件连接。原有实现存在以下问题：
+[项目代号] 项目使用 DIP 开关（D1/D2）在「USB Host（通过 HUB）」与「Type-C」两种模式间切换硬件连接。原有实现存在以下问题：
 
 - USB ID 检测依赖 `pm2250_charger` 的 `usb_id_irq`（TLMM 89），而非专用 extcon 驱动，ID 电平判定不可靠（PMIC GPIO3 的 1.7V ID 电平在 1.8V VIN 选择错误时会被误判为低）；
 - Host 模式 VBUS 使能、HUB 复位等 GPIO 无统一控制逻辑；
@@ -160,7 +160,7 @@ DIP D2 (ID high) → extcon 上报 none（id-high-is-none）
 ## 补丁内容
 
 ```diff
-Subject: [PATCH] [MT5205][120577][usb][Description]USB Type-C DIP ID host mux hubreset[Owner]tengqi
+Subject: [PATCH] [[项目代号]][120577][usb][Description]USB Type-C DIP ID host mux hubreset[Owner][同事]
 
 [Solution]extcon-usb-gpio on PMIC GPIO3; GPIO19/103 host VBUS; GPIO108 hubreset follows ID
 
@@ -321,7 +321,7 @@ index ab4ebe1..0897664 100755
  	status = "ok";
  };
  
-+/* MT5205: PM4125/PM2250 GPIO3 = USB_ID (U900F E9), via extcon-usb-gpio */
++/* [项目代号]: PM4125/PM2250 GPIO3 = USB_ID (U900F E9), via extcon-usb-gpio */
 +&pm2250_gpios {
 +	usb_id {
 +		usb_id_default: usb_id_default {
@@ -533,7 +533,7 @@ index 492c4e0..60d3d09 100755
 
 ## 补充：DIP Host/Type-C 隔离与编译修复（#196756 + #196543）
 
-**Change**: #196756（tengqi）+ #196543（weirong）| **项目**: LA.VENDOR.13.2.1 | **分支**: MT5205 | **状态**: MERGED
+**Change**: #196756（[同事]）+ #196543（[同事]）| **项目**: LA.VENDOR.13.2.1 | **分支**: [项目代号] | **状态**: MERGED
 **任务**: Task 120577（与 #196403 同一任务，合并归档）
 
 ### 需求/问题描述
@@ -822,7 +822,7 @@ index 0897664..8e85682 100755
  &qusb_phy0 {
  	extcon = <&pm2250_charger>;
 +	/*
-+	 * MT5205 DIP Host/Type-C isolation: USB-A (extcon_usb_id HOST)
++	 * [项目代号] DIP Host/Type-C isolation: USB-A (extcon_usb_id HOST)
 +	 * suppresses qusb charger role extcon; Type-C clears mute + resync.
 +	 */
 +	qcom,role-mute-extcon = <&extcon_usb_id>;
@@ -878,7 +878,7 @@ index bab869e..04549d1 100644
 
 | Change | 验证方式 | 结果 |
 |--------|---------|------|
-| #196756 | 134 MT5205 LA.VENDOR.13.2.1 `git apply --check --reverse` | ✅ 已在分支 HEAD（MERGED） |
+| #196756 | 134 [项目代号] LA.VENDOR.13.2.1 `git apply --check --reverse` | ✅ 已在分支 HEAD（MERGED） |
 | #196543 | 同上 | ✅ 已在分支 HEAD（MERGED） |
 
 ### 源码归档

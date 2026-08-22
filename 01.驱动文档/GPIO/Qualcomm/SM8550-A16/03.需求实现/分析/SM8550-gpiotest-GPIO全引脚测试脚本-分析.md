@@ -7,16 +7,16 @@
 
 SM8550（kalama）是高通旗舰平台，SoC 侧含 TLMM GPIO（约 200 个编号到 500+ 的系统 GPIO 偏移）与 PMIC 侧 PM8550 系列 GPIO。产测场景需要对全部 GPIO 做开短路环回测试：将成对 GPIO 一个配置为输出、另一个配置为输入，输出端拉高后输入端回读，验证板级连线的电气完整性。
 
-本平台的 gpiotest 以 shell 脚本形式集成在 vendor 分区（`/vendor/bin/SRM969_gpio.sh`），由 init 服务 `meig_gpio_test` 在产测模式触发，测试结果写入 persist 分区 `gpio_test_final.ini` 供产测工具解析。
+本平台的 gpiotest 以 shell 脚本形式集成在 vendor 分区（`/vendor/bin/gpiotest_gpio.sh`），由 init 服务 `meig_gpio_test` 在产测模式触发，测试结果写入 persist 分区 `gpio_test_final.ini` 供产测工具解析。
 
 ## 代码改动分析
 
-### device/qcom/kalama/SRM969_gpio.sh（RENAMED +105/-72）
+### device/qcom/kalama/gpiotest_gpio.sh（RENAMED +105/-72）
 
 核心改动：
 
-1. **引脚表重排**：`gpio_num1`/`gpio_num2` 更新为 SRM969 平台的系统 GPIO 偏移（303~500 区间），并加入 PM8550VE/PMK8550 等 PMIC GPIO 项（284~289、255~268 等偏移段），对应 SPMI 侧 PMIC GPIO 映射。
-2. **测试段结构**（与 SRM965 相同）：
+1. **引脚表重排**：`gpio_num1`/`gpio_num2` 更新为 [项目代号] 平台的系统 GPIO 偏移（303~500 区间），并加入 PM8550VE/PMK8550 等 PMIC GPIO 项（284~289、255~268 等偏移段），对应 SPMI 侧 PMIC GPIO 映射。
+2. **测试段结构**（与 [项目代号] 相同）：
    - `gpioAllTest_PullUp`：num1 组输出 1，num2 组输入回读
    - `gpioAllTest_PullDown`：输出 0 后回读
    - `gpio_single_input*`：单引脚分组验证
@@ -28,11 +28,11 @@ SM8550（kalama）是高通旗舰平台，SoC 侧含 TLMM GPIO（约 200 个编�
 
 ### device/qcom/kalama/AndroidBoard.mk / kalama.mk / init.target.rc
 
-三处 +1/-1 的机械替换：脚本模块名从 `SRM965_gpio.sh` 统一改为 `SRM969_gpio.sh`，保证打包产物、PRODUCT_PACKAGES 与 init service 引用一致。
+三处 +1/-1 的机械替换：脚本模块名从 `gpiotest_gpio.sh` 统一改为 `gpiotest_gpio.sh`，保证打包产物、PRODUCT_PACKAGES 与 init service 引用一致。
 
 ## 潜在风险
 
-1. **引脚表准确性依赖网表**：替换后的引脚偏移（303~500+）若与 SRM969 实际 TLMM/PMIC 映射不符，会产生误判 false 或测试死等（export 失败）。需要产线首台样机实测校准。
+1. **引脚表准确性依赖网表**：替换后的引脚偏移（303~500+）若与 [项目代号] 实际 TLMM/PMIC 映射不符，会产生误判 false 或测试死等（export 失败）。需要产线首台样机实测校准。
 2. **PMIC GPIO 依赖 SPMI 节点路径**：`c42d000.qcom,spmi` 路径为 kalama 平台固定地址，若后续平台变体改动地址，脚本会静默读取失败（`cat` 返回非数字导致 `[` 判断报错）。
 3. **`sdcard_auto` 节点依赖自研驱动**：`meig_sd_and_sim_auto` 为美格自研 misc 驱动节点，若该驱动未合入则测试段报错。
 4. **shell 无 set -e**：单个 GPIO 失败不会中止脚本，多失败时仅 test_result=0 汇总，定位需要逐条看 ini 文件。

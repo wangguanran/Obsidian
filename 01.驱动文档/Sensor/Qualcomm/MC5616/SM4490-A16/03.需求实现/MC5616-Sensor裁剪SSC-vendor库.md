@@ -5,7 +5,7 @@
 - **Change**: #196014
 - **项目**: snapdragon-premium-high-2021-spf-2-0-2_amss_standard_oem_apq
 - **分支**: master_Snapdragon_Premium_High_2021.SPF.2.0.2_MC5616
-- **作者**: zhourulei
+- **作者**: [同事]
 - **状态**: MERGED
 - **类型**: 需求 (trim)
 - **芯片**: MC5616（基于 parrot/QCM4490）
@@ -94,7 +94,7 @@ include_sensor_vendor_libs = [
 ## 补丁内容
 
 ```diff
-[PATCH] [MC5616][93821][Sensor]Trim SSC netrani vendor libs to sns_sc7a20 [Owner]zhourulei
+[PATCH] [MC5616][93821][Sensor]Trim SSC netrani vendor libs to sns_sc7a20 [Owner][同事]
 
 diff --git a/ADSP.HT.5.7/adsp_proc/ssc/chipset/netrani/por.py b/ADSP.HT.5.7/adsp_proc/ssc/chipset/netrani/por.py
 index a9ab0fa..9de8eab 100755

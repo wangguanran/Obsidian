@@ -67,12 +67,12 @@ se-reset {
 
 ```dts
 &tlmm {
-    mt5205_se_reset: mt5205_se_reset {
+    [项目代号]_se_reset: [项目代号]_se_reset {
         mux { pins = "gpio102"; function = "gpio"; };
         config { pins = "gpio102"; drive-strength = <2>;
                 bias-disable; output-high; };
     };
-    mt5205_mdb_reset: mt5205_mdb_reset {
+    [项目代号]_mdb_reset: [项目代号]_mdb_reset {
         mux { pins = "gpio36"; function = "gpio"; };
         config { pins = "gpio36"; drive-strength = <2>;
                 bias-disable; output-high; };
@@ -84,7 +84,7 @@ se-reset {
         compatible = "gpio-userspace";
         status = "okay";
         pinctrl-names = "default";
-        pinctrl-0 = <&mt5205_se_reset &mt5205_mdb_reset>;
+        pinctrl-0 = <&[项目代号]_se_reset &[项目代号]_mdb_reset>;
 
         se-reset { label = "se_reset"; gpios = <&tlmm 102 GPIO_ACTIVE_HIGH>; default-state = <1>; };
         mdb-reset { label = "mdb_reset"; gpios = <&tlmm 36 GPIO_ACTIVE_HIGH>; default-state = <1>; };
@@ -500,7 +500,7 @@ index 96adfa675a1..6c52b71a3ec 100755
 + * default-state: 0-low, 1-high, 2-input
 + */
 +&tlmm {
-+	mt5205_se_reset: mt5205_se_reset {
++	[项目代号]_se_reset: [项目代号]_se_reset {
 +		mux {
 +			pins = "gpio102";
 +			function = "gpio";
@@ -514,7 +514,7 @@ index 96adfa675a1..6c52b71a3ec 100755
 +		};
 +	};
 +
-+	mt5205_mdb_reset: mt5205_mdb_reset {
++	[项目代号]_mdb_reset: [项目代号]_mdb_reset {
 +		mux {
 +			pins = "gpio36";
 +			function = "gpio";
@@ -534,7 +534,7 @@ index 96adfa675a1..6c52b71a3ec 100755
 +		compatible = "gpio-userspace";
 +		status = "okay";
 +		pinctrl-names = "default";
-+		pinctrl-0 = <&mt5205_se_reset &mt5205_mdb_reset>;
++		pinctrl-0 = <&[项目代号]_se_reset &[项目代号]_mdb_reset>;
 +
 +		se-reset {
 +			label = "se_reset";
@@ -573,7 +573,7 @@ index 96adfa675a1..6c52b71a3ec 100755
 
 ### scuba-iot-idp-overlay.dts
 路径：`kernel_platform/qcom/proprietary/devicetree/qcom/scuba-iot-idp-overlay.dts`
-新增 pinctrl 节点（`mt5205_se_reset`、`mt5205_mdb_reset`）和 `gpio-userspace` 子节点（`se-reset` label=se_reset, gpios=102, default-high；`mdb-reset` label=mdb_reset, gpios=36, default-high）。
+新增 pinctrl 节点（`[项目代号]_se_reset`、`[项目代号]_mdb_reset`）和 `gpio-userspace` 子节点（`se-reset` label=se_reset, gpios=102, default-high；`mdb-reset` label=mdb_reset, gpios=36, default-high）。
 
 ### init.target.rc
 路径：`device/qcom/bengal_515_32go/init.target.rc`
