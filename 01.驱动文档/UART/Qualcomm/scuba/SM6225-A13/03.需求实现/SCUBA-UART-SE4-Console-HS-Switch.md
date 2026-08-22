@@ -120,7 +120,7 @@ cat /sys/kernel/debug/uart/*/info
 ## 补丁内容
 
 ```diff
-[PATCH] [[项目代号]][120574][uart][Description]fastboot oem uartdebug SE4 console/HS switch[Owner][同事]
+[PATCH] [项目代号][120574][uart][Description]fastboot oem uartdebug SE4 console/HS switch[Owner][同事]
 
 diff --git a/kernel_platform/bootable/bootloader/edk2/QcomModulePkg/Include/Library/DeviceInfo.h b/kernel_platform/bootable/bootloader/edk2/QcomModulePkg/Include/Library/DeviceInfo.h
 index 3eff8cf..4fed12a 100644

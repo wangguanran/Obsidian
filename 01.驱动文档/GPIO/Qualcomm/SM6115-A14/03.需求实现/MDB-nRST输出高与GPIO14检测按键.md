@@ -136,7 +136,7 @@ static const int scuba_reserved_gpios[] = {
 ## 补丁内容
 
 ```diff
-Subject: [PATCH] [[项目代号]][TaskID]120572[Description]MDB nRST output-high and GPIO14 DB detect key[Solution]idle mdb_reset output-high, unreserve GPIO14, gpio-keys KEY_F1[Owner][同事]
+Subject: [PATCH] [项目代号][TaskID]120572[Description]MDB nRST output-high and GPIO14 DB detect key[Solution]idle mdb_reset output-high, unreserve GPIO14, gpio-keys KEY_F1[Owner][同事]
 
 ---
 

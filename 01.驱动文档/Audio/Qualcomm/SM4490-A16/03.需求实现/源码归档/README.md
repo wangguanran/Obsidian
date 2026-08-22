@@ -5,7 +5,7 @@
 | 项目 | 内容 |
 |------|------|
 | **Change** | #196025 |
-| **标题** | [[项目代号]][93821][Audio] Disable RX macro/SWR path, drop VA always-on |
+| **标题** | [项目代号][93821][Audio] Disable RX macro/SWR path, drop VA always-on |
 | **作者** | [同事] |
 | **状态** | MERGED (Gerrit) / 未合入 134 仓库 |
 | **归档日期** | 2026-08-18 |

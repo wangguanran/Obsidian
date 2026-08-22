@@ -16,7 +16,7 @@
 | 芯片 | Qualcomm SM6115 (scuba) |
 | 平台 | SM6115-A14 (LA.VENDOR.13.2.1) |
 | 模块 | USB (extcon / dwc3 / devicetree) |
-| 提交标题 | `[[项目代号]][120577][usb][Description]USB Type-C DIP ID host mux hubreset[Owner][同事]` |
+| 提交标题 | `[项目代号][120577][usb][Description]USB Type-C DIP ID host mux hubreset[Owner][同事]` |
 | 任务 | Task 120577 |
 
 ## 现象
@@ -160,7 +160,7 @@ DIP D2 (ID high) → extcon 上报 none（id-high-is-none）
 ## 补丁内容
 
 ```diff
-Subject: [PATCH] [[项目代号]][120577][usb][Description]USB Type-C DIP ID host mux hubreset[Owner][同事]
+Subject: [PATCH] [项目代号][120577][usb][Description]USB Type-C DIP ID host mux hubreset[Owner][同事]
 
 [Solution]extcon-usb-gpio on PMIC GPIO3; GPIO19/103 host VBUS; GPIO108 hubreset follows ID
 

@@ -132,7 +132,7 @@ se-rdy { label = "se_rdy"; gpios = <&tlmm 63 GPIO_ACTIVE_HIGH>; default-state = 
 ### 补丁 1/2：#195885（AP 侧 kernel + DT）
 
 ```diff
-Subject: [PATCH] [[项目代号]][TaskID]118732[Description]enable SE SPI0 spidev and
+Subject: [PATCH] [项目代号][TaskID]118732[Description]enable SE SPI0 spidev and
  handshake GPIOs [Solution]overlay SE0 10MHz dummy spidev, unreserve GPIO0-3,
  export GPIO37/63/102 [Owner][同事]
 
@@ -284,7 +284,7 @@ index 3d1654f1658..e985688633f 100755
 ### 补丁 2/2：#197063（TZ QUPAC）
 
 ```diff
-Subject: [PATCH] [[项目代号]][TaskID]118732[Description]release QUP SE0 SPI to
+Subject: [PATCH] [项目代号][TaskID]118732[Description]release QUP SE0 SPI to
  HLOS for Secure MCU[Solution]add QUPAC_Access_[项目代号] product overlay with SE0
  FIFO AC_HLOS[Owner][同事]
 

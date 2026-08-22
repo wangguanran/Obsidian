@@ -94,7 +94,7 @@ include_sensor_vendor_libs = [
 ## 补丁内容
 
 ```diff
-[PATCH] [[项目代号]][93821][Sensor]Trim SSC netrani vendor libs to sns_sc7a20 [Owner][同事]
+[PATCH] [项目代号][93821][Sensor]Trim SSC netrani vendor libs to sns_sc7a20 [Owner][同事]
 
 diff --git a/ADSP.HT.5.7/adsp_proc/ssc/chipset/netrani/por.py b/ADSP.HT.5.7/adsp_proc/ssc/chipset/netrani/por.py
 index a9ab0fa..9de8eab 100755

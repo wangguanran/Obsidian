@@ -16,7 +16,7 @@
 | 作者 | [同事] |
 | 状态 | MERGED |
 | 类型 | 需求 (feature) |
-| 标题 | [[项目代号]][120574][uart] fastboot oem uartdebug SE4 console/HS switch |
+| 标题 | [项目代号][120574][uart] fastboot oem uartdebug SE4 console/HS switch |
 
 ### 摘要
 

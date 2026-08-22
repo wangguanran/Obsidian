@@ -54,7 +54,7 @@ qcom,mdss-dsi-bl-max-level = <4095>;
 ## 补丁内容
 
 ```diff
-Subject: [PATCH]  [[项目代号]][TaskID]120699[Description]Increase the display PWM frequency[Owner][同事]
+Subject: [PATCH]  [项目代号][TaskID]120699[Description]Increase the display PWM frequency[Owner][同事]
 
 ---
 

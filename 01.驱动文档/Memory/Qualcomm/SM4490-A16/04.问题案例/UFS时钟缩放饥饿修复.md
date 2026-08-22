@@ -83,7 +83,7 @@ UFS_FIX(UFS_VENDOR_HOSINGLOBAL, UFS_ANY_MODEL,
 ## 补丁内容
 
 ```diff
-Subject: [PATCH] [[项目代号]][96242][UFS]Fix clock scaling starvation on high-latency HOSINGLOBAL UFS 2.x device
+Subject: [PATCH] [项目代号][96242][UFS]Fix clock scaling starvation on high-latency HOSINGLOBAL UFS 2.x device
 
 [Root Cause]
 flashval test 2.1/2.2/10.1/10.2 (clock scale transitions >= 1000) fail on

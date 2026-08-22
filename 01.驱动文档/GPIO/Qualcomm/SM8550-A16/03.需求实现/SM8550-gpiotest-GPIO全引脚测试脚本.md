@@ -116,7 +116,7 @@ adb shell cat /mnt/vendor/persist/gpiotest/gpio_test_final.ini
 ## 补丁内容
 
 ```diff
-Subject: [PATCH] [[项目代号]][TaskID]120144[Description]add gpiotest[Solution]modify gpiotest[Owner]wanghao_sh
+Subject: [PATCH] [项目代号][TaskID]120144[Description]add gpiotest[Solution]modify gpiotest[Owner]wanghao_sh
 ---
 
 diff --git a/device/qcom/kalama/AndroidBoard.mk b/device/qcom/kalama/AndroidBoard.mk

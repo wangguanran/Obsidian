@@ -149,7 +149,7 @@ r66451 AMOLED video 面板的 ESD 检查在 [项目代号] 平台误触发，导
 ## 补丁内容（完整粘贴，不截断）
 
 ```diff
-Subject: [PATCH] [[项目代号]][96455][Display]Disable ESD check for r66451 AMOLED video panel [Owner][同事]
+Subject: [PATCH] [项目代号][96455][Display]Disable ESD check for r66451 AMOLED video panel [Owner][同事]
 
 [Root Cause]
 	&dsi_r66451_amoled_video 面板节点默认使能 qcom,esd-check-enabled，驱动会按 panel-status-command 周期性读取 status 寄存器并可能触发 panel recovery。

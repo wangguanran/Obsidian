@@ -16,7 +16,7 @@
 | 芯片 | Qualcomm SM6225 (khaje) |
 | 平台 | SM6225-A14 (LA.VENDOR.13.2.1) |
 | 模块 | Charger (smb5-lib POGO/Dock) |
-| 提交标题 | `[[项目代号]][TaskID]119595[Description]When the dock is connected to the host, the charging function will be affected[owner][同事]` |
+| 提交标题 | `[项目代号][TaskID]119595[Description]When the dock is connected to the host, the charging function will be affected[owner][同事]` |
 | 任务 | Task 119595 |
 
 ## 现象
@@ -89,7 +89,7 @@ Dock host 模式下不再打开充电器 OTG_EN（避免与 DCIN 输入互斥）
 ## 补丁内容
 
 ```diff
-Subject: [PATCH] [[项目代号]][TaskID]119595[Description]When the dock is connected to the host, the charging function will be affected[owner][同事]
+Subject: [PATCH] [项目代号][TaskID]119595[Description]When the dock is connected to the host, the charging function will be affected[owner][同事]
 
 ---
 diff --git a/kernel_platform/msm-kernel/drivers/power/supply/qcom/smb5-lib.c b/kernel_platform/msm-kernel/drivers/power/supply/qcom/smb5-lib.c

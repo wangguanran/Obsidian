@@ -5,7 +5,7 @@
 | 项目 | 内容 |
 |------|------|
 | Change | #196025 |
-| 标题 | [[项目代号]][93821][Audio] Disable RX macro/SWR path, drop VA always-on |
+| 标题 | [项目代号][93821][Audio] Disable RX macro/SWR path, drop VA always-on |
 | 作者 | [同事] |
 | 类型 | 需求 (power optimization) |
 | 芯片 | [项目代号] (parrot/QCM4490) |

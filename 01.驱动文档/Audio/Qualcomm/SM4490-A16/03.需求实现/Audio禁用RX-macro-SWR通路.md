@@ -146,7 +146,7 @@ tinycap /data/record.wav
 ## 补丁内容
 
 ```diff
-[PATCH] [[项目代号]][93821][Audio] Disable RX macro/SWR path, drop VA always-on [Owner][同事]
+[PATCH] [项目代号][93821][Audio] Disable RX macro/SWR path, drop VA always-on [Owner][同事]
 
 diff --git a/vendor/qcom/opensource/audio-kernel/asoc/codecs/lpass-cdc/lpass-cdc-rx-macro.c b/vendor/qcom/opensource/audio-kernel/asoc/codecs/lpass-cdc/lpass-cdc-rx-macro.c
 index 058154b..543e672 100644

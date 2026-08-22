@@ -165,7 +165,7 @@ echo 50000 > /dev/meig_pulse0
 ## 补丁内容
 
 ```diff
-Subject: [PATCH] [[项目代号]][TaskID]118743[Description]fix UIC pulse GPIO32/33 direct-wire detect and sysfs[Solution]ACTIVE_HIGH IN, batch_timer cancel, debounce default 2ms, update binding and DT overlay[Owner][同事]
+Subject: [PATCH] [项目代号][TaskID]118743[Description]fix UIC pulse GPIO32/33 direct-wire detect and sysfs[Solution]ACTIVE_HIGH IN, batch_timer cancel, debounce default 2ms, update binding and DT overlay[Owner][同事]
 
 ---
 
