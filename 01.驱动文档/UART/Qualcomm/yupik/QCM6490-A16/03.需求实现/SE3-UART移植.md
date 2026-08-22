@@ -36,7 +36,7 @@
 
 ### 3. TrustZone QUP 访问控制（#195834）
 
-修改 `QUPAC_Access_MT912.c` 文件，在 QUP 访问控制配置中增加 SE3 UART 对应的通道权限，允许非安全世界（Linux/Android）访问该 QUP 通道。
+修改 `QUPAC_Access_[项目代号].c` 文件，在 QUP 访问控制配置中增加 SE3 UART 对应的通道权限，允许非安全世界（Linux/Android）访问该 QUP 通道。
 
 ## 修改文件清单
 
@@ -54,7 +54,7 @@
 - `qcom/yupikp-iot-qrd-overlay-stdmc938-evt2.dtsi`：status 改为 okay（+1/-1）
 
 ### #195834 — TrustZone QUP 访问控制
-- `TZ.XF.5.35/trustzone_images/core/settings/buses/qup_accesscontrol/qupv3/config/kodiak/QUPAC_Access_MT912.c`：增加 SE3 UART QUP 通道权限（+10/-6）
+- `TZ.XF.5.35/trustzone_images/core/settings/buses/qup_accesscontrol/qupv3/config/kodiak/QUPAC_Access_[项目代号].c`：增加 SE3 UART QUP 通道权限（+10/-6）
 
 ## 配置方式
 
@@ -99,7 +99,7 @@
 - 无 Kconfig 变更（UART 驱动已在 QCM6490 内核中内置）
 
 ### TZ 配置
-- `QUPAC_Access_MT912.c` 中为 SE3 UART 对应的 QUP 通道增加非安全世界访问权限
+- `QUPAC_Access_[项目代号].c` 中为 SE3 UART 对应的 QUP 通道增加非安全世界访问权限
 
 ### 其他配置
 - 无 BoardConfig 变更
@@ -140,6 +140,6 @@
 - `qcom/yupik-qrd.dtsi`：QRD 板级配置，引用 SE3 UART（同上）
 - `qcom/yupik.dtsi`：SoC 级 DTS，注册 UART 总线别名（同上）
 - `qcom/yupikp-iot-qrd-overlay-*.dtsi`：5 个产品 overlay，使能外部 UART（同上）
-- `TZ.XF.5.35/trustzone_images/core/settings/buses/qup_accesscontrol/qupv3/config/kodiak/QUPAC_Access_MT912.c`：TZ QUP 访问控制配置（远程 `qcm6490-la-6-0_amss_standard_oem`）
+- `TZ.XF.5.35/trustzone_images/core/settings/buses/qup_accesscontrol/qupv3/config/kodiak/QUPAC_Access_[项目代号].c`：TZ QUP 访问控制配置（远程 `qcm6490-la-6-0_amss_standard_oem`）
 
 _Author: 艾达_

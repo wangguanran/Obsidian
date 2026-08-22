@@ -42,7 +42,7 @@ Qualcomm 平台的 TrustZone（TZ）对 QUP 等外设实施访问控制。QUPAC�
 
 **1 个文件修改，+10/-6：**
 
-在 `QUPAC_Access_MT912.c` 中增加 SE3 UART 对应的 QUP 通道配置条目，将通道权限设置为 NS（Non-Secure）可读写。原配置中可能缺少该通道或配置为 Secure 模式。
+在 `QUPAC_Access_[项目代号].c` 中增加 SE3 UART 对应的 QUP 通道配置条目，将通道权限设置为 NS（Non-Secure）可读写。原配置中可能缺少该通道或配置为 Secure 模式。
 
 ## 配置分析
 
@@ -56,7 +56,7 @@ SE3 UART 的 DTS 配置遵循 QCM6490 平台的 QUPv3 设备树绑定规范。�
 
 ### TZ 配置变更
 
-QUPAC 配置是 Qualcomm 平台特有的安全机制，在 TZ 侧编译。`QUPAC_Access_MT912.c` 中定义了每个 QUP 通道的访问权限数组，修改后需要重新编译 TZ 镜像并刷入。
+QUPAC 配置是 Qualcomm 平台特有的安全机制，在 TZ 侧编译。`QUPAC_Access_[项目代号].c` 中定义了每个 QUP 通道的访问权限数组，修改后需要重新编译 TZ 镜像并刷入。
 
 ## 潜在风险
 

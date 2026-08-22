@@ -1,0 +1,4 @@
+[2026-08-21 23:25:46,893] [DEBUG   ] [__main__.py             ] [main                    ] [989 ] sys.argv: ['/Users/wangguanran/.local/lib/projman/venv/bin/projman', 'upgrade', '--help']
+[2026-08-21 23:25:46,893] [DEBUG   ] [profiler.py             ] [wrapper                 ] [27  ] _load_builtin_plugin_operations took 0.000196 seconds
+[2026-08-21 23:25:46,893] [DEBUG   ] [__main__.py             ] [main                    ] [1007] Loaded 23 builtin operations.
+[2026-08-21 23:25:46,893] [DEBUG   ] [__main__.py             ] [main                    ] [1008] Builtin operations: ['upgrade', 'update', 'project_new', 'project_del', 'board_new', 'board_del', 'po_apply', 'po_revert', 'po_analyze', 'po_new', 'po_update', 'po_del', 'po_status', 'po_clear', 'po_list', 'project_diff', 'project_pre_build', 'project_do_build', 'project_post_build', 'project_build', 'doctor', 'snapshot_create', 'snapshot_validate']

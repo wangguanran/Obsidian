@@ -5,7 +5,7 @@
 ## 芯片信息
 
 - **芯片**：ITE IT8851（Type-C/PD 控制器）
-- **平台**：SM7325-A13（yupik），项目代号 MT912 / RIG5EM-3701
+- **平台**：SM7325-A13（yupik），项目代号 [项目代号] / [项目代号]-3701
 - **驱动**：`kernel/msm-5.4/drivers/meig-tools/it8851.c`
 
 ## 硬件接口

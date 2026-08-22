@@ -58,7 +58,7 @@ BIAS: vcc-micbias1/2-gpio (TLMM 96/97) → VCC MIC BIAS1
 
 ## 与同平台其他模块的关系
 
-音频 overlay 与相机（camera-devicetree 仓库，同分支 [项目代号]）共用 TLMM GPIO；GPIO96/97（micbias）与 150~153（DMIC）需避开相机/显示占用。per-SKU 结构与 [[01.驱动文档/Audio/Qualcomm/MC5617/SM4490-A16/03.需求实现/听筒与扬声器同时播放功能.md|MC5617 听筒+扬声器同播]] 的需求实现思路一致：机器级配置驱动通路差异。
+音频 overlay 与相机（camera-devicetree 仓库，同分支 [项目代号]）共用 TLMM GPIO；GPIO96/97（micbias）与 150~153（DMIC）需避开相机/显示占用。per-SKU 结构与 [[01.驱动文档/Audio/Qualcomm/SM4490-A16/03.需求实现/听筒与扬声器同时播放功能.md|[项目代号] 听筒+扬声器同播]] 的需求实现思路一致：机器级配置驱动通路差异。
 
 ---
 

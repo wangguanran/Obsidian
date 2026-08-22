@@ -5,7 +5,7 @@
 **状态：已合入**
 **来源：** Gerrit Change 195129
 **项目：** LA.UM.9.14.1
-**分支：** master_LA.4.0_MT912
+**分支：** master_LA.4.0_[项目代号]
 **作者：** [同事]
 **合入时间：** 2026-08-15
 
@@ -19,7 +19,7 @@ CFD 屏在系统 suspend/resume 后偶尔出现无法点亮的问题。这是一
 - Android 版本：13
 - 内核：msm-5.4
 - 涉及芯片：ITE IT8851（Type-C/PD 控制器）
-- 平台：[项目代号：MT912 / RIG5EM-3701]
+- 平台：[项目代号：[项目代号] / [项目代号]-3701]
 
 ## 关键日志
 
@@ -64,7 +64,7 @@ commit fc207b938710c3754b95116e14428ed7b78e60d3
 Author: [同事] <[同事]@example.com>
 Date:   [日期]
 
-    [RIG5EM-3701][120301]Addressing the issue of the CFD screen occasionally not lighting up after suspend/resume[owner][同事]
+    [[项目代号]-3701][120301]Addressing the issue of the CFD screen occasionally not lighting up after suspend/resume[owner][同事]
 
 diff --git a/kernel/msm-5.4/drivers/meig-tools/it8851.c b/kernel/msm-5.4/drivers/meig-tools/it8851.c
 index 0000000..0000000
@@ -77,7 +77,7 @@ index 0000000..0000000
 
 ## 源码归档
 
-- 源码未归档（远程源码树不可达，文件位于 Gerrit 仓库 `LA.UM.9.14.1` 项目，分支 `master_LA.4.0_MT912`）
+- 源码未归档（远程源码树不可达，文件位于 Gerrit 仓库 `LA.UM.9.14.1` 项目，分支 `master_LA.4.0_[项目代号]`）
 - 文件路径：`kernel/msm-5.4/drivers/meig-tools/it8851.c`
 
 ## 引用文件索引

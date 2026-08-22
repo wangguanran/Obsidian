@@ -55,7 +55,7 @@
 };
 ```
 
-### TZ QUP 访问控制（QUPAC_Access_MT912.c）
+### TZ QUP 访问控制（QUPAC_Access_[项目代号].c）
 
 为 SE3 UART 对应的 QUP 通道增加非安全世界访问权限（+10/−6）。
 
@@ -84,7 +84,7 @@ echo "SE3 UART test" > /dev/ttyMSM3
 
 - [[01.驱动文档/UART/Qualcomm/yupik/QCM6490-A16/03.需求实现/SE3-UART移植.md|SE3-UART移植]]（补丁内容）
 - `qcom/yupik-pinctrl.dtsi`、`yupik-qupv3.dtsi`、`yupik-qrd.dtsi`、`yupik.dtsi`、`yupikp-iot-qrd-overlay-*.dtsi`（远程）
-- `TZ.XF.5.35/.../QUPAC_Access_MT912.c`（远程）
+- `TZ.XF.5.35/.../QUPAC_Access_[项目代号].c`（远程）
 
 ---
 
